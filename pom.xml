@@ -15,6 +15,9 @@
         <log4j.version>2.11.2</log4j.version>
         <junit.version>5.3.1</junit.version>
         <mockito.version>2.25.1</mockito.version>
+        <wiremock.version>2.22.0</wiremock.version>
+        <wiremock-extension.version>0.4.0</wiremock-extension.version>
+        <assertj.version>3.12.2</assertj.version>
     </properties>
 
     <dependencies>
@@ -76,6 +79,24 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock-jre8</artifactId>
+            <version>${wiremock.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.JensPiegsa</groupId>
+            <artifactId>wiremock-extension</artifactId>
+            <version>${wiremock-extension.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -97,5 +118,12 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
 </project>

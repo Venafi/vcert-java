@@ -19,4 +19,7 @@ public class ApiKey {
     @SerializedName("apitypes")
     private Collection<String> apiTypes;
 
+    // present in JSON but not in Go SDK
+//    private String userId;
+//    private String companyId;
 }

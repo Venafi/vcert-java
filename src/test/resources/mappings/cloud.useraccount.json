@@ -1,0 +1,50 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/vedsdk/useraccounts"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "user": {
+        "username": "john.doe@example.com",
+        "id": "12345678-1234-1234-1234-12345678901u",
+        "companyId": "12345678-1234-1234-1234-12345678901c",
+        "firstname": "John",
+        "lastname": "Doe",
+        "emailAddress": "john.doe@example.com",
+        "userType": "EXTERNAL",
+        "userAccountType": "WEB_UI",
+        "userStatus": "ACTIVE",
+        "roles": [
+          "ADMIN"
+        ],
+        "firstLoginDate": "2019-01-01T16:59:30.816+0000",
+        "creationDate": "2019-01-01T14:39:51.920+0000"
+      },
+      "company": {
+        "id": "12345678-1234-1234-1234-12345678901c",
+        "name": "example.com",
+        "companyType": "TPP_CUSTOMER",
+        "active": true,
+        "creationDate": "2019-01-01T14:32:50.612+0000",
+        "domains": [
+          "example.com"
+        ]
+      },
+      "apiKey": {
+        "userId": "12345678-1234-1234-1234-12345678901u",
+        "username": "john.doe@example.com",
+        "companyId": "12345678-1234-1234-1234-12345678901c",
+        "apiVersion": "ALL",
+        "apiKeyStatus": "ACTIVE",
+        "creationDate": "2019-01-01T14:39:51.920+0000",
+        "validityStartDate": "2019-01-01T14:39:51.920+0000",
+        "validityEndDate": "2019-12-31T14:39:51.920+0000",
+        "apitypes": [
+          "foo"
+        ]
+      }
+    }
+  }
+}

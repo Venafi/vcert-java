@@ -6,8 +6,16 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Root level="trace">
+        <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
+        <Logger name="com.opencredo" level="DEBUG"
+                additivity="false">
+            <Appender-ref ref="Console" level="DEBUG" />
+        </Logger>
+        <Logger name="feign" level="TRACE"
+                additivity="false">
+            <Appender-ref ref="Console" />
+        </Logger>
     </Loggers>
 </Configuration>

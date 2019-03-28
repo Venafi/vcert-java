@@ -15,4 +15,12 @@ public interface Cloud {
     static Cloud connect(String baseUrl) {
         return FeignUtils.client(Cloud.class, baseUrl);
     }
+
+    @Headers("tppl-api-key: {apiKey}")
+    @RequestLine("GET /zones/tag/{zone}")
+    Zone zoneByTag(@Param("zone") String zone, @Param("apiKey") String apiKey);
+
+    @Headers("tppl-api-key: {apiKey}")
+    @RequestLine("GET /certificatepolicies/{id}")
+    CertificatePolicy policyById(@Param("id") String id, @Param("apiKey") String apiKey);
 }

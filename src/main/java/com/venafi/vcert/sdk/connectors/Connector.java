@@ -1,6 +1,7 @@
 package com.venafi.vcert.sdk.connectors;
 
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 
 public interface Connector {
@@ -11,7 +12,7 @@ public interface Connector {
 //    void ping() throws VCertException;
 //    void register(String eMail) throws VCertException;
     void authenticate(Authentication auth) throws VCertException;
-//    ZoneConfiguration readZoneConfiguration(String zone) throws VCertException;
+    ZoneConfiguration readZoneConfiguration(String zone) throws VCertException;
 //    CertificateRequest generateRequest(ZoneConfiguration config) throws VCertException;
 //    String generateRequest(CertificateRequest request, String zone) throws VCertException;
 //    Collection retrieveCertificate(CertificateRequest request) throws VCertException;
