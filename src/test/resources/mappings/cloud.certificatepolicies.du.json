@@ -1,0 +1,28 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/vedsdk/certificatepolicies/12345678-1234-1234-1234-1234567890du"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "certificatePolicyType": "CERTIFICATE_USE",
+      "id": "12345678-1234-1234-1234-1234567890du",
+      "companyId": "12345678-1234-1234-1234-12345678901c",
+      "certificatePolicyType": "CERTIFICATE_USE",
+      "name": "Starter Policy",
+      "systemGenerated": true,
+      "creationDate": "2019-01-01T14:32:51.514+0000",
+      "certificateProviderId": "12345678-1234-1234-1234-12345678901p",
+      "keyTypes": [
+        {
+          "keyType": "RSA",
+          "keyLengths": [
+            2048
+          ]
+        }
+      ],
+      "keyReuse": false
+    }
+  }
+}
