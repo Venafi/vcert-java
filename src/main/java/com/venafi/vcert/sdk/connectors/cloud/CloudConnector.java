@@ -75,4 +75,16 @@ public class CloudConnector implements Connector {
         VCertException.throwIfNull(user, "must be authenticated to read the zone configuration");
         return cloud.zoneByTag(zone, auth.apiKey());
     }
+
+    private Cloud.CertificateSearchResponse searchCertificates(Cloud.SearchRequest searchRequest) {
+        return cloud.searchCertificates(auth.apiKey(), searchRequest);
+    }
+
+    private Cloud.CertificateSearchResponse searchCertificatesByFingerprint(String fingerprint) {
+        String cleanFingerprint = fingerprint
+                .replaceAll(":", "")
+                .replaceAll("/.", "");
+
+        return searchCertificates(Cloud.SearchRequest.findByFingerPrint(cleanFingerprint));
+    }
 }
