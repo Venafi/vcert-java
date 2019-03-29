@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/vedsdk/zones/tag/Default"
+    "url": "/v1/zones/tag/Default"
   },
   "response": {
     "status": 200,

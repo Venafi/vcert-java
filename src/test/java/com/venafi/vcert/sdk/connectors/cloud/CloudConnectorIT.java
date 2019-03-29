@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,7 +25,7 @@ class CloudConnectorIT {
 
     @BeforeEach
     void setup() {
-        classUnderTest =  new CloudConnector(Cloud.connect("http://localhost:" + serverMock.port() + "/vedsdk/")); // todo String.format()
+        classUnderTest =  new CloudConnector(Cloud.connect("http://localhost:" + serverMock.port())); // todo String.format()
     }
 
     @Test
@@ -96,5 +97,15 @@ class CloudConnectorIT {
         assertThat(zoneConfiguration.hashAlgorithm()).isNull();
         assertThat(zoneConfiguration.customAttributeValues()).isNotNull();
         assertThat(zoneConfiguration.customAttributeValues()).isEmpty();
+    }
+
+    @Test
+    void register() throws VCertException {
+        Authentication authentication = new Authentication(null, null, "12345678-1234-1234-1234-123456789012");
+        classUnderTest.authenticate(authentication);
+        classUnderTest.register("me@venafi.com");
+
+        assertThat(classUnderTest.user()).isNotNull();
+        assertThat(classUnderTest.user().user().username()).isEqualTo("me@venafi.com");
     }
 }

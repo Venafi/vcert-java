@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/vedsdk/certificatepolicies/12345678-1234-1234-1234-1234567890di"
+    "url": "/v1/certificatepolicies/12345678-1234-1234-1234-1234567890di"
   },
   "response": {
     "status": 200,

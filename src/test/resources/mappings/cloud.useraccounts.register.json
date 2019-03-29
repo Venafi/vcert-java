@@ -1,13 +1,13 @@
 {
   "request": {
-    "method": "GET",
+    "method": "POST",
     "url": "/v1/useraccounts"
   },
   "response": {
     "status": 200,
     "jsonBody": {
       "user": {
-        "username": "john.doe@example.com",
+        "username": "me@venafi.com",
         "id": "12345678-1234-1234-1234-12345678901u",
         "companyId": "12345678-1234-1234-1234-12345678901c",
         "firstname": "John",

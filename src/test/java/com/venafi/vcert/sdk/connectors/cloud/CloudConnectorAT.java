@@ -7,6 +7,8 @@ import feign.FeignException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 class CloudConnectorAT {
 
     private CloudConnector classUnderTest;
@@ -23,6 +25,15 @@ class CloudConnectorAT {
     void readZoneConfiguration() throws VCertException {
         try {
             ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(System.getenv("VENAFI_ZONE"));
+        } catch(FeignException fe) {
+            throw VCertException.fromFeignException(fe);
+        }
+    }
+
+    @Test
+    void register() throws  VCertException {
+        try {
+            classUnderTest.register(UUID.randomUUID() + "@venafi.com");
         } catch(FeignException fe) {
             throw VCertException.fromFeignException(fe);
         }

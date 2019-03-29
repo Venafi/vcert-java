@@ -50,6 +50,11 @@ public class TppConnector implements Connector {
         return zoneConfig;
     }
 
+    /** Register does nothing for TTP */
+    @Override
+    public void register(String eMail) throws VCertException {
+    }
+
     private String getPolicyDN(final String zone) {
         String result = zone;
         Matcher candidate = policy.matcher(zone);

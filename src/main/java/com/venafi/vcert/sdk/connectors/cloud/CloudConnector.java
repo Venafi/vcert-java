@@ -2,6 +2,7 @@ package com.venafi.vcert.sdk.connectors.cloud;
 
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.connectors.Connector;
+import com.venafi.vcert.sdk.connectors.cloud.domain.UserAccount;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
@@ -36,6 +37,11 @@ public class CloudConnector implements Connector {
         Zone zone = getZoneByTag(tag);
         CertificatePolicy policy = getPoliciesById(Arrays.asList(zone.defaultCertificateIdentityPolicy(), zone.defaultCertificateUsePolicy()));
         return zone.getZoneConfiguration(user, policy);
+    }
+
+    @Override
+    public void register(String eMail) throws VCertException {
+        this.user = cloud.register(auth.apiKey(), new UserAccount(eMail, "API"));
     }
 
     private CertificatePolicy getPoliciesById(Collection<String> ids) throws VCertException {
