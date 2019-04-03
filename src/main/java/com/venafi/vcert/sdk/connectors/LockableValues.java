@@ -4,10 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.Collection;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 class LockableValues<T> {
     boolean locked;
-    Collection<T> values;
+    List<T> values;
 }

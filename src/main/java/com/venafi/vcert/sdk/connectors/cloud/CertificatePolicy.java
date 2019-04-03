@@ -78,7 +78,7 @@ public class CertificatePolicy {
             for (AllowedKeyType keyType : keyTypes) {
                 AllowedKeyConfiguration keyConfiguration = new AllowedKeyConfiguration();
                 // error checking; throws exception (i.e. panics) if invalid keyType
-                KeyType.set(keyType.keyType());
+                KeyType.from(keyType.keyType());
                 keyConfiguration.keySizes(keyType.keyLengths != null ? new ArrayList<>(keyType.keyLengths) : Collections.emptyList());
                 policy.allowedKeyConfigurations().add(keyConfiguration);
             }

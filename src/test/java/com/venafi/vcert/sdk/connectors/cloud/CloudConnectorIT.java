@@ -84,7 +84,7 @@ class CloudConnectorIT {
         assertThat(zoneConfiguration.policy().allowedKeyConfigurations()).isNotNull();
         assertThat(zoneConfiguration.policy().allowedKeyConfigurations()).isNotNull();
         assertThat(zoneConfiguration.policy().allowedKeyConfigurations()).hasSize(1);
-        assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keytype()).isNull();
+        assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keyType()).isNull();
         assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keySizes()).containsExactly(2048);
         assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keyCurves()).isNull();
         assertThat(zoneConfiguration.policy().dnsSanRegExs()).containsExactly("^.*$");
