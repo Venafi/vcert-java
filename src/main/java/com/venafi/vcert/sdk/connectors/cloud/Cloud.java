@@ -2,6 +2,7 @@ package com.venafi.vcert.sdk.connectors.cloud;
 
 
 import com.venafi.vcert.sdk.certificate.CertificateStatus;
+import com.venafi.vcert.sdk.certificate.ManagedCertificate;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserAccount;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.utils.FeignUtils;
@@ -54,6 +55,10 @@ public interface Cloud {
     @RequestLine("GET /v1/certificates/{id}/encoded")
     String certificateAsPem(@Param("id") String id, @Param("apiKey") String apiKey);
 
+    @Headers("tppl-api-key: {apiKey}")
+    @RequestLine("GET /v1/managedcertificates/{id}")
+    ManagedCertificate managedCertificate(@Param("id") String id, @Param("apiKey") String apiKey);
+
     @RequestLine("GET ping")
     @Headers("x-venafi-api-key: {apiKey}")
     Response ping(@Param("apiKey") String apiKey);
@@ -73,7 +78,7 @@ public interface Cloud {
             this.expression = expression;
         }
 
-        static SearchRequest findByFingerPrint(String fingerprint){
+        static SearchRequest findByFingerPrint(String fingerprint) {
             return new SearchRequest(
                     new Cloud.Expression(singletonList(
                             new Cloud.Operand("fingerprint", "MATCH", fingerprint))));
