@@ -10,6 +10,7 @@ import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
+import feign.Response;
 import joptsimple.internal.Strings;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -77,7 +78,14 @@ public class TppConnector implements Connector {
 
     @Override
     public void ping() throws VCertException {
-        throw new UnsupportedOperationException("Method not yet implemented");
+        Response response = doPing();
+        if(response.status() != 200) {
+            throw new VCertException(format("ping failed with status %d and reason %s", response.status(), response.reason()));
+        }
+    }
+
+    private Response doPing() {
+        return tpp.ping(apiKey);
     }
 
     public void authenticate(Authentication auth) throws VCertException {

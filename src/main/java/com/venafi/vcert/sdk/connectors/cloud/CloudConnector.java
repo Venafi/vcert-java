@@ -11,6 +11,7 @@ import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
+import feign.Response;
 import lombok.Data;
 import lombok.Getter;
 
@@ -57,7 +58,14 @@ public class CloudConnector implements Connector {
 
     @Override
     public void ping() throws VCertException {
-        throw new UnsupportedOperationException("Method not yet implemented");
+        Response response = doPing();
+        if(response.status() != 200) {
+            throw new VCertException(format("Unexpected status code on Venafi Cloud ping. Status: %d %s", response.status(), response.reason()));
+        }
+    }
+
+    private Response doPing() {
+        return cloud.ping(auth.apiKey());
     }
 
     @Override
