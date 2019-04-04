@@ -14,6 +14,16 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 @Data
 // TODO mvoe up one package
@@ -25,10 +35,10 @@ public class ZoneConfiguration {
     private String province;
     private String locality;
     private Policy policy = new Policy(); // Go merges the policy struct into the ZoneConfiguration one...
-
-    private SignatureAlgorithm hashAlgorithm;
+    private SignatureAlgorithm hashAlgorithm = SignatureAlgorithm.UnknownSignatureAlgorithm;
 
     private Map<String, String> customAttributeValues = new HashMap<>(); // Go SDK factory sets an empty map
+
 
     /**
      * UpdateCertificateRequest updates a certificate request based on the zone configurataion retrieved from the remote endpoint
@@ -36,7 +46,6 @@ public class ZoneConfiguration {
      */
     public void updateCertificateRequest(CertificateRequest request) {
         CertificateRequest.PKIXName subject = request.subject();
-
         subject.organization(Entity.of(subject.organization(), organization).resolve());
         if(Is.blank(subject.organizationalUnit()) && !Is.blank(organizationalUnit)) {
             subject.organizationalUnit(organizationalUnit);
@@ -161,7 +170,7 @@ public class ZoneConfiguration {
         if(!isComponentValid(policy.dnsSanRegExs(), request.dnsNames())) {
             throw new VCertException("The requested Subject Alternative Name does not match any of the allowed Country regular expressions");
         }
-        //todo: add ip, email and over cheking
+        //todo (from Go SDK): add ip, email and over cheking
 
         List<AllowedKeyConfiguration> allowedKeyConfigurations = policy.allowedKeyConfigurations();
         if(allowedKeyConfigurations != null && allowedKeyConfigurations.size() > 0) {
@@ -185,7 +194,7 @@ public class ZoneConfiguration {
     }
 
     private boolean isComponentValid(Collection<String> regexes, Collection<String> components) {
-        if(regexes.size() == 0 && components.size() == 0) {
+        if(regexes.size() == 0 || components.size() == 0) {
             return true;
         }
 
@@ -200,7 +209,7 @@ public class ZoneConfiguration {
             for(String component : components) {
                 Matcher m = pattern.matcher(component);
                 if(m.matches()) {
-                    return true;
+                    return true; // todo: that seems wrong. Check if all policy rules need to be matched, or any one? (E.g.: Policy says location is [0]:Madrid,[1]:London -  does it need to match either or both?) Also, if we have locations 0:London, 1: Brussels, 2: Madrid, won't this pass? Should it?
                 }
             }
         }

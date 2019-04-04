@@ -23,4 +23,8 @@ public enum KeyType {
     public static Integer defaultRsaLength() {
         return 2048;
     }
+
+    public static KeyType defaultKeyType() {
+        return RSA;
+    }
 }

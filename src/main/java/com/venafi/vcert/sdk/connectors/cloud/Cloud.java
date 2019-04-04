@@ -40,6 +40,10 @@ public interface Cloud {
     @RequestLine("POST /v1/certificatesearch")
     CertificateSearchResponse searchCertificates(@Param("apiKey") String apiKey, SearchRequest searchRequest);
 
+    @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+    @RequestLine("POST /v1/certificaterequests")
+    CloudConnector.CertificateRequestsResponse certificateRequest(@Param("apiKey") String apiKey, CloudConnector.CertificateRequestsPayload csr);
+
     @Data
     @NoArgsConstructor
     class SearchRequest {

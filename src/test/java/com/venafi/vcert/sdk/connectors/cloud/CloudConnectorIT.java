@@ -4,6 +4,7 @@ import com.github.jenspiegsa.wiremockextension.InjectServer;
 import com.github.jenspiegsa.wiremockextension.WireMockExtension;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,14 +24,14 @@ class CloudConnectorIT {
     private CloudConnector classUnderTest;
 
     @BeforeEach
-    void setup() {
+    void setup() throws VCertException {
         classUnderTest =  new CloudConnector(Cloud.connect("http://localhost:" + serverMock.port())); // todo String.format()
+        Authentication authentication = new Authentication(null, null, "12345678-1234-1234-1234-123456789012");
+        classUnderTest.authenticate(authentication);
     }
 
     @Test
     void authenticate() throws VCertException {
-        Authentication authentication = new Authentication(null, null, "12345678-1234-1234-1234-123456789012");
-        classUnderTest.authenticate(authentication);
         assertThat(classUnderTest.user()).describedAs("user details").isNotNull();
 
         assertThat(classUnderTest.user().apiKey()).describedAs("api key details").isNotNull();
@@ -64,8 +64,7 @@ class CloudConnectorIT {
 
     @Test // todo: unit test for mapping code to check whatever is null here is mapped correctly.
     void readZoneConfiguration() throws VCertException {
-        Authentication authentication = new Authentication(null, null, "12345678-1234-1234-1234-123456789012");
-        classUnderTest.authenticate(authentication);
+
         ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration("Default");
 
         assertThat(zoneConfiguration).isNotNull();
@@ -101,11 +100,19 @@ class CloudConnectorIT {
 
     @Test
     void register() throws VCertException {
-        Authentication authentication = new Authentication(null, null, "12345678-1234-1234-1234-123456789012");
-        classUnderTest.authenticate(authentication);
         classUnderTest.register("me@venafi.com");
 
         assertThat(classUnderTest.user()).isNotNull();
         assertThat(classUnderTest.user().user().username()).isEqualTo("me@venafi.com");
+    }
+
+    @Test
+    void requestCertificate() throws VCertException {
+        CertificateRequest certificateRequest = new CertificateRequest()
+        // Signing request borrowed from tpp/connector-test.go#checkCertificateCSRRSA, response unrelated from tpp/connector_test.go#successRequestCertificate
+        .csr("-----BEGIN CERTIFICATE REQUEST-----\nMIIBrDCCARUCAQAwbDELMAkGA1UEBhMCVVMxDTALBgNVBAgMBFV0YWgxEjAQBgNV\nBAcMCVNhbHQgTGFrZTEPMA0GA1UECgwGVmVuYWZpMQ8wDQYDVQQLDAZEZXZPcHMx\nGDAWBgNVBAMMD3Rlc3QudmVuZGV2LmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAw\ngYkCgYEAqIPiGtjnxep5gQHIiDXhHpHYhr/ndwFKQ2HNGftD3AMjMDyolSQY27w7\nPScTZXcuENew0zsH4iA7UsFhEGB6AIoelBWxiWc1SYRNslIgsSxsRlksJowFcL/E\n40qkmL0TerI2vq829jF3XY6X1E3e1OXo0kbmBLwEB/xnpfuvpt0CAwEAAaAAMA0G\nCSqGSIb3DQEBCwUAA4GBAGsKm5fJ8Zm/j9XMPXhPYmOdiDj+9QlcFq7uRRqwpxo7\nC507RR5Pj2zBRZRLJcc/bNTQFqnW92kIcvJ+YvrQl/GkEMKM2wds/RyMXRHtOJvZ\nYQt6JtkAeQOMECJ7RRHrZiG+m2by2YAB2krthK2gJGSr80xWzZWzrgdwdTe2sxUG\n-----BEGIN CERTIFICATE REQUEST-----".getBytes());
+        // todo: improve test: add request matcher (and add data to request to ensure it gets passed through all right)
+        String requestId = classUnderTest.requestCertificate(certificateRequest, "Default");
+        assertThat(requestId).isEqualTo("04c051d0-f118-11e5-8b33-d96cf8021ce5");
     }
 }
