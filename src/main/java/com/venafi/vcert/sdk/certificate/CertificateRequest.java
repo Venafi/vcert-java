@@ -6,6 +6,9 @@ import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.utils.Is;
 import lombok.Data;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.asn1.eac.ECDSAPublicKey;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -15,6 +18,12 @@ import sun.misc.BASE64Encoder;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
+import java.net.InetAddress;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
@@ -111,11 +120,13 @@ public class CertificateRequest {
     @VisibleForTesting
     KeyPair generateRSAKeyPair(Integer keyLength) throws VCertException {
         try {
-            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
             keyPairGenerator.initialize(keyLength);
             return keyPairGenerator.generateKeyPair();
         } catch(NoSuchAlgorithmException e) {
             throw new VCertException("No security provider found for KeyFactory.RSA", e);
+        } catch(NoSuchProviderException e) {
+            throw new VCertException(format("No algorithm provider for RSA with key length %s", Integer.toString(keyLength)) , e);
         }
     }
 

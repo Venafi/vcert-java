@@ -10,6 +10,7 @@ import com.venafi.vcert.sdk.endpoint.AllowedKeyConfiguration;
 import com.venafi.vcert.sdk.utils.Is;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +27,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 @Data
-// TODO mvoe up one package
+// TODO move up one package
 public class ZoneConfiguration {
 
     private String organization;
@@ -34,6 +35,9 @@ public class ZoneConfiguration {
     private String country;
     private String province;
     private String locality;
+    private Policy policy = new Policy(); // Go merges the policy struct into the ZoneConfiguration one...
+
+    private SignatureAlgorithm hashAlgorithm = SignatureAlgorithm.UnknownSignatureAlgorithm;
     private Policy policy = new Policy(); // Go merges the policy struct into the ZoneConfiguration one...
     private SignatureAlgorithm hashAlgorithm = SignatureAlgorithm.UnknownSignatureAlgorithm;
 

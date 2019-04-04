@@ -12,6 +12,10 @@ import java.util.List;
 
 public interface Tpp {
 
+    static Tpp connect(String baseUrl) {
+        return FeignUtils.client(Tpp.class, baseUrl);
+    }
+
     @RequestLine("POST authorize/")
     @Headers("Content-Type: application/json")
     AuthorizeResponse authorize(TppConnector.AuthorizeRequest authorizeRequest);
@@ -22,6 +26,10 @@ public interface Tpp {
             "x-venafi-api-key: {apiKey}"
     })
     TppConnector.ReadZoneConfigurationResponse readZoneConfiguration(TppConnector.ReadZoneConfigurationRequest readZoneConfigurationRequest, @Param("apiKey") String apiKey);
+
+    @RequestLine("POST certificates/request")
+    @Headers("Content-Type: application/json")
+    String requestCertificate(TppConnector.CertificateRequestsPayload payload, @Param("apiKey") String apiKey);
 
     @RequestLine("GET certificates/?{search}")
     @Headers("x-venafi-api-key: {apiKey}")

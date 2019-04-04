@@ -1,7 +1,14 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.annotations.SerializedName;
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.certificate.CertificateRequest;
+import com.venafi.vcert.sdk.certificate.ImportRequest;
+import com.venafi.vcert.sdk.certificate.ImportResponse;
+import com.venafi.vcert.sdk.certificate.PublicKeyAlgorithm;
+import com.venafi.vcert.sdk.certificate.RenewalRequest;
+import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.certificate.*;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
@@ -9,18 +16,30 @@ import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
+import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import com.venafi.vcert.sdk.utils.Is;
 import joptsimple.internal.Strings;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 
+import java.security.KeyStore;
+import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.util.stream.Collectors.toList;
 
 import static java.lang.String.format;
 import static java.time.Duration.ZERO;
@@ -29,15 +48,17 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class TppConnector implements Connector {
 
-    private final Tpp tpp;
-    @Getter
-    private String apiKey;
-
     private static final Pattern policy = Pattern.compile("^\\\\VED\\\\Policy");
     private static final Pattern path = Pattern.compile("^\\\\");
-
+    private static final String tppAttributeManagementType = "Management Type";
+    private static final String tppAttributeManualCSR = "Manual Csr";
+    private final Tpp tpp;
     @VisibleForTesting
     OffsetDateTime bestBeforeEnd;
+    @Getter
+    private String apiKey;
+    @Getter
+    private String zone;
 
     @Getter
     private String zone;
@@ -96,6 +117,7 @@ public class TppConnector implements Connector {
 
     @Override
     public CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request) throws VCertException {
+        // todo: should one really have to pass a request into a "generate request" method?
         if(config == null) {
             config = readZoneConfiguration(zone);
         }
@@ -130,12 +152,74 @@ public class TppConnector implements Connector {
                 break;
             }
         }
-        return request;
+        return request; // TODO: should we return the request we modified? It's not a copy, it's the one that was passed in, mutated.
     }
 
     @Override
     public String requestCertificate(CertificateRequest request, String zone) throws VCertException {
-        throw new UnsupportedOperationException("Method not yet implemented");
+        if(Is.blank(zone)) {
+            zone = this.zone;
+        }
+        CertificateRequestsPayload payload = prepareRequest(request, zone);
+        String requestId = tpp.requestCertificate(payload, apiKey);
+        request.pickupId(requestId);
+        return requestId;
+    }
+
+    private CertificateRequestsPayload prepareRequest(CertificateRequest request, String zone) throws VCertException {
+        CertificateRequestsPayload payload;
+        switch (request.csrOrigin()) {
+            case LocalGeneratedCSR:
+            case UserProvidedCSR:
+                payload = new CertificateRequestsPayload()
+                        .policyDN(getPolicyDN(zone))
+                        .pkcs10(new String(request.csr()))
+                        .objectName(request.friendlyName())
+                        .disableAutomaticRenewal(true);
+                break;
+            case ServiceGeneratedCSR:
+                payload = new CertificateRequestsPayload()
+                        .policyDN(getPolicyDN(zone))
+                        .objectName(request.friendlyName())
+                        .subject(request.subject().commonName())  // TODO (Go SDK): there is some problem because Subject is not only CN
+                        .subjectAltNames(wrapAltNames(request))
+                        .disableAutomaticRenewal(true);
+                break;
+            default:
+                throw new VCertException(MessageFormat.format("Unexpected option in PrivateKeyOrigin: {0}", request.csrOrigin()));
+        }
+
+        switch (request.keyType()) {
+            case RSA: {
+                payload.keyAlgorithm(PublicKeyAlgorithm.RSA.name());
+                payload.keyBitSize(request.keyLength());
+                break;
+            }
+            case ECDSA: {
+                payload.keyAlgorithm("ECC");
+                payload.ellipticCurve(request.keyCurve().name());
+                break;
+            }
+        }
+        return payload;
+    }
+
+    private Collection<SANItem> wrapAltNames(CertificateRequest request) {
+        List<SANItem> sanItems = new ArrayList<>();
+        sanItems.addAll(toSanItems(request.emailAddresses(), 1));
+        sanItems.addAll(toSanItems(request.dnsNames(), 2));
+        sanItems.addAll(toSanItems(request.ipAddresses(), 7));
+        return sanItems;
+    }
+
+    private List<SANItem> toSanItems(Collection<?> collection, int type) {
+        return Optional
+                .ofNullable(collection)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(Objects::nonNull)
+                .map(entry -> new SANItem().type(type).name(entry.toString()))
+                .collect(toList());
     }
 
     @Override
@@ -279,5 +363,42 @@ public class TppConnector implements Connector {
     public static class ReadZoneConfigurationResponse {
         Object error;
         ServerPolicy policy;
+    }
+
+    @Data
+    static class CertificateRequestsPayload {
+        @SerializedName("PolicyDN")
+        private String policyDN;
+        @SerializedName("CADN")
+        private String cadn;
+        private String objectName;
+        private String subject;
+        private String organizationalUnit;
+        private String organization;
+        private String city;
+        private String state;
+        private String country;
+        private Collection<SANItem> subjectAltNames;
+        private String contact;
+        @SerializedName("CASpecificAttributes")
+        private Collection<NameValuePair<String, String>> caSpecificAttributes;
+        @SerializedName("PKCS10")
+        private String pkcs10;
+        private String keyAlgorithm;
+        private int keyBitSize;
+        private String ellipticCurve;
+        private boolean disableAutomaticRenewal;
+    }
+
+    @Data
+    private static class SANItem {
+        private int type;
+        private String name;
+    }
+
+    @Data
+    private static class NameValuePair<K, V> {
+        private K key;
+        private V value;
     }
 }

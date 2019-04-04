@@ -1,5 +1,6 @@
 package com.venafi.vcert.sdk.connectors;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.venafi.vcert.sdk.SignatureAlgorithm;
 import com.venafi.vcert.sdk.certificate.EllipticCurve;
 import com.venafi.vcert.sdk.certificate.KeyType;
@@ -8,6 +9,7 @@ import com.venafi.vcert.sdk.endpoint.AllowedKeyConfiguration;
 import com.venafi.vcert.sdk.utils.Is;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.*;
 import java.util.function.Function;
@@ -15,6 +17,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Data
+@NoArgsConstructor // for testing
 @AllArgsConstructor
 public class ServerPolicy {
 
@@ -49,10 +52,14 @@ public class ServerPolicy {
     public Policy toPolicy() {
         Function<String, String> escapeOne = s -> addStartEnd.apply(Pattern.quote(s));
         Function<Collection<String>, Collection<String>> escapeCollection = in -> in.stream().map(escapeOne).collect(Collectors.toList());
-        Function<LockableValue<String>, Collection<String>> selectValue = in ->
-                in.locked() ?
-                Collections.singleton(escapeOne.apply(in.value())) :
-                Collections.singleton(allAllowedRegex);
+        Function<LockableValue<String>, Collection<String>> selectValue = in -> {
+            if(null == in) {
+                return Collections.singleton(allAllowedRegex); // Go would provide empty structs with default values, so in Java, we have to deal with null instead
+            }
+            return in.locked() ?
+                    Collections.singleton(escapeOne.apply(in.value())) :
+                    Collections.singleton(allAllowedRegex);
+        };
         Function<Boolean, Collection<String>> allOrNothing = bool -> bool ? Collections.singleton(allAllowedRegex) : Collections.emptyList();
 
         Policy policy = new Policy().allowedKeyConfigurations(new ArrayList<>());
@@ -148,15 +155,18 @@ public class ServerPolicy {
 
     @Data
     @AllArgsConstructor
-    private static class KeyPair {
+    @VisibleForTesting
+    public static class KeyPair {
         private LockableValue<String> keyAlgorithm;
         private LockableValue<Integer> keySize;
         private LockableValue<String> ellipticCurve;
     }
 
     @Data
+    @NoArgsConstructor // for testing
     @AllArgsConstructor
-    private static class Subject {
+    @VisibleForTesting
+    public static class Subject {
         private LockableValue<String> city;
         private LockableValue<String> country;
         private LockableValue<String> organization;
