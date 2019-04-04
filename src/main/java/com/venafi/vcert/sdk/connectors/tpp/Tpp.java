@@ -12,10 +12,6 @@ import java.util.List;
 
 public interface Tpp {
 
-    static Tpp connect(String baseUrl) {
-        return FeignUtils.client(Tpp.class, baseUrl);
-    }
-
     @RequestLine("POST authorize/")
     @Headers("Content-Type: application/json")
     AuthorizeResponse authorize(TppConnector.AuthorizeRequest authorizeRequest);

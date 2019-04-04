@@ -3,12 +3,6 @@ package com.venafi.vcert.sdk.connectors.tpp;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.annotations.SerializedName;
 import com.venafi.vcert.sdk.VCertException;
-import com.venafi.vcert.sdk.certificate.CertificateRequest;
-import com.venafi.vcert.sdk.certificate.ImportRequest;
-import com.venafi.vcert.sdk.certificate.ImportResponse;
-import com.venafi.vcert.sdk.certificate.PublicKeyAlgorithm;
-import com.venafi.vcert.sdk.certificate.RenewalRequest;
-import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.certificate.*;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
@@ -16,33 +10,22 @@ import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
-import com.venafi.vcert.sdk.endpoint.ConnectorType;
-import com.venafi.vcert.sdk.utils.Is;
 import joptsimple.internal.Strings;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 
-import java.security.KeyStore;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.util.stream.Collectors.toList;
-
 import static java.lang.String.format;
 import static java.time.Duration.ZERO;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 
@@ -50,15 +33,11 @@ public class TppConnector implements Connector {
 
     private static final Pattern policy = Pattern.compile("^\\\\VED\\\\Policy");
     private static final Pattern path = Pattern.compile("^\\\\");
-    private static final String tppAttributeManagementType = "Management Type";
-    private static final String tppAttributeManualCSR = "Manual Csr";
     private final Tpp tpp;
     @VisibleForTesting
     OffsetDateTime bestBeforeEnd;
     @Getter
     private String apiKey;
-    @Getter
-    private String zone;
 
     @Getter
     private String zone;
@@ -168,7 +147,7 @@ public class TppConnector implements Connector {
 
     private CertificateRequestsPayload prepareRequest(CertificateRequest request, String zone) throws VCertException {
         CertificateRequestsPayload payload;
-        switch (request.csrOrigin()) {
+        switch(request.csrOrigin()) {
             case LocalGeneratedCSR:
             case UserProvidedCSR:
                 payload = new CertificateRequestsPayload()
@@ -189,7 +168,7 @@ public class TppConnector implements Connector {
                 throw new VCertException(MessageFormat.format("Unexpected option in PrivateKeyOrigin: {0}", request.csrOrigin()));
         }
 
-        switch (request.keyType()) {
+        switch(request.keyType()) {
             case RSA: {
                 payload.keyAlgorithm(PublicKeyAlgorithm.RSA.name());
                 payload.keyBitSize(request.keyLength());
@@ -333,7 +312,8 @@ public class TppConnector implements Connector {
         throw new UnsupportedOperationException("Method not yet implemented");
     }
 
-    private String getPolicyDN(final String zone) {
+    @VisibleForTesting
+    String getPolicyDN(final String zone) {
         String result = zone;
         Matcher candidate = policy.matcher(zone);
         if(!candidate.matches()) {
