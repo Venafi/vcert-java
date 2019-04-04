@@ -1,5 +1,6 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
+import com.google.common.io.CharStreams;
 import com.google.gson.annotations.SerializedName;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.*;
@@ -14,8 +15,8 @@ import com.venafi.vcert.sdk.utils.Is;
 import feign.Response;
 import lombok.Data;
 import lombok.Getter;
-import org.junit.platform.commons.util.Preconditions;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -227,8 +228,20 @@ public class CloudConnector implements Connector {
         }
     }
 
-    private String certificateViaCSR(String requestId, String chainOrder) {
-        return cloud.certificateViaCSR(requestId, auth.apiKey(), chainOrder);
+    private String certificateViaCSR(String requestId, String chainOrder) throws VCertException {
+        // We should decode this as is not REST, multiple decoders should be supported
+        // by feign as a potential improvement.
+        Response response = cloud.certificateViaCSR(requestId, auth.apiKey(), chainOrder);
+        if (response.status() != 200) {
+            throw new VCertException(String.format("Invalid response fetching the certificate via CSR: %s",
+                    response.reason()));
+        }
+        try {
+            return CharStreams.toString(response.body().asReader());
+        }catch (IOException e) {
+            throw new VCertException("Unable to read the PEM certificate");
+        }
+
     }
 
     private String certificateAsPem(String requestId) {

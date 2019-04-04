@@ -2,13 +2,13 @@ package com.venafi.vcert.sdk.connectors.cloud;
 
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
-import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import feign.FeignException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.security.Security;
 import java.util.UUID;
 
 class CloudConnectorAT {
@@ -17,6 +17,7 @@ class CloudConnectorAT {
 
     @BeforeEach
     public void authenticate() throws VCertException {
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         Cloud cloud = Cloud.connect(System.getenv("VENAFI_CLOUD_URL"));
         classUnderTest = new CloudConnector(cloud);
         Authentication authentication = new Authentication(null, null, System.getenv("VENAFI_API_KEY"));

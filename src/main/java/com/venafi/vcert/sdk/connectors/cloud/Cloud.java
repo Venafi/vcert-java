@@ -49,7 +49,7 @@ public interface Cloud {
 
     @Headers("tppl-api-key: {apiKey}")
     @RequestLine("GET /v1/certificaterequests/{id}/certificate?chainOrder={chainOrder}&format=PEM")
-    String certificateViaCSR(@Param("id") String id, @Param("apiKey") String apiKey, @Param("chainOrder") String chainOrder);
+    Response certificateViaCSR(@Param("id") String id, @Param("apiKey") String apiKey, @Param("chainOrder") String chainOrder);
 
     @Headers("tppl-api-key: {apiKey}")
     @RequestLine("GET /v1/certificates/{id}/encoded")
