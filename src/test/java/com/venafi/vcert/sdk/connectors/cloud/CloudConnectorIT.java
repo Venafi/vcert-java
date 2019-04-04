@@ -3,6 +3,7 @@ package com.venafi.vcert.sdk.connectors.cloud;
 import com.github.jenspiegsa.wiremockextension.InjectServer;
 import com.github.jenspiegsa.wiremockextension.WireMockExtension;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.venafi.vcert.sdk.SignatureAlgorithm;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
@@ -93,7 +94,7 @@ class CloudConnectorIT {
         assertThat(zoneConfiguration.policy().upnSanRegExs()).isNull();
         assertThat(zoneConfiguration.policy().allowWildcards()).isTrue();
         assertThat(zoneConfiguration.policy().allowKeyReuse()).isFalse();
-        assertThat(zoneConfiguration.hashAlgorithm()).isNull();
+        assertThat(zoneConfiguration.hashAlgorithm()).isEqualTo(SignatureAlgorithm.UnknownSignatureAlgorithm);
         assertThat(zoneConfiguration.customAttributeValues()).isNotNull();
         assertThat(zoneConfiguration.customAttributeValues()).isEmpty();
     }

@@ -6,8 +6,6 @@ import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 
-import java.security.KeyStore;
-
 public interface Connector {
 
     ConnectorType getType();
@@ -26,7 +24,7 @@ public interface Connector {
      */
     CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request) throws VCertException; //todo: do we have to pass CertificateREquest into a generate function?
     String requestCertificate(CertificateRequest request, String zone) throws VCertException;
-    KeyStore retrieveCertificate(CertificateRequest request) throws VCertException;
+    PEMCollection retrieveCertificate(CertificateRequest request) throws VCertException;
     void revokeCertificate(RevocationRequest request) throws VCertException;
     String renewCertificate(RenewalRequest request) throws VCertException;
     ImportResponse importCertificate(ImportRequest request) throws VCertException;

@@ -2,25 +2,41 @@ package com.venafi.vcert.sdk.certificate;
 
 import com.venafi.vcert.sdk.SignatureAlgorithm;
 import com.venafi.vcert.sdk.VCertException;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import sun.misc.BASE64Encoder;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.*;
-import java.security.KeyPair;
-import java.security.Security;
-import java.security.Signature;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.*;
+import static org.junit.platform.commons.util.StringUtils.isNotBlank;
 
 class CertificateRequestTest {
 
@@ -96,6 +112,90 @@ class CertificateRequestTest {
 
         // TODO verify certificate is valid
 
+    }
+
+    //TODO rework
+    @ParameterizedTest
+    @MethodSource("provideCertificatedForCheckCertificate")
+    void checkCertificate(CertificateRequest certificateRequest, Certificate certificate, boolean isValid, String errorMessage) {
+        Security.addProvider(new BouncyCastleProvider());
+
+        boolean validCert;
+        try {
+            validCert = certificateRequest.checkCertificate(certificate);
+            if(!isValid && validCert) {
+                fail("certificate should failed but check returns that its valid");
+            }
+            assertThat(validCert).isTrue();
+        } catch(VCertException e) {
+            if(isValid) {
+                if(isNotBlank(errorMessage) && !e.getMessage().contains(errorMessage)) {
+                    fail(format("unexpected error '%s' (should conatins %s)", e.getMessage(), errorMessage));
+                } else {
+                    fail(format("cert should be valid but checker found error: %s", e.getMessage()));
+                }
+            }
+        }
+
+    }
+
+    private static Stream<Arguments> provideCertificatedForCheckCertificate() throws IOException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
+        KeyPair rsaKeyInvalid = loadKeyPairFromFile("checkCertificatePrivateKeyRSAinvalid");
+        KeyPair rsaKeyValid = loadKeyPairFromFile("checkCertificatePrivateKeyRSAvalid");
+
+        return Stream.of(
+                Arguments.of(createCertFor(KeyType.RSA, rsaKeyValid), loadCertificateFromFile("checkCertificateRSACert"), true, ""),
+                Arguments.of(createCertFor(KeyType.ECDSA, rsaKeyValid), loadCertificateFromFile("checkCertificateRSACert"), false, "key type"),
+                Arguments.of(createCertFor(KeyType.RSA, rsaKeyInvalid), loadCertificateFromFile("checkCertificateRSACert"), false, "key modules"),
+                Arguments.of(createCertSigningRequestFor(loadCertificateSigningRequestFromFile("checkCertificateCSRRSA")), loadCertificateFromFile("checkCertificateRSACert"), true, ""),
+                Arguments.of(createCertSigningRequestFor(loadCertificateSigningRequestFromFile("checkCertificateCSRRSA")), loadCertificateFromFile("checkCertificateRSACert2"), false, "key modules")
+        );
+    }
+
+    private static CertificateRequest createCertFor(KeyType keyType, KeyPair keyPair) {
+        return new CertificateRequest().keyType(keyType).keyPair(keyPair);
+    }
+
+    private static CertificateRequest createCertSigningRequestFor(PKCS10CertificationRequest certSigningReq) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        BASE64Encoder base64Encoder = new BASE64Encoder();
+        outputStream.write("-----BEGIN CERTIFICATE REQUEST-----".getBytes());
+        outputStream.write(System.lineSeparator().getBytes());
+        base64Encoder.encodeBuffer(certSigningReq.getEncoded(), outputStream);
+        outputStream.write("-----END CERTIFICATE REQUEST-----".getBytes());
+        return new CertificateRequest().csr(outputStream.toByteArray());
+    }
+
+    private static KeyPair loadKeyPairFromFile(String name) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        ClassLoader classLoader = CertificateRequestTest.class.getClassLoader();
+        String body = new String(Files.readAllBytes(Paths.get(classLoader.getResource("certificates/" + name).getPath())));
+        PEMParser pemParser = new PEMParser(new StringReader(body));
+        JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter();
+        Object object = pemParser.readObject();
+        PrivateKey privateKey = keyConverter.getPrivateKey((PrivateKeyInfo) object);
+        RSAPrivateCrtKey privk = (RSAPrivateCrtKey)privateKey;
+        RSAPublicKeySpec publicKeySpec = new java.security.spec.RSAPublicKeySpec(privk.getModulus(), privk.getPublicExponent());
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
+        return new KeyPair(publicKey, privateKey);
+    }
+
+    private static Certificate loadCertificateFromFile(String name) throws IOException, CertificateException {
+        ClassLoader classLoader = CertificateRequestTest.class.getClassLoader();
+        String body = new String(Files.readAllBytes(Paths.get(classLoader.getResource("certificates/" + name).getPath())));
+        PEMParser pemParser = new PEMParser(new StringReader(body));
+        JcaX509CertificateConverter certificateConverter = new JcaX509CertificateConverter();
+        Object object = pemParser.readObject();
+        return certificateConverter.getCertificate((X509CertificateHolder) object);
+    }
+
+    private static PKCS10CertificationRequest loadCertificateSigningRequestFromFile(String name) throws IOException {
+        ClassLoader classLoader = CertificateRequestTest.class.getClassLoader();
+        String body = new String(Files.readAllBytes(Paths.get(classLoader.getResource("certificates/" + name).getPath())));
+        StringReader reader = new StringReader(body);
+        try(PEMParser pemParser = new PEMParser(reader)) {
+            return (PKCS10CertificationRequest) pemParser.readObject();
+        }
     }
 
     private PKCS10CertificationRequest getCertRequest(CertificateRequest certificateRequest) throws IOException {

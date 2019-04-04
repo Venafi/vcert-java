@@ -16,6 +16,17 @@ public enum KeyType {
         }
     }
 
+    public PublicKeyAlgorithm X509Type() {
+        switch(this) {
+            case RSA:
+                return PublicKeyAlgorithm.RSA;
+            case ECDSA:
+                return PublicKeyAlgorithm.ECDSA;
+            default:
+                return PublicKeyAlgorithm.Unknown;
+        }
+    }
+
     public static List<Integer> allSupportedKeySizes() {
         return Arrays.asList(512, 1024, 2048, 4096, 8192);
     }

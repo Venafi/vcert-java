@@ -9,14 +9,22 @@ import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
+import joptsimple.internal.Strings;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 
-import java.security.KeyStore;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.lang.String.format;
+import static java.time.Duration.ZERO;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 
 public class TppConnector implements Connector {
@@ -79,7 +87,9 @@ public class TppConnector implements Connector {
         return zoneConfig;
     }
 
-    /** Register does nothing for TTP */
+    /**
+     * Register does nothing for TTP
+     */
     @Override
     public void register(String eMail) throws VCertException {
     }
@@ -96,9 +106,9 @@ public class TppConnector implements Connector {
 
         config.updateCertificateRequest(request);
 
-        switch (request.csrOrigin()) {
+        switch(request.csrOrigin()) {
             case LocalGeneratedCSR: {
-                if ("0".equals(config.customAttributeValues().get(tppAttributeManualCSR))) {
+                if("0".equals(config.customAttributeValues().get(tppAttributeManualCSR))) {
                     throw new VCertException("Unable to request certificate by local generated CSR when zone configuration is 'Manual Csr' = 0");
                 }
                 request.generatePrivateKey();
@@ -129,8 +139,94 @@ public class TppConnector implements Connector {
     }
 
     @Override
-    public KeyStore retrieveCertificate(CertificateRequest request) throws VCertException {
-        throw new UnsupportedOperationException("Method not yet implemented");
+    public PEMCollection retrieveCertificate(CertificateRequest request) throws VCertException {
+        boolean includeChain = request.chainOption() != ChainOption.ChainOptionIgnore;
+        boolean rootFirstOrder = includeChain && request.chainOption() == ChainOption.ChainOptionRootFirst;
+
+        if(isNotBlank(request.pickupId()) && isNotBlank(request.thumbprint())) {
+            Tpp.CertificateSearchResponse searchResult = searchCertificatesByFingerprint(request.thumbprint());
+            if(searchResult.certificates().size() == 0) {
+                throw new VCertException(format("No certifiate found using fingerprint %s", request.thumbprint()));
+            }
+            if(searchResult.certificates().size() > 1) {
+                throw new VCertException(format("Error: more than one CertificateRequestId was found with the same thumbprint %s", request.thumbprint()));
+            }
+            request.pickupId(searchResult.certificates().get(0).certificateRequestId());
+        }
+
+        CertificateRetrieveRequest certReq = new CertificateRetrieveRequest()
+                .certificateDN(request.pickupId())
+                .format("base64")
+                .rootFirstOrder(rootFirstOrder)
+                .includeChain(includeChain);
+
+        if(request.csrOrigin() == CsrOriginOption.ServiceGeneratedCSR || request.fetchPrivateKey()) {
+            certReq.includePrivateKey(true);
+            certReq.password(request.keyPassword());
+        }
+
+        // TODO move this retry logic to feign client
+        Instant startTime = Instant.now();
+        while(true) {
+            CertificateRetrieveResponse retrieveResponse = retrieveCertificateOnce(certReq);
+            if(isNotBlank(retrieveResponse.certificateData())) {
+                PEMCollection pemCollection = PEMCollection.fromResponse(retrieveResponse.certificateData(), request.chainOption());
+                request.checkCertificate(pemCollection.certificate());
+                return pemCollection;
+            }
+
+            if(ZERO.equals(request.timeout())) {
+                throw new VCertException(format("Failed to retrieve certificate %s. Status %s", request.pickupId(), retrieveResponse.status()));
+            }
+
+            if(Instant.now().isAfter(startTime.plus(request.timeout()))) {
+                throw new VCertException(format("Timeout trying to retrieve certificate %s", request.pickupId()));
+            }
+
+            try {
+                TimeUnit.SECONDS.sleep(2);
+            } catch(InterruptedException e) {
+                e.printStackTrace();
+                throw new VCertException("Error attempting to retry", e);
+            }
+        }
+    }
+
+    private CertificateRetrieveResponse retrieveCertificateOnce(CertificateRetrieveRequest certificateRetrieveRequest) {
+        return tpp.certificateRetrieve(certificateRetrieveRequest, apiKey);
+    }
+
+    @Data
+    class CertificateRetrieveRequest {
+        private String certificateDN;
+        private String format;
+        private String password;
+        private boolean includePrivateKey;
+        private boolean includeChain;
+        private String friendlyName;
+        private boolean rootFirstOrder;
+    }
+
+    @Data
+    class CertificateRetrieveResponse {
+        private String certificateData;
+        private String format;
+        private String filename;
+        private String status;
+        private int stage;
+    }
+
+    private Tpp.CertificateSearchResponse searchCertificatesByFingerprint(String fingerprint) {
+        String cleanFingerprint = fingerprint
+                .replaceAll(":", "")
+                .replaceAll("/.", "")
+                .toUpperCase();
+
+        return searchCertificates(Collections.singletonList(format("Thumbprint=%s", cleanFingerprint)));
+    }
+
+    private Tpp.CertificateSearchResponse searchCertificates(List<String> searchRequest) {
+        return tpp.searchCertificates(Strings.join(searchRequest, "&"), apiKey);
     }
 
     @Override

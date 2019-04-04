@@ -2,12 +2,6 @@ package com.venafi.vcert.sdk.connectors.cloud;
 
 import com.google.gson.annotations.SerializedName;
 import com.venafi.vcert.sdk.VCertException;
-import com.venafi.vcert.sdk.certificate.CertificateRequest;
-import com.venafi.vcert.sdk.certificate.CsrOriginOption;
-import com.venafi.vcert.sdk.certificate.ImportRequest;
-import com.venafi.vcert.sdk.certificate.ImportResponse;
-import com.venafi.vcert.sdk.certificate.RenewalRequest;
-import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.certificate.*;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
@@ -18,17 +12,20 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
 import lombok.Data;
-import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import lombok.Getter;
 
-import java.security.KeyStore;
+import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
+import static java.time.Duration.ZERO;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class CloudConnector implements Connector {
 
@@ -96,8 +93,12 @@ public class CloudConnector implements Connector {
                 request.generateCSR();
                 break;
             case UserProvidedCSR:
+                if(request.csr().length == 0) {
+                    throw new VCertException("CSR was supposed to be provided by user, but it's empty");
+                }
                 break;
             case ServiceGeneratedCSR:
+                request.csr(null);
                 break;
             default:
                 throw new VCertException(format("Unreconginised request CSR origin %s", request.csrOrigin()));
@@ -129,8 +130,106 @@ public class CloudConnector implements Connector {
     }
 
     @Override
-    public KeyStore retrieveCertificate(CertificateRequest request) throws VCertException {
-        throw new UnsupportedOperationException("Method not yet implemented");
+    public PEMCollection retrieveCertificate(CertificateRequest request) throws VCertException {
+        if(request.fetchPrivateKey()) {
+            throw new VCertException("Failed to retrieve private key from Venafi Cloud service: not supported");
+        }
+        String certId = "";
+        if(isBlank(request.pickupId()) && isNotBlank(request.thumbprint())) {
+            String certificateRequestId = null;
+            Cloud.CertificateSearchResponse certificateSearchResponse = searchCertificatesByFingerprint(request.thumbprint());
+            if(certificateSearchResponse.certificates().size() == 0) {
+                throw new VCertException(format("No certifiate found using fingerprint %s", request.thumbprint()));
+            }
+
+            List<String> reqIds = new ArrayList<>();
+            boolean isOnlyOneCertificateRequestId = true;
+            for(Cloud.Certificate certificate : certificateSearchResponse.certificates()) {
+                reqIds.add(certificate.certificateRequestId());
+                if(isNotBlank(certificateRequestId) && certificateRequestId.equals(certificate.certificateRequestId())) {
+                    isOnlyOneCertificateRequestId = true;
+                }
+                if(isNotBlank(certificate.certificateRequestId())) {
+                    certificateRequestId = certificate.certificateRequestId();
+                } else {
+                    certId = certificate.id();
+                }
+            }
+            if(!isOnlyOneCertificateRequestId) {
+                throw new VCertException(format("More than one CertificateRequestId was found with the same Fingerprint: %s", reqIds));
+            }
+            request.pickupId(certificateRequestId);
+        }
+
+        // TODO move this retry logic to feign client
+        Instant startTime = Instant.now();
+        while(true) {
+            if(isBlank(request.pickupId())) {
+                break;
+            }
+
+            CertificateStatus certificateStatus = getCertificateStatus(request.pickupId());
+            if("REQUESTED".equals(certificateStatus.status())) {
+                break;
+            } else if("FAILED".equals(certificateStatus.status())) {
+                throw new VCertException(format("Failed to retrieve certificate. Status: %s", certificateStatus.toString()));
+            }
+
+            // Status either REQUESTED or PENDING
+            if(ZERO.equals(request.timeout())) {
+                throw new VCertException(format("Failed to retrieve certificate %s. Status %s", request.pickupId(), certificateStatus.status()));
+            }
+
+            if(Instant.now().isAfter(startTime.plus(request.timeout()))) {
+                throw new VCertException(format("Timeout trying to retrieve certificate %s", request.pickupId()));
+            }
+
+            try {
+                TimeUnit.SECONDS.sleep(2);
+            } catch(InterruptedException e) {
+                e.printStackTrace();
+                throw new VCertException("Error attempting to retry", e);
+            }
+        }
+
+        if(user == null || user.company() == null) {
+            throw new VCertException("Must be autheticated to retieve certificate");
+        }
+
+        if(isNotBlank(request.pickupId())) {
+
+            // Todo cleanup unnecessary switch
+            String chainOption;
+            switch(request.chainOption()) {
+                case ChainOptionRootFirst:
+                    chainOption = "ROOT_FIRST";
+                    break;
+                case ChainOptionRootLast:
+                case ChainOptionIgnore:
+                default:
+                    chainOption = "EE_FIRST";
+                    break;
+            }
+            String body = certificateViaCSR(request.pickupId(), chainOption);
+            PEMCollection pemCollection = PEMCollection.fromResponse(body, request.chainOption());
+            request.checkCertificate(pemCollection.certificate());
+            return pemCollection;
+        } else {
+            String body = certificateAsPem(certId);
+            return PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore);
+        }
+    }
+
+    private String certificateViaCSR(String requestId, String chainOrder) {
+        return cloud.certificateViaCSR(requestId, auth.apiKey(), chainOrder);
+    }
+
+    private String certificateAsPem(String requestId) {
+        return cloud.certificateAsPem(requestId, auth.apiKey());
+    }
+
+    private CertificateStatus getCertificateStatus(String requestId) {
+        return cloud.certificateStatus(requestId, auth.apiKey());
     }
 
     @Override
@@ -158,7 +257,7 @@ public class CloudConnector implements Connector {
         VCertException.throwIfNull(user, "must be authenticated to read the zone configuration");
         for (String id : ids) {
             CertificatePolicy certificatePolicy = cloud.policyById(id, auth.apiKey());
-            switch (certificatePolicy.certificatePolicyType()) {
+            switch(certificatePolicy.certificatePolicyType()) {
                 case "CERTIFICATE_IDENTITY": {
                     policy.subjectCNRegexes(certificatePolicy.subjectCNRegexes());
                     policy.subjectORegexes(certificatePolicy.subjectORegexes());
