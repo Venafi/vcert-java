@@ -1,6 +1,8 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.certificate.CertificateRequest;
+import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import feign.FeignException;
@@ -37,5 +39,48 @@ class CloudConnectorAT {
         } catch(FeignException fe) {
             throw VCertException.fromFeignException(fe);
         }
+    }
+
+
+    @Test
+    void renewCertificate() throws VCertException {
+        try {
+            final CertificateRequest certificateRequest = new CertificateRequest();
+            final String csr = "" +
+                    "-----BEGIN CERTIFICATE REQUEST-----\n" +
+                    "MIICtzCCAZ8CAQAwcjELMAkGA1UEBhMCVUsxFzAVBgNVBAMMDm9wZW5jcmVkby50\n" +
+                    "ZXN0MQ8wDQYDVQQHDAZMb25kb24xDzANBgNVBAoMBkxvbmRvbjESMBAGA1UECAwJ\n" +
+                    "T3BlbmNyZWRvMRQwEgYDVQQLDAtFbmdpbmVlcmluZzCCASIwDQYJKoZIhvcNAQEB\n" +
+                    "BQADggEPADCCAQoCggEBAKsWVhtbxMguBkrGqOb02EWqmBHo6swA/h57jdAq1Vjj\n" +
+                    "ACrqFE+3tWu8CHxM/d12vKj2PlKNKXdWtP+2s5Y/vQjNifV+lZPOBoYtOxhcIi8x\n" +
+                    "84rKnxlf13j5K8/b6K19LU9b5r7Yzgs6VuIzUTsXqVkm3gMWcdlf2xfvvvb63f8+\n" +
+                    "lrzT7fjn+oeGYBfgoOZSNgUXTNyjz6aJF/GzBmEZsVUfn1ML2UyVL7qCqCB8b2J9\n" +
+                    "4AvF4iR3Z1Mp0h6ck+I8WhThGcCr6LRdEpocbLVpIH0wiuxIwOkFfYTWzNdp9lwb\n" +
+                    "cz4QazcjahDK3n6y9sHl+3+wX/chzXfSQo4NYKpGu0MCAwEAAaAAMA0GCSqGSIb3\n" +
+                    "DQEBCwUAA4IBAQB8E6pFXq1cJJpwIXumfbwYGf7BUoZvxjdL9TvNZSb2vGu0yMFr\n" +
+                    "XObRn6Bx4fdo6KdnPifSIRq2Sg1J7l38Gvzb5aDRHCMPtGW49cp/2LK/dk+1ZQDf\n" +
+                    "aVu3D3D+eoed7poiJ0BlENtb4i9HtuEynHpcNp322O98Lc3np7s/eG7oRkribAE2\n" +
+                    "OPVeCyqSXNDdnBWnUsDYlxpvvrs8cKZcxLBJjGhq+YiFMoygCcBF7z6KmiH3bDuT\n" +
+                    "G6P0myqqq38BoULQebBzUTw8pcA/6fQqe6FuteQGNtM/b0SU8qmIMYWjyCDbVmIf\n" +
+                    "iAfGQ3dVXwbj6CHSSaKoBA160FFSKSs7Yif+\n" +
+                    "-----END CERTIFICATE REQUEST-----\n";
+
+
+            certificateRequest.csr(csr.getBytes());
+            final String requestId = classUnderTest.requestCertificate(certificateRequest, "Default");
+
+            certificateRequest.pickupId(requestId);
+            classUnderTest.retrieveCertificate(certificateRequest);
+
+
+
+            //final RenewalRequest renewalRequest = new RenewalRequest();
+            //renewalRequest.thumbprint("52030990E3DC44199DA11C2D73E41EF8EAD8A4E1");
+            //String id = classUnderTest.renewCertificate(renewalRequest);
+        } catch (FeignException fe) {
+            throw VCertException.fromFeignException(fe);
+        }
+
+
     }
 }

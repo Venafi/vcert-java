@@ -14,6 +14,7 @@ import com.venafi.vcert.sdk.utils.Is;
 import feign.Response;
 import lombok.Data;
 import lombok.Getter;
+import org.junit.platform.commons.util.Preconditions;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -128,7 +129,7 @@ public class CloudConnector implements Connector {
         CertificateRequestsResponse response = cloud.certificateRequest(
                 auth.apiKey(),
                 new CertificateRequestsPayload()
-                        .zoneID(z.id())
+                        .zoneId(z.id())
                         .csr(new String(request.csr())));
         String requestId = response.certificateRequests().get(0).id();
         request.pickupId(requestId);
@@ -175,7 +176,7 @@ public class CloudConnector implements Connector {
             }
 
             CertificateStatus certificateStatus = getCertificateStatus(request.pickupId());
-            if("REQUESTED".equals(certificateStatus.status())) {
+            if("ISSUED".equals(certificateStatus.status())) {
                 break;
             } else if("FAILED".equals(certificateStatus.status())) {
                 throw new VCertException(format("Failed to retrieve certificate. Status: %s", certificateStatus.toString()));
@@ -274,7 +275,7 @@ public class CloudConnector implements Connector {
         }
 
 
-        final CertificateStatus status = cloud.certificateStatus(auth.apiKey(), certificateRequestId);
+        final CertificateStatus status = cloud.certificateStatus(certificateRequestId, auth.apiKey());
         VCertException.throwIfNull(status.managedCertificateId(),
                         String.format("failed to submit renewal request for certificate: ManagedCertificateId is empty, certificate status is %s", status.status()));
         VCertException.throwIfNull(status.zoneId(),
@@ -294,7 +295,7 @@ public class CloudConnector implements Connector {
         }
 
         final CertificateRequestsPayload certificateRequest = new CertificateRequestsPayload();
-        certificateRequest.zoneID(status.zoneId());
+        certificateRequest.zoneId(status.zoneId());
         certificateRequest.existingManagedCertificateId(managedCertificate.id());
 
         certificateRequest.reuseCSR(Objects.nonNull(request.request()) && request.request().csr().length > 0);
@@ -367,7 +368,7 @@ public class CloudConnector implements Connector {
         // private String downloadFormat;
         @SerializedName("certificateSigningRequest")
         private String csr;
-        private String zoneID;
+        private String zoneId;
         private String existingManagedCertificateId;
         private boolean reuseCSR;
     }

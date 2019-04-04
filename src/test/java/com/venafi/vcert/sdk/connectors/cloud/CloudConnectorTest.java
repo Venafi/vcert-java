@@ -23,7 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.security.Security;
 import java.util.Arrays;
-import java.util.Collections;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -219,7 +218,7 @@ class CloudConnectorTest {
                 .thenReturn(searchResponse);
         when(searchResponse.certificates())
                 .thenReturn(singletonList(certificate1));
-        when(cloud.certificateStatus(apiKey, "request_1"))
+        when(cloud.certificateStatus( "request_1", apiKey))
                 .thenReturn(certificateStatus);
         when(certificateStatus.managedCertificateId()).thenReturn("test_managed_certificate_id");
         when(certificateStatus.zoneId()).thenReturn("test_zone_id");

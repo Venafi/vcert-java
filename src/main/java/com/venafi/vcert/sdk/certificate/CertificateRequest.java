@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.lang.String.format;
+import static java.time.temporal.ChronoUnit.MINUTES;
 
 @Data
 public class CertificateRequest {
@@ -48,9 +49,21 @@ public class CertificateRequest {
     private String pickupId;
     private ChainOption chainOption;
     private String keyPassword;
-    private Boolean fetchPrivateKey;
+    private boolean fetchPrivateKey;
     private String thumbprint;
     private Duration timeout;
+
+    public Duration timeout() {
+        return (!Objects.isNull(timeout))
+                ?timeout
+                :Duration.of(5, MINUTES);
+    }
+
+    public ChainOption chainOption() {
+        return (!Objects.isNull(chainOption))
+                ?chainOption
+                :ChainOption.ChainOptionRootFirst;
+    }
 
     public void generatePrivateKey() throws VCertException {
         if(keyPair != null) {
