@@ -34,6 +34,7 @@ public class TppConnector implements Connector {
     private static final Pattern policy = Pattern.compile("^\\\\VED\\\\Policy");
     private static final Pattern path = Pattern.compile("^\\\\");
     private final Tpp tpp;
+
     @VisibleForTesting
     OffsetDateTime bestBeforeEnd;
     @Getter
@@ -43,6 +44,17 @@ public class TppConnector implements Connector {
     private String zone;
     private static final String tppAttributeManagementType = "Management Type";
     private static final String tppAttributeManualCSR = "Manual Csr";
+
+    // TODO can be enum
+    private static Map<String, Integer> revocationReasons = new HashMap<String, Integer>() {{
+        put("", 0); // NoReason
+        put("none", 0); //
+        put("key-compromise", 1); // UserKeyCompromised
+        put("ca-compromise", 2); // CAKeyCompromised
+        put("affiliation-changed", 3); // UserChangedAffiliation
+        put("superseded", 4); // CertificateSuperseded
+        put("cessation-of-operation", 5); // OriginalUseNoLongerValid
+    }};
 
     TppConnector(Tpp tpp) {
         this.tpp = tpp;
@@ -279,6 +291,22 @@ public class TppConnector implements Connector {
         private int stage;
     }
 
+    @Data
+    class CertificateRevokeRequest {
+        private String certificateDN;
+        private String thumbprint;
+        private Integer reason;
+        private String comments;
+        private boolean disable;
+    }
+
+    @Data
+    class CertificateRevokeResponse {
+        private boolean requested;
+        private boolean success;
+        private String error;
+    }
+
     private Tpp.CertificateSearchResponse searchCertificatesByFingerprint(String fingerprint) {
         String cleanFingerprint = fingerprint
                 .replaceAll(":", "")
@@ -294,10 +322,30 @@ public class TppConnector implements Connector {
 
     @Override
     public void revokeCertificate(RevocationRequest request) throws VCertException {
-        throw new UnsupportedOperationException("Method not yet implemented");
+        Integer reason = revocationReasons.get(request.reason());
+        if(reason == null) {
+            throw new VCertException(format("could not parse revocation reason `%s`", request.reason()));
+        }
+
+        CertificateRevokeRequest revokeRequest = new CertificateRevokeRequest()
+                .certificateDN(request.certificateDN())
+                .thumbprint(request.thumbprint())
+                .reason(reason)
+                .comments(request.comments())
+                .disable(request.disable());
+
+        CertificateRevokeResponse revokeResponse = revokeCertificate(revokeRequest);
+        if(!revokeResponse.success()) {
+            throw new VCertException(format("Revocation error: %s", revokeResponse.error()));
+        }
+    }
+
+    private CertificateRevokeResponse revokeCertificate(CertificateRevokeRequest request) {
+        return tpp.revokeCertificate(request, apiKey);
     }
 
     @Override
+
     public String renewCertificate(RenewalRequest request) throws VCertException {
         throw new UnsupportedOperationException("Method not yet implemented");
     }

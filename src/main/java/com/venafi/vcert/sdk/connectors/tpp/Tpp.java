@@ -38,6 +38,13 @@ public interface Tpp {
     })
     TppConnector.CertificateRetrieveResponse certificateRetrieve(TppConnector.CertificateRetrieveRequest certificateRetrieveRequest, @Param("apiKey") String apiKey);
 
+    @RequestLine("POST certificates/revoke")
+    @Headers({
+            "Content-Type: application/json",
+            "x-venafi-api-key: {apiKey}"
+    })
+    TppConnector.CertificateRevokeResponse revokeCertificate(TppConnector.CertificateRevokeRequest request, @Param("apiKey") String apiKey);
+
     static Tpp connect(String baseUrl) {
         return FeignUtils.client(Tpp.class, baseUrl);
     }
