@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 import static java.lang.String.format;
 import static java.time.Duration.ZERO;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 
@@ -360,7 +361,15 @@ public class TppConnector implements Connector {
 
     @Override
     public ImportResponse importCertificate(ImportRequest request) throws VCertException {
-        throw new UnsupportedOperationException("Method not yet implemented");
+        if(isBlank(request.policyDN())) {
+            request.policyDN(getPolicyDN(zone));
+        }
+
+        return doImportCertificate(request);
+    }
+
+    private ImportResponse doImportCertificate(ImportRequest request) {
+        return tpp.importCertificate(request, apiKey);
     }
 
     @Override

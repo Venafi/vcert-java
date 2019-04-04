@@ -1,6 +1,8 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
 
+import com.venafi.vcert.sdk.certificate.ImportRequest;
+import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.utils.FeignUtils;
 import feign.Headers;
 import feign.Param;
@@ -48,6 +50,13 @@ public interface Tpp {
             "x-venafi-api-key: {apiKey}"
     })
     TppConnector.CertificateRevokeResponse revokeCertificate(TppConnector.CertificateRevokeRequest request, @Param("apiKey") String apiKey);
+
+    @RequestLine("POST certificates/import")
+    @Headers({
+            "Content-Type: application/json",
+            "x-venafi-api-key: {apiKey}"
+    })
+    ImportResponse importCertificate(ImportRequest request, @Param("apiKey") String apiKey);
 
     @RequestLine("GET /")
     @Headers("x-venafi-api-key: {apiKey}")
