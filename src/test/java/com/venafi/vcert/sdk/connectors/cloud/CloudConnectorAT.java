@@ -2,14 +2,19 @@ package com.venafi.vcert.sdk.connectors.cloud;
 
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
+import com.venafi.vcert.sdk.certificate.PEMCollection;
+import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import feign.FeignException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.security.Security;
 import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class CloudConnectorAT {
 
@@ -44,9 +49,12 @@ class CloudConnectorAT {
 
 
     @Test
-    void renewCertificate() throws VCertException {
+    @DisplayName("Fetch certificate from a cloud provider should be succesfuly after requested")
+    void fetchCertificate() throws VCertException {
         try {
             final CertificateRequest certificateRequest = new CertificateRequest();
+
+            //Todo externalise the certificate CSR or the ceation for AC
             final String csr = "" +
                     "-----BEGIN CERTIFICATE REQUEST-----\n" +
                     "MIICtzCCAZ8CAQAwcjELMAkGA1UEBhMCVUsxFzAVBgNVBAMMDm9wZW5jcmVkby50\n" +
@@ -66,18 +74,15 @@ class CloudConnectorAT {
                     "iAfGQ3dVXwbj6CHSSaKoBA160FFSKSs7Yif+\n" +
                     "-----END CERTIFICATE REQUEST-----\n";
 
-
             certificateRequest.csr(csr.getBytes());
-            final String requestId = classUnderTest.requestCertificate(certificateRequest, "Default");
+            final String requestId = classUnderTest.requestCertificate(certificateRequest, System.getenv("VENAFI_ZONE"));
 
             certificateRequest.pickupId(requestId);
-            classUnderTest.retrieveCertificate(certificateRequest);
+            PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest);
 
-
-
-            //final RenewalRequest renewalRequest = new RenewalRequest();
-            //renewalRequest.thumbprint("52030990E3DC44199DA11C2D73E41EF8EAD8A4E1");
-            //String id = classUnderTest.renewCertificate(renewalRequest);
+            assertThat(pemCollection.certificate()).isNotNull();
+            assertThat(pemCollection.chain()).hasSizeBetween(1,3);
+            assertThat(pemCollection.privateKey()).isNull();
         } catch (FeignException fe) {
             throw VCertException.fromFeignException(fe);
         }
