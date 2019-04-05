@@ -6,6 +6,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.venafi.vcert.sdk.SignatureAlgorithm;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
+import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,7 +85,7 @@ class CloudConnectorIT {
         assertThat(zoneConfiguration.policy().allowedKeyConfigurations()).isNotNull();
         assertThat(zoneConfiguration.policy().allowedKeyConfigurations()).isNotNull();
         assertThat(zoneConfiguration.policy().allowedKeyConfigurations()).hasSize(1);
-        assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keyType()).isNull();
+        assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keyType()).isEqualTo(KeyType.RSA);
         assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keySizes()).containsExactly(2048);
         assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keyCurves()).isNull();
         assertThat(zoneConfiguration.policy().dnsSanRegExs()).containsExactly("^.*$");
