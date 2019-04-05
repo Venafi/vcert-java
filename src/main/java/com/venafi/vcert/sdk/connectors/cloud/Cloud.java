@@ -3,7 +3,6 @@ package com.venafi.vcert.sdk.connectors.cloud;
 
 import com.venafi.vcert.sdk.certificate.CertificateStatus;
 import com.venafi.vcert.sdk.certificate.ManagedCertificate;
-import com.venafi.vcert.sdk.connectors.cloud.domain.UserAccount;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.utils.FeignUtils;
 import feign.Headers;
@@ -30,10 +29,6 @@ public interface Cloud {
     @Headers("tppl-api-key: {apiKey}")
     @RequestLine("GET /v1/certificatepolicies/{id}")
     CertificatePolicy policyById(@Param("id") String id, @Param("apiKey") String apiKey);
-
-    @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
-    @RequestLine("POST /v1/useraccounts")
-    UserDetails register(@Param("apiKey") String apiKey, UserAccount userAccount);
 
     @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
     @RequestLine("POST /v1/certificatesearch")

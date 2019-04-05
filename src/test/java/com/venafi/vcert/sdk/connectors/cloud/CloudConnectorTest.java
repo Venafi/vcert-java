@@ -7,7 +7,6 @@ import com.venafi.vcert.sdk.certificate.ManagedCertificate;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Company;
 import com.venafi.vcert.sdk.connectors.cloud.domain.User;
-import com.venafi.vcert.sdk.connectors.cloud.domain.UserAccount;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
@@ -40,9 +39,6 @@ class CloudConnectorTest {
     private CloudConnector classUnderTest;
 
     @Captor
-    private ArgumentCaptor<UserAccount> userAccountArgumentCaptor;
-
-    @Captor
     private ArgumentCaptor<Cloud.SearchRequest> searchRequestArgumentCaptor;
 
     UserDetails userDetails;
@@ -60,26 +56,6 @@ class CloudConnectorTest {
         Authentication auth = new Authentication(null, null, "12345678-1234-1234-1234-123456789012");
         classUnderTest.authenticate(auth);
         assertEquals(userDetails, classUnderTest.user());
-    }
-
-    @Test
-    @DisplayName("Register a new user on venafi cloud")
-    void register() throws  VCertException{
-        final String email = "me@venafi.com";
-        final Authentication auth =
-                new Authentication(null, null, "12345678-1234-1234-1234-123456789012");
-        final UserDetails userDetails = mock(UserDetails.class);
-
-        when(cloud.register(eq("12345678-1234-1234-1234-123456789012"), userAccountArgumentCaptor.capture()))
-                .thenReturn(userDetails);
-
-        classUnderTest.authenticate(auth);
-        classUnderTest.register(email);
-
-        UserAccount userAccount = userAccountArgumentCaptor.getValue();
-        assertEquals(userAccount.username(), email);
-        assertEquals(userAccount.userAccountType(), "API");
-        assertEquals(classUnderTest.user(), userDetails);
     }
 
     @Test

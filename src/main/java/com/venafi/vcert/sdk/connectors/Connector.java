@@ -12,7 +12,6 @@ public interface Connector {
     void setBaseUrl(String url) throws VCertException;
     void setZone(String zone);
     void ping() throws VCertException;
-    void register(String eMail) throws VCertException;
     void authenticate(Authentication auth) throws VCertException;
     ZoneConfiguration readZoneConfiguration(String zone) throws VCertException;
 

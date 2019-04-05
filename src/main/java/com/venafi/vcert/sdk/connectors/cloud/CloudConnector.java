@@ -84,11 +84,6 @@ public class CloudConnector implements Connector {
     }
 
     @Override
-    public void register(String eMail) throws VCertException {
-        this.user = cloud.register(auth.apiKey(), new UserAccount(eMail, "API"));
-    }
-
-    @Override
     public CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request) throws VCertException {
         switch (request.csrOrigin()) {
             case LocalGeneratedCSR:

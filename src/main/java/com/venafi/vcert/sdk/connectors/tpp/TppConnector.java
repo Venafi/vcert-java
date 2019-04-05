@@ -108,13 +108,6 @@ public class TppConnector implements Connector {
         return zoneConfig;
     }
 
-    /**
-     * Register does nothing for TTP
-     */
-    @Override
-    public void register(String eMail) throws VCertException {
-    }
-
     @Override
     public CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request) throws VCertException {
         // todo: should one really have to pass a request into a "generate request" method?
