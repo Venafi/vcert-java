@@ -99,13 +99,6 @@ class CloudConnectorIT {
         assertThat(zoneConfiguration.customAttributeValues()).isEmpty();
     }
 
-    @Test
-    void register() throws VCertException {
-        classUnderTest.register("me@venafi.com");
-
-        assertThat(classUnderTest.user()).isNotNull();
-        assertThat(classUnderTest.user().user().username()).isEqualTo("me@venafi.com");
-    }
 
     @Test
     void requestCertificate() throws VCertException {
