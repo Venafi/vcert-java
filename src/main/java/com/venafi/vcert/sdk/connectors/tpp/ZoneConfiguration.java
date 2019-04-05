@@ -160,7 +160,7 @@ public class ZoneConfiguration {
         if(!isComponentValid(policy.dnsSanRegExs(), request.dnsNames())) {
             throw new VCertException("The requested Subject Alternative Name does not match any of the allowed Country regular expressions");
         }
-        //todo (from Go SDK): add ip, email and over cheking
+        //todo (from Go SDK): add ip, email and over checking
 
         List<AllowedKeyConfiguration> allowedKeyConfigurations = policy.allowedKeyConfigurations();
         if(allowedKeyConfigurations != null && allowedKeyConfigurations.size() > 0) {

@@ -29,6 +29,7 @@ import java.util.Objects;
 
 import static java.lang.String.format;
 import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.util.Collections.emptyList;
 
 @Data
 public class CertificateRequest {
@@ -52,6 +53,13 @@ public class CertificateRequest {
     private boolean fetchPrivateKey;
     private String thumbprint;
     private Duration timeout;
+
+    public CertificateRequest() {
+        this.dnsNames = emptyList();
+        this.emailAddresses = emptyList();
+        this.ipAddresses = emptyList();
+        this.attributes = emptyList();
+    }
 
     public Duration timeout() {
         return (!Objects.isNull(timeout))
