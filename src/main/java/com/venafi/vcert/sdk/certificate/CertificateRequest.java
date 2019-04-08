@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.venafi.vcert.sdk.SignatureAlgorithm;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.utils.Is;
+import lombok.Builder;
 import lombok.Data;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.eac.ECDSAPublicKey;
