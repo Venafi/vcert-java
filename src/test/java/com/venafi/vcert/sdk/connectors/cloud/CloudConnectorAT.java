@@ -44,16 +44,6 @@ class CloudConnectorAT {
     }
 
     @Test
-    void register() throws  VCertException {
-        try {
-            classUnderTest.register(UUID.randomUUID() + "@venafi.com");
-        } catch(FeignException fe) {
-            throw VCertException.fromFeignException(fe);
-        }
-    }
-
-
-    @Test
     @DisplayName("Fetch certificate from a cloud provider should be succesfuly after requested")
     void fetchCertificate() throws VCertException {
         try {
