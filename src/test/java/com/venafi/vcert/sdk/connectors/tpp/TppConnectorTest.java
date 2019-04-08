@@ -3,6 +3,7 @@ package com.venafi.vcert.sdk.connectors.tpp;
 
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
+import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.connectors.LockableValue;
 import com.venafi.vcert.sdk.connectors.LockableValues;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
@@ -10,8 +11,11 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
@@ -20,12 +24,17 @@ import org.slf4j.LoggerFactory;
 import java.security.Security;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +46,9 @@ class TppConnectorTest {
     @Mock
     private Tpp tpp;
     private TppConnector classUnderTest;
+
+    @Captor
+    private ArgumentCaptor<TppConnector.CertificateRenewalRequest> certificateRenewalRequestArgumentCaptor;
 
     @BeforeEach
     void setUp() throws VCertException {
@@ -55,6 +67,7 @@ class TppConnectorTest {
     }
 
     @Test
+    @DisplayName("Request a certificate from TPP")
     void requestCertificate() throws VCertException {
         Security.addProvider(new BouncyCastleProvider());
 
@@ -94,4 +107,82 @@ class TppConnectorTest {
         assertEquals("reqId", requestId);
     }
 
+
+    @Test
+    @DisplayName("Renew Certificate with an empty request")
+    void renewCertificateWithEmptyRequest() throws VCertException {
+        final RenewalRequest renewalRequest = mock(RenewalRequest.class);
+        final Throwable throwable = assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
+
+        assertThat(throwable.getMessage()).contains("CertificateDN or Thumbprint required");
+    }
+
+    @Test
+    @DisplayName("Renew Certificate with fingerprint not found")
+    void renewCertificateWithFingeprintNoSearchResults() throws VCertException {
+        final RenewalRequest renewalRequest = mock(RenewalRequest.class);
+        final Tpp.CertificateSearchResponse certificateSearchResponse =
+                mock(Tpp.CertificateSearchResponse.class);
+
+        when(renewalRequest.thumbprint()).thenReturn("1111:1111:1111:1111");
+        when(tpp.searchCertificates(contains("111111111111111"), eq(API_KEY))).thenReturn(certificateSearchResponse);
+
+        final Throwable throwable = assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
+        assertThat(throwable.getMessage()).contains("No certificate found using fingerprint");
+    }
+
+    @Test
+    @DisplayName("Renew Certificate multiple certificates for the fingerprint")
+    void renewCertificateWithFingerPrintMultipleCertificates() throws VCertException {
+        final RenewalRequest renewalRequest = mock(RenewalRequest.class);
+        final Tpp.CertificateSearchResponse certificateSearchResponse =
+                mock(Tpp.CertificateSearchResponse.class);
+
+        when(renewalRequest.thumbprint()).thenReturn("1111:1111:1111:1111");
+        when(tpp.searchCertificates(contains("111111111111111"), eq(API_KEY))).thenReturn(certificateSearchResponse);
+        when(certificateSearchResponse.certificates()).thenReturn(Arrays.asList(new Tpp.Certificate(), new Tpp.Certificate()));
+
+        final Throwable throwable = assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
+        assertThat(throwable.getMessage()).contains("More than one certificate was found");
+    }
+
+    @Test
+    @DisplayName("Renew Certificate with fingerprint")
+    void renewCertificateWithFingerPrint() throws VCertException {
+        final RenewalRequest renewalRequest = mock(RenewalRequest.class);
+        final Tpp.CertificateSearchResponse certificateSearchResponse =
+                mock(Tpp.CertificateSearchResponse.class);
+        final Tpp.Certificate certificate = mock(Tpp.Certificate.class);
+        final TppConnector.CertificateRenewalResponse certificateRenewalResponse =
+                mock(TppConnector.CertificateRenewalResponse.class);
+
+        when(renewalRequest.thumbprint()).thenReturn("1111:1111:1111:1111");
+        when(tpp.searchCertificates(contains("111111111111111"), eq(API_KEY))).thenReturn(certificateSearchResponse);
+        when(certificateSearchResponse.certificates()).thenReturn(Arrays.asList(certificate));
+        when(certificate.certificateRequestId()).thenReturn("test_certificate_requestid");
+        when(tpp.renewCertificate(certificateRenewalRequestArgumentCaptor.capture(), any()))
+                .thenReturn(certificateRenewalResponse);
+        when(certificateRenewalResponse.success()).thenReturn(true);
+
+        String result = classUnderTest.renewCertificate(renewalRequest);
+        assertThat(result).isEqualTo("test_certificate_requestid");
+        assertThat(certificateRenewalRequestArgumentCaptor.getValue().certificateDN())
+                .isEqualTo("test_certificate_requestid");
+    }
+
+    @Test
+    @DisplayName("Renew Certificate with DN")
+    void renewCertificateWithDN() throws VCertException {
+        final RenewalRequest renewalRequest = mock(RenewalRequest.class);
+        final TppConnector.CertificateRenewalResponse certificateRenewalResponse =
+                mock(TppConnector.CertificateRenewalResponse.class);
+
+        when(renewalRequest.certificateDN()).thenReturn("certificateDN");
+        when(tpp.renewCertificate(certificateRenewalRequestArgumentCaptor.capture(), any()))
+                .thenReturn(certificateRenewalResponse);
+        when(certificateRenewalResponse.success()).thenReturn(true);
+
+        String result = classUnderTest.renewCertificate(renewalRequest);
+        assertThat(result).isEqualTo("certificateDN");
+    }
 }

@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 import static java.time.Duration.ZERO;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -273,41 +274,6 @@ public class TppConnector implements Connector {
         return tpp.certificateRetrieve(certificateRetrieveRequest, apiKey);
     }
 
-    @Data
-    class CertificateRetrieveRequest {
-        private String certificateDN;
-        private String format;
-        private String password;
-        private boolean includePrivateKey;
-        private boolean includeChain;
-        private String friendlyName;
-        private boolean rootFirstOrder;
-    }
-
-    @Data
-    class CertificateRetrieveResponse {
-        private String certificateData;
-        private String format;
-        private String filename;
-        private String status;
-        private int stage;
-    }
-
-    @Data
-    class CertificateRevokeRequest {
-        private String certificateDN;
-        private String thumbprint;
-        private Integer reason;
-        private String comments;
-        private boolean disable;
-    }
-
-    @Data
-    class CertificateRevokeResponse {
-        private boolean requested;
-        private boolean success;
-        private String error;
-    }
 
     private Tpp.CertificateSearchResponse searchCertificatesByFingerprint(String fingerprint) {
         String cleanFingerprint = fingerprint
@@ -347,10 +313,41 @@ public class TppConnector implements Connector {
     }
 
     @Override
-
     public String renewCertificate(RenewalRequest request) throws VCertException {
-        throw new UnsupportedOperationException("Method not yet implemented");
+        String certificateDN;
+
+        if(!Is.blank(request.thumbprint()) && Is.blank(request.certificateDN())) {
+            Tpp.CertificateSearchResponse searchResult = searchCertificatesByFingerprint(request.thumbprint());
+            if (searchResult.certificates().isEmpty()) {
+                throw new VCertException(String.format("No certificate found using fingerprint %s", request.thumbprint()));
+            }
+            if (searchResult.certificates().size() > 1 ) {
+                throw new VCertException(String.format("More than one certificate was found with the same thumbprint"));
+            }
+            certificateDN = searchResult.certificates().get(0).certificateRequestId();
+        } else {
+            certificateDN = request.certificateDN();
+        }
+
+        if (isNull(certificateDN)) {
+            throw new VCertException("Failed to create renewal request: CertificateDN or Thumbprint required");
+        }
+
+        final CertificateRenewalRequest renewalRequest = new CertificateRenewalRequest();
+        renewalRequest.certificateDN(certificateDN);
+
+        if (Objects.nonNull(request.request()) && request.request().csr().length > 0) {
+            renewalRequest.PKCS10 = org.bouncycastle.util.Strings.fromByteArray(request.request().csr());
+        }
+
+        final CertificateRenewalResponse response = tpp.renewCertificate(renewalRequest, apiKey());
+        if (!response.success()) {
+            throw new VCertException(String.format("Certificate renewal error: %s", response.error));
+        }
+
+        return certificateDN;
     }
+
 
     @Override
     public ImportResponse importCertificate(ImportRequest request) throws VCertException {
@@ -439,4 +436,53 @@ public class TppConnector implements Connector {
         private K key;
         private V value;
     }
+
+    @Data
+    class CertificateRetrieveRequest {
+        private String certificateDN;
+        private String format;
+        private String password;
+        private boolean includePrivateKey;
+        private boolean includeChain;
+        private String friendlyName;
+        private boolean rootFirstOrder;
+    }
+
+    @Data
+    class CertificateRetrieveResponse {
+        private String certificateData;
+        private String format;
+        private String filename;
+        private String status;
+        private int stage;
+    }
+
+    @Data
+    class CertificateRevokeRequest {
+        private String certificateDN;
+        private String thumbprint;
+        private Integer reason;
+        private String comments;
+        private boolean disable;
+    }
+
+    @Data
+    class CertificateRevokeResponse {
+        private boolean requested;
+        private boolean success;
+        private String error;
+    }
+
+    @Data
+    class CertificateRenewalRequest {
+        private String certificateDN;
+        private String PKCS10;
+    }
+
+    @Data
+    class CertificateRenewalResponse {
+        private boolean success;
+        private String error;
+    }
+
 }

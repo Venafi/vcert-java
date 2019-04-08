@@ -51,6 +51,15 @@ public interface Tpp {
     })
     TppConnector.CertificateRevokeResponse revokeCertificate(TppConnector.CertificateRevokeRequest request, @Param("apiKey") String apiKey);
 
+
+    @RequestLine("POST certificates/renew")
+    @Headers({
+            "Content-Type: application/json",
+            "x-venafi-api-key: {apiKey}"
+    })
+    TppConnector.CertificateRenewalResponse renewCertificate(TppConnector.CertificateRenewalRequest request, @Param("apiKey") String apiKey);
+
+
     @RequestLine("POST certificates/import")
     @Headers({
             "Content-Type: application/json",
@@ -79,5 +88,6 @@ public interface Tpp {
         private String certificateRequestId;
         private List<String> subjectCN;
     }
+
 
 }
