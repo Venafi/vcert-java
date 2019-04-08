@@ -14,6 +14,7 @@ import com.venafi.vcert.sdk.utils.Is;
 import feign.Response;
 import lombok.Data;
 import lombok.Getter;
+import org.bouncycastle.util.Strings;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -305,9 +306,9 @@ public class CloudConnector implements Connector {
         certificateRequest.zoneId(status.zoneId());
         certificateRequest.existingManagedCertificateId(managedCertificate.id());
 
-        certificateRequest.reuseCSR(Objects.nonNull(request.request()) && request.request().csr().length > 0);
-        if (certificateRequest.reuseCSR) {
-            certificateRequest.csr(Arrays.toString(request.request().csr()));
+        certificateRequest.reuseCSR(!(Objects.nonNull(request.request()) && request.request().csr().length > 0));
+        if (!certificateRequest.reuseCSR) {
+            certificateRequest.csr(Strings.fromByteArray(request.request().csr()));
         }
 
         CertificateRequestsResponse response = cloud.certificateRequest(auth.apiKey(), certificateRequest);

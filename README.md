@@ -6,6 +6,8 @@ VCert is a Java library, SDK, designed to simplify key generation and enrollment
 (also known as SSL/TLS certificates and keys) that comply with enterprise security policy by using the
 [Venafi Platform](https://www.venafi.com/platform/trust-protection-platform) or [Venafi Cloud](https://pki.venafi.com/venafi-cloud/).
 
+
+
 ## Installation
 
 The current version of this library can be install using
@@ -64,6 +66,19 @@ A basic example of createing a certificate using the VCert java implementation.
 
 The requirement for the CA Template to be assigned by policy follows a long standing Venafi best practice which also met our design objective to keep the certificate request process simple for VCert users. If you require the abilty to specify the CA Template with the request you can use the TPP REST APIs but please be advised this goes against Venafi recommendations.
 
+## Acceptance Tests
+
+To run the acceptance tests the following environment variables must be set:
+
+| NAME | NOTES |
+|------|-------|
+| VENAFI_USER | |
+| VENAFI_PASSWORD | |
+| VENAFI_TPP_URL | Only for TPP connector tests |
+| VENAFI_API_KEY | Taken from account after logged in |
+| VENAFI_CERT_COMMON_NAME | Used for cert creation, should match configured domains |
+| VENAFI_CLOUD_URL | Only for cloud connector tests |
+| VENAFI_ZONE | Only for cloud connector tests |
 
 ## Contributing to VCert
 
