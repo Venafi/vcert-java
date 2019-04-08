@@ -58,7 +58,7 @@ public class TppConnector implements Connector {
         put("cessation-of-operation", 5); // OriginalUseNoLongerValid
     }};
 
-    TppConnector(Tpp tpp) {
+    public TppConnector(Tpp tpp) {
         this.tpp = tpp;
     }
 

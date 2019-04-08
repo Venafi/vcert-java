@@ -7,6 +7,7 @@ import feign.FeignException;
 import lombok.Data;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class VCertException extends Exception {
@@ -40,12 +41,12 @@ public class VCertException extends Exception {
     public static VCertException fromFeignException(FeignException feignException) {
         Gson gson = new GsonBuilder().create();
         VenafiTppErrorResponse tppResponse = gson.fromJson(feignException.contentUTF8(), VenafiTppErrorResponse.class);
-        if(tppResponse.error() != null) {
+        if(Objects.nonNull(tppResponse) &&  tppResponse.error() != null) {
             return new VCertException(
                     feignException.getMessage() + ": " + tppResponse.error(), feignException);
         }
         VenafiCloudErrorResponse response = gson.fromJson(feignException.contentUTF8(), VenafiCloudErrorResponse.class);
-        if(response.errors() != null && !response.errors().isEmpty()) {
+        if(Objects.nonNull(response) &&  response.errors() != null && !response.errors().isEmpty()) {
             return new VCertException(
                     feignException.getMessage() + ": "
                             + response.errors().stream().map(VenafiServerError::message).collect(Collectors.joining(System.lineSeparator())), feignException);

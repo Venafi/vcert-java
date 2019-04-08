@@ -36,7 +36,7 @@ public class CloudConnector implements Connector {
     private Authentication auth;
     private String zone;
 
-    CloudConnector(Cloud cloud) {
+    public CloudConnector(Cloud cloud) {
         this.cloud = cloud;
     }
 
