@@ -1,6 +1,5 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
-
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;

@@ -19,6 +19,7 @@
         <wiremock.version>2.22.0</wiremock.version>
         <wiremock-extension.version>0.4.0</wiremock-extension.version>
         <assertj.version>3.12.2</assertj.version>
+        <ini4j.version>0.5.4</ini4j.version>
     </properties>
 
     <dependencies>
@@ -115,7 +116,11 @@
             <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.ini4j</groupId>
+            <artifactId>ini4j</artifactId>
+            <version>${ini4j.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
