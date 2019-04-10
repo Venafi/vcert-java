@@ -80,6 +80,12 @@ To run the acceptance tests the following environment variables must be set:
 | VENAFI_CLOUD_URL | Only for cloud connector tests |
 | VENAFI_ZONE | Only for cloud connector tests |
 
+Acceptance test  are executed with:
+```
+mvn "-Dtest=*AT" test
+```
+
+
 ## Contributing to VCert
 
 1. Fork it to your account (https://github.com/Venafi/vcert-java/fork)

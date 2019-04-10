@@ -10,7 +10,6 @@ import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
-import com.venafi.vcert.sdk.utils.Is;
 import feign.Response;
 import lombok.Data;
 import lombok.Getter;
@@ -112,7 +111,7 @@ public class CloudConnector implements Connector {
 
     @Override
     public String requestCertificate(CertificateRequest request, String zone) throws VCertException {
-        if (Is.blank(zone)) {
+        if (isBlank(zone)) {
             zone = this.zone;
         }
         if (CsrOriginOption.ServiceGeneratedCSR == request.csrOrigin()) {
@@ -257,7 +256,7 @@ public class CloudConnector implements Connector {
 
         String certificateRequestId = null;
 
-        if (!Is.blank(request.thumbprint())) {
+        if (isNotBlank(request.thumbprint())) {
             Cloud.CertificateSearchResponse result = this.searchCertificatesByFingerprint(request.thumbprint());
             Set<String> requestIds = result.certificates()
                     .stream()
@@ -276,7 +275,7 @@ public class CloudConnector implements Connector {
 
         certificateRequestId = requestIds.iterator().next();
 
-        } else if (!Is.blank(request.certificateDN())) {
+        } else if (isNotBlank(request.certificateDN())) {
             certificateRequestId = request.certificateDN();
         } else {
             throw new VCertException("failed to create renewal request: CertificateDN or Thumbprint required");
@@ -294,7 +293,7 @@ public class CloudConnector implements Connector {
         if (!managedCertificate.latestCertificateRequestId().equals(certificateRequestId)) {
             final StringBuilder errorStr = new StringBuilder();
             errorStr.append("Certificate under requestId %s ");
-            errorStr.append(!Is.blank(request.thumbprint())? String.format("with thumbprint %s ", request.thumbprint()):"");
+            errorStr.append(isNotBlank(request.thumbprint())? String.format("with thumbprint %s ", request.thumbprint()):"");
             errorStr.append("is not the latest under ManagedCertificateId %s. The latest request is %s. ");
             errorStr.append("This error may happen when revoked certificate is requested to be renewed.");
 

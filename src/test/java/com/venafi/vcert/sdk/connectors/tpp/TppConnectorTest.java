@@ -30,9 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -86,7 +84,7 @@ class TppConnectorTest {
                             new ServerPolicy.KeyPair(new LockableValue<>(false, "keyAlgo"),
                                     new LockableValue<>(false, 1024),
                                     null))));
-        when(tpp.requestCertificate(any(TppConnector.CertificateRequestsPayload.class), eq(API_KEY))).thenReturn("reqId");
+        when(tpp.requestCertificate(any(TppConnector.CertificateRequestsPayload.class), eq(API_KEY))).thenReturn(new Tpp.CertificateRequestResponse().certificateDN("reqId"));
         String zoneTag = "myZone";
         ZoneConfiguration zoneConfig = classUnderTest.readZoneConfiguration(classUnderTest.getPolicyDN(zoneTag));
         String cn = String.format("t%d-%s.venafi.xample.com", Instant.now().getEpochSecond(), RandomStringUtils.randomAlphabetic(4).toLowerCase());
@@ -124,7 +122,7 @@ class TppConnectorTest {
                 mock(Tpp.CertificateSearchResponse.class);
 
         when(renewalRequest.thumbprint()).thenReturn("1111:1111:1111:1111");
-        when(tpp.searchCertificates(contains("111111111111111"), eq(API_KEY))).thenReturn(certificateSearchResponse);
+        when(tpp.searchCertificates(any(), eq(API_KEY))).thenReturn(certificateSearchResponse);
 
         final Throwable throwable = assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
         assertThat(throwable.getMessage()).contains("No certificate found using fingerprint");
@@ -138,7 +136,7 @@ class TppConnectorTest {
                 mock(Tpp.CertificateSearchResponse.class);
 
         when(renewalRequest.thumbprint()).thenReturn("1111:1111:1111:1111");
-        when(tpp.searchCertificates(contains("111111111111111"), eq(API_KEY))).thenReturn(certificateSearchResponse);
+        when(tpp.searchCertificates(any(), eq(API_KEY))).thenReturn(certificateSearchResponse);
         when(certificateSearchResponse.certificates()).thenReturn(Arrays.asList(new Tpp.Certificate(), new Tpp.Certificate()));
 
         final Throwable throwable = assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
@@ -152,11 +150,11 @@ class TppConnectorTest {
         final Tpp.CertificateSearchResponse certificateSearchResponse =
                 mock(Tpp.CertificateSearchResponse.class);
         final Tpp.Certificate certificate = mock(Tpp.Certificate.class);
-        final TppConnector.CertificateRenewalResponse certificateRenewalResponse =
-                mock(TppConnector.CertificateRenewalResponse.class);
+        final Tpp.CertificateRenewalResponse certificateRenewalResponse =
+                mock(Tpp.CertificateRenewalResponse.class);
 
         when(renewalRequest.thumbprint()).thenReturn("1111:1111:1111:1111");
-        when(tpp.searchCertificates(contains("111111111111111"), eq(API_KEY))).thenReturn(certificateSearchResponse);
+        when(tpp.searchCertificates(any(), eq(API_KEY))).thenReturn(certificateSearchResponse);
         when(certificateSearchResponse.certificates()).thenReturn(Arrays.asList(certificate));
         when(certificate.certificateRequestId()).thenReturn("test_certificate_requestid");
         when(tpp.renewCertificate(certificateRenewalRequestArgumentCaptor.capture(), any()))
@@ -165,16 +163,14 @@ class TppConnectorTest {
 
         String result = classUnderTest.renewCertificate(renewalRequest);
         assertThat(result).isEqualTo("test_certificate_requestid");
-        assertThat(certificateRenewalRequestArgumentCaptor.getValue().certificateDN())
-                .isEqualTo("test_certificate_requestid");
     }
 
     @Test
     @DisplayName("Renew Certificate with DN")
     void renewCertificateWithDN() throws VCertException {
         final RenewalRequest renewalRequest = mock(RenewalRequest.class);
-        final TppConnector.CertificateRenewalResponse certificateRenewalResponse =
-                mock(TppConnector.CertificateRenewalResponse.class);
+        final Tpp.CertificateRenewalResponse certificateRenewalResponse =
+                mock(Tpp.CertificateRenewalResponse.class);
 
         when(renewalRequest.certificateDN()).thenReturn("certificateDN");
         when(tpp.renewCertificate(certificateRenewalRequestArgumentCaptor.capture(), any()))

@@ -12,10 +12,6 @@ public class Is {
         return array == null || array.length == 0;
     }
 
-    public static boolean blank(String s) {
-        return s == null || s.isEmpty();
-    }
-
     /**
      *
      * @param left

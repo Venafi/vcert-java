@@ -15,6 +15,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 @Data
 // TODO move up one package
 public class ZoneConfiguration {
@@ -130,14 +132,15 @@ public class ZoneConfiguration {
             return entity;
         }
         List<String> resolve() {
-            if(Is.blank(target) && !Is.blank(source)) {
+            if(Is.blank(target) && isNotBlank(source)) {
                 return Collections.singletonList(source);
-            } else if(!Is.blank(target) && !Is.equalsFold(target.get(0), source)) {
+            } else if(!Is.blank(target) && isNotBlank(source) && !Is.equalsFold(target.get(0), source)) {
                 return Collections.singletonList(source);
             }
             return target;
         }
     }
+
     public boolean validateCertificateRequest(CertificateRequest request) throws VCertException {
         if(!isComponentValid(policy.subjectCNRegexes(), Collections.singletonList(request.subject().commonName()))) {
             throw new VCertException("The requested CN does not match any of the allowed CN regular expressions");
@@ -164,7 +167,6 @@ public class ZoneConfiguration {
 
         List<AllowedKeyConfiguration> allowedKeyConfigurations = policy.allowedKeyConfigurations();
         if(allowedKeyConfigurations != null && allowedKeyConfigurations.size() > 0) {
-            boolean match = false;
             for(AllowedKeyConfiguration keyConfiguration : allowedKeyConfigurations) {
                 if(keyConfiguration.keyType() == request.keyType()) {
                     if(request.keyLength() > 0) {

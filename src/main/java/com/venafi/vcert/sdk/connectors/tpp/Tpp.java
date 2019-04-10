@@ -1,16 +1,15 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
 
+import com.google.gson.annotations.SerializedName;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.utils.FeignUtils;
-import feign.Headers;
-import feign.Param;
-import feign.RequestLine;
-import feign.Response;
+import feign.*;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 
 public interface Tpp {
@@ -31,25 +30,25 @@ public interface Tpp {
             "Content-Type: application/json",
             "x-venafi-api-key: {apiKey}"
     })
-    String requestCertificate(TppConnector.CertificateRequestsPayload payload, @Param("apiKey") String apiKey);
+    CertificateRequestResponse requestCertificate(TppConnector.CertificateRequestsPayload payload, @Param("apiKey") String apiKey);
 
-    @RequestLine("GET certificates/?{search}")
+    @RequestLine("GET certificates/")
     @Headers("x-venafi-api-key: {apiKey}")
-    Tpp.CertificateSearchResponse searchCertificates(@Param("search") String searchRequest, @Param("apiKey") String apiKey);
+    Tpp.CertificateSearchResponse searchCertificates(@QueryMap Map<String, String> query, @Param("apiKey") String apiKey);
 
     @RequestLine("POST certificates/retrieve")
     @Headers({
             "Content-Type: application/json",
             "x-venafi-api-key: {apiKey}"
     })
-    TppConnector.CertificateRetrieveResponse certificateRetrieve(TppConnector.CertificateRetrieveRequest certificateRetrieveRequest, @Param("apiKey") String apiKey);
+    CertificateRetrieveResponse certificateRetrieve(TppConnector.CertificateRetrieveRequest certificateRetrieveRequest, @Param("apiKey") String apiKey);
 
     @RequestLine("POST certificates/revoke")
     @Headers({
             "Content-Type: application/json",
             "x-venafi-api-key: {apiKey}"
     })
-    TppConnector.CertificateRevokeResponse revokeCertificate(TppConnector.CertificateRevokeRequest request, @Param("apiKey") String apiKey);
+    Tpp.CertificateRevokeResponse revokeCertificate(TppConnector.CertificateRevokeRequest request, @Param("apiKey") String apiKey);
 
 
     @RequestLine("POST certificates/renew")
@@ -57,7 +56,7 @@ public interface Tpp {
             "Content-Type: application/json",
             "x-venafi-api-key: {apiKey}"
     })
-    TppConnector.CertificateRenewalResponse renewCertificate(TppConnector.CertificateRenewalRequest request, @Param("apiKey") String apiKey);
+    Tpp.CertificateRenewalResponse renewCertificate(TppConnector.CertificateRenewalRequest request, @Param("apiKey") String apiKey);
 
 
     @RequestLine("POST certificates/import")
@@ -83,11 +82,37 @@ public interface Tpp {
 
     @Data
     class Certificate {
-        private String id;
-        private String managedCertificateId;
-        private String certificateRequestId;
-        private List<String> subjectCN;
+
+        @SerializedName("DN") private String certificateRequestId;
     }
 
+    @Data
+    class CertificateRequestResponse {
+        @SerializedName("CertificateDN")
+        private String certificateDN;
+        @SerializedName("Guid")
+        private String guid;
+    }
 
+    @Data
+    class CertificateRetrieveResponse {
+        private String certificateData;
+        private String format;
+        private String filename;
+        private String status;
+        private int stage;
+    }
+
+    @Data
+    class CertificateRenewalResponse {
+        private boolean success;
+        private String error;
+    }
+
+    @Data
+    class CertificateRevokeResponse {
+        private boolean requested;
+        private boolean success;
+        private String error;
+    }
 }

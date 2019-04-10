@@ -11,10 +11,12 @@ import com.venafi.vcert.sdk.connectors.tpp.TppConnector;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
-import com.venafi.vcert.sdk.utils.Is;
 import feign.FeignException;
 
 import java.security.Security;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class VCertClient implements Connector {
 
@@ -26,14 +28,14 @@ public class VCertClient implements Connector {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         switch (config.connectorType()) {
             case TPP:
-                if (Is.blank(config.baseUrl()))
+                if (isBlank(config.baseUrl()))
                     throw new VCertException("TPP client requires a base url");
 
                 connector = new TppConnector(Tpp.connect(config.baseUrl()));
                 break;
 
             case CLOUD:
-                connector = new CloudConnector(Cloud.connect(!Is.blank(config.baseUrl())
+                connector = new CloudConnector(Cloud.connect(isNotBlank(config.baseUrl())
                         ? config.baseUrl() : "https://api.venafi.cloud"));
                 break;
             default:

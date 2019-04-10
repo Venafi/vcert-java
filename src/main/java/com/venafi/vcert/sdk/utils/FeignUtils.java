@@ -32,7 +32,7 @@ public class FeignUtils {
                 .encoder(encoder(builder))
                 .decoder(decoder(builder))
                 .logger(new Slf4jLogger())
-                .logLevel(Logger.Level.FULL)
+                .logLevel(Logger.Level.BASIC)
                 .target(clazz, baseUrl);
     }
 

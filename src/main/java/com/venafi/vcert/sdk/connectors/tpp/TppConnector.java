@@ -11,7 +11,6 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
 import feign.Response;
-import joptsimple.internal.Strings;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -151,11 +150,12 @@ public class TppConnector implements Connector {
 
     @Override
     public String requestCertificate(CertificateRequest request, String zone) throws VCertException {
-        if(Is.blank(zone)) {
+        if(isBlank(zone)) {
             zone = this.zone;
         }
         CertificateRequestsPayload payload = prepareRequest(request, zone);
-        String requestId = tpp.requestCertificate(payload, apiKey);
+        Tpp.CertificateRequestResponse response = tpp.requestCertificate(payload, apiKey);
+        String requestId = response.certificateDN();
         request.pickupId(requestId);
         return requestId;
     }
@@ -246,9 +246,11 @@ public class TppConnector implements Connector {
         // TODO move this retry logic to feign client
         Instant startTime = Instant.now();
         while(true) {
-            CertificateRetrieveResponse retrieveResponse = retrieveCertificateOnce(certReq);
+            Tpp.CertificateRetrieveResponse retrieveResponse = retrieveCertificateOnce(certReq);
             if(isNotBlank(retrieveResponse.certificateData())) {
-                PEMCollection pemCollection = PEMCollection.fromResponse(retrieveResponse.certificateData(), request.chainOption());
+                PEMCollection pemCollection = PEMCollection.fromResponse(
+                        org.bouncycastle.util.Strings.fromByteArray(Base64.getDecoder().decode(retrieveResponse.certificateData())),
+                        request.chainOption());
                 request.checkCertificate(pemCollection.certificate());
                 return pemCollection;
             }
@@ -270,22 +272,25 @@ public class TppConnector implements Connector {
         }
     }
 
-    private CertificateRetrieveResponse retrieveCertificateOnce(CertificateRetrieveRequest certificateRetrieveRequest) {
+    private Tpp.CertificateRetrieveResponse retrieveCertificateOnce(CertificateRetrieveRequest certificateRetrieveRequest) {
         return tpp.certificateRetrieve(certificateRetrieveRequest, apiKey);
     }
 
 
     private Tpp.CertificateSearchResponse searchCertificatesByFingerprint(String fingerprint) {
-        String cleanFingerprint = fingerprint
+        final String cleanFingerprint = fingerprint
                 .replaceAll(":", "")
                 .replaceAll("/.", "")
                 .toUpperCase();
 
-        return searchCertificates(Collections.singletonList(format("Thumbprint=%s", cleanFingerprint)));
+        final Map<String,String> searchRequest = new HashMap<String,String>();
+        searchRequest.put("Thumbprint", fingerprint);
+
+        return searchCertificates(searchRequest);
     }
 
-    private Tpp.CertificateSearchResponse searchCertificates(List<String> searchRequest) {
-        return tpp.searchCertificates(Strings.join(searchRequest, "&"), apiKey);
+    private Tpp.CertificateSearchResponse searchCertificates(Map<String, String> searchRequest) {
+        return tpp.searchCertificates(searchRequest, apiKey);
     }
 
     @Override
@@ -302,13 +307,13 @@ public class TppConnector implements Connector {
                 .comments(request.comments())
                 .disable(request.disable());
 
-        CertificateRevokeResponse revokeResponse = revokeCertificate(revokeRequest);
+        Tpp.CertificateRevokeResponse revokeResponse = revokeCertificate(revokeRequest);
         if(!revokeResponse.success()) {
             throw new VCertException(format("Revocation error: %s", revokeResponse.error()));
         }
     }
 
-    private CertificateRevokeResponse revokeCertificate(CertificateRevokeRequest request) {
+    private Tpp.CertificateRevokeResponse revokeCertificate(CertificateRevokeRequest request) {
         return tpp.revokeCertificate(request, apiKey);
     }
 
@@ -316,12 +321,12 @@ public class TppConnector implements Connector {
     public String renewCertificate(RenewalRequest request) throws VCertException {
         String certificateDN;
 
-        if(!Is.blank(request.thumbprint()) && Is.blank(request.certificateDN())) {
+        if(isNotBlank(request.thumbprint()) && isBlank(request.certificateDN())) {
             Tpp.CertificateSearchResponse searchResult = searchCertificatesByFingerprint(request.thumbprint());
-            if (searchResult.certificates().isEmpty()) {
+            if(searchResult.certificates().isEmpty()) {
                 throw new VCertException(String.format("No certificate found using fingerprint %s", request.thumbprint()));
             }
-            if (searchResult.certificates().size() > 1 ) {
+            if(searchResult.certificates().size() > 1) {
                 throw new VCertException(String.format("More than one certificate was found with the same thumbprint"));
             }
             certificateDN = searchResult.certificates().get(0).certificateRequestId();
@@ -329,20 +334,20 @@ public class TppConnector implements Connector {
             certificateDN = request.certificateDN();
         }
 
-        if (isNull(certificateDN)) {
+        if(isNull(certificateDN)) {
             throw new VCertException("Failed to create renewal request: CertificateDN or Thumbprint required");
         }
 
         final CertificateRenewalRequest renewalRequest = new CertificateRenewalRequest();
         renewalRequest.certificateDN(certificateDN);
 
-        if (Objects.nonNull(request.request()) && request.request().csr().length > 0) {
+        if(Objects.nonNull(request.request()) && request.request().csr().length > 0) {
             renewalRequest.PKCS10 = org.bouncycastle.util.Strings.fromByteArray(request.request().csr());
         }
 
-        final CertificateRenewalResponse response = tpp.renewCertificate(renewalRequest, apiKey());
-        if (!response.success()) {
-            throw new VCertException(String.format("Certificate renewal error: %s", response.error));
+        final Tpp.CertificateRenewalResponse response = tpp.renewCertificate(renewalRequest, apiKey());
+        if(!response.success()) {
+            throw new VCertException(String.format("Certificate renewal error: %s", response.error()));
         }
 
         return certificateDN;
@@ -449,15 +454,6 @@ public class TppConnector implements Connector {
     }
 
     @Data
-    class CertificateRetrieveResponse {
-        private String certificateData;
-        private String format;
-        private String filename;
-        private String status;
-        private int stage;
-    }
-
-    @Data
     class CertificateRevokeRequest {
         private String certificateDN;
         private String thumbprint;
@@ -467,22 +463,9 @@ public class TppConnector implements Connector {
     }
 
     @Data
-    class CertificateRevokeResponse {
-        private boolean requested;
-        private boolean success;
-        private String error;
-    }
-
-    @Data
     class CertificateRenewalRequest {
         private String certificateDN;
         private String PKCS10;
-    }
-
-    @Data
-    class CertificateRenewalResponse {
-        private boolean success;
-        private String error;
     }
 
 }

@@ -3,8 +3,6 @@ package com.venafi.vcert.sdk.certificate;
 import com.google.common.annotations.VisibleForTesting;
 import com.venafi.vcert.sdk.SignatureAlgorithm;
 import com.venafi.vcert.sdk.VCertException;
-import com.venafi.vcert.sdk.utils.Is;
-import lombok.Builder;
 import lombok.Data;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.eac.ECDSAPublicKey;
@@ -31,6 +29,7 @@ import java.util.Objects;
 import static java.lang.String.format;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Data
 public class CertificateRequest {
@@ -165,8 +164,8 @@ public class CertificateRequest {
         private Collection<AttributeTypeAndValue> extraNames;
 
         public X500Principal toX500Principal() throws VCertException {
-            if(Is.blank(commonName)) {
-                throw new VCertException("common nae must not be null or emtpy");
+            if(isBlank(commonName)) {
+                throw new VCertException("common name must not be null or emtpy");
             }
             X500NameBuilder x500NameBuilder = new X500NameBuilder();
             x500NameBuilder.addRDN(BCStyle.CN, commonName);
