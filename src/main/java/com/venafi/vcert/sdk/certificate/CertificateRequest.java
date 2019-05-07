@@ -225,7 +225,7 @@ public class CertificateRequest {
                 default:
                     throw new VCertException(format("unknown key algorithm %s", publicKeyAlgorithm.name()));
             }
-        } else if(csr.length != 0) {
+        } else if(Objects.nonNull(csr) && csr.length != 0) {
             try {
                 PemReader pemReader = new PemReader(new StringReader(new String(csr)));
                 PKCS10CertificationRequest csr = new PKCS10CertificationRequest(pemReader.readPemObject().getContent());

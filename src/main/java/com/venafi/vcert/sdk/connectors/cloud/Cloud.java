@@ -30,7 +30,7 @@ public interface Cloud {
     @RequestLine("GET /v1/certificatepolicies/{id}")
     CertificatePolicy policyById(@Param("id") String id, @Param("apiKey") String apiKey);
 
-    @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+    @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json", "Accept: application/json"})
     @RequestLine("POST /v1/certificatesearch")
     CertificateSearchResponse searchCertificates(@Param("apiKey") String apiKey, SearchRequest searchRequest);
 

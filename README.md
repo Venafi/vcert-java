@@ -28,26 +28,63 @@ A basic example of createing a certificate using the VCert java implementation.
             .build();
 
     final VCertClient client = new VCertClient(config);
-    final ZoneConfiguration zoneConfiguration = client.readZoneConfiguration("Public");
     final Authentication auth = Authentication.builder()
             .apiKey("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
             .build();
 
-    CertificateRequest certificateRequest = new CertificateRequest().subject(
-            new CertificateRequest.PKIXName()
-                    .commonName("cert.example.com")
-                    .organization(Collections.singletonList("Venafi, Inc."))
-                    .organizationalUnit(Arrays.asList("Engineering"))
-                    .country(Collections.singletonList("US"))
-                    .locality(Collections.singletonList("SLC"))
-                    .province(Collections.singletonList("Utah")))
-
-            .keyType(KeyType.RSA);
-
-
     client.authenticate(auth);
-    certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);
-    String newCertId = client.requestCertificate(certificateRequest, "Public");
+    final ZoneConfiguration zoneConfiguration = client.readZoneConfiguration("Public");
+
+
+
+        // Generate a certificate
+        CertificateRequest certificateRequest = new CertificateRequest().subject(
+                new CertificateRequest.PKIXName()
+                        .commonName("opencredo.test")
+                        .organization(Collections.singletonList("Venafi, Inc."))
+                        .organizationalUnit(Arrays.asList("Engineering"))
+                        .country(Collections.singletonList("US"))
+                        .locality(Collections.singletonList("SLC"))
+                        .province(Collections.singletonList("Utah")))
+
+                .keyType(KeyType.RSA);
+        certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);
+
+
+        // Submit the certificate request
+        String newCertId = client.requestCertificate(certificateRequest, "Default");
+
+
+        // Retrieve PEM collection from Venafi
+        final CertificateRequest pickupRequest = new CertificateRequest().pickupId(newCertId);
+        PEMCollection pemCollection = client.retrieveCertificate(pickupRequest);
+        System.out.println(pemCollection.certificate());
+
+        // Renew the certificate
+        X509Certificate cert = (X509Certificate) pemCollection.certificate();
+        String thumbprint = DigestUtils.sha1Hex(cert.getEncoded()).toUpperCase();
+        final CertificateRequest certificateRequestToRenew = new CertificateRequest().subject(
+                new CertificateRequest.PKIXName()
+                        .commonName("opencredo.test")
+                        .organization(Collections.singletonList("Venafi, Inc."))
+                        .organizationalUnit(Arrays.asList("Engineering"))
+                        .country(Collections.singletonList("US"))
+                        .locality(Collections.singletonList("SLC"))
+                        .province(Collections.singletonList("Utah")));
+
+        client.generateRequest(zoneConfiguration, certificateRequestToRenew);
+
+        final RenewalRequest renewalRequest = new RenewalRequest()
+                .thumbprint(thumbprint)
+                .request(certificateRequestToRenew);
+        final String renewedCertificate = client.renewCertificate(renewalRequest);
+
+        // Retrieve PEM collection from Venafi
+        final CertificateRequest renewPickupRequest = new CertificateRequest().pickupId(renewedCertificate);
+        PEMCollection pemCollectionRenewed = client.retrieveCertificate(pickupRequest);
+        System.out.println(pemCollectionRenewed.certificate());
+
+
 ```
 
 ## Prerequisites for using with Trust Protection Platform
