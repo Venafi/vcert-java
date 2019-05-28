@@ -1,0 +1,45 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/v1/certificatepolicies/12345678-1234-1234-1234-1234567890di"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "certificatePolicyType": "CERTIFICATE_IDENTITY",
+      "id": "12345678-1234-1234-1234-1234567890di",
+      "companyId": "12345678-1234-1234-1234-12345678901c",
+      "certificatePolicyType": "CERTIFICATE_IDENTITY",
+      "name": "Starter Policy",
+      "systemGenerated": true,
+      "creationDate": "2019-01-01T14:32:51.514+0000",
+      "subjectCNRegexes": [
+        ".*.example.com",
+        ".*.example.org",
+        ".*.example.net",
+        ".*.invalid",
+        ".*.local",
+        ".*.localhost",
+        ".*.test"
+      ],
+      "subjectORegexes": [
+        ".*"
+      ],
+      "subjectOURegexes": [
+        ".*"
+      ],
+      "subjectSTRegexes": [
+        ".*"
+      ],
+      "subjectLRegexes": [
+        ".*"
+      ],
+      "subjectCValues": [
+        ".*"
+      ],
+      "sanRegexes": [
+        ".*"
+      ]
+    }
+  }
+}
