@@ -7,7 +7,7 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import sun.misc.BASE64Encoder;
+import java.util.Base64;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -66,10 +66,10 @@ public class TestUtils {
 
     public static byte[] getCertificateAsBytes(X509Certificate certificate) throws IOException, CertificateEncodingException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        BASE64Encoder base64Encoder = new BASE64Encoder();
+
         outputStream.write("-----BEGIN CERTIFICATE-----".getBytes());
         outputStream.write(System.lineSeparator().getBytes());
-        base64Encoder.encodeBuffer(certificate.getEncoded(), outputStream);
+        outputStream.write(Base64.getEncoder().encode(certificate.getEncoded()));
         outputStream.write("-----END CERTIFICATE-----".getBytes());
         return outputStream.toByteArray();
     }

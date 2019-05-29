@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import sun.misc.BASE64Encoder;
+import java.util.Base64;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -172,10 +172,9 @@ class CertificateRequestTest {
 
     private static CertificateRequest createCertSigningRequestFor(PKCS10CertificationRequest certSigningReq) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        BASE64Encoder base64Encoder = new BASE64Encoder();
         outputStream.write("-----BEGIN CERTIFICATE REQUEST-----".getBytes());
         outputStream.write(System.lineSeparator().getBytes());
-        base64Encoder.encodeBuffer(certSigningReq.getEncoded(), outputStream);
+        outputStream.write(Base64.getEncoder().encode(certSigningReq.getEncoded()));
         outputStream.write("-----END CERTIFICATE REQUEST-----".getBytes());
         return new CertificateRequest().csr(outputStream.toByteArray());
     }

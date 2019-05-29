@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.util.io.pem.PemReader;
-import sun.misc.BASE64Encoder;
+import java.util.Base64;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
@@ -103,10 +103,9 @@ public class CertificateRequest {
                     keyPair.getPrivate());
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            BASE64Encoder base64Encoder = new BASE64Encoder();
             outputStream.write("-----BEGIN CERTIFICATE REQUEST-----".getBytes());
             outputStream.write(System.lineSeparator().getBytes());
-            base64Encoder.encodeBuffer(certificationRequest.getEncoded(), outputStream);
+            outputStream.write(Base64.getEncoder().encode(certificationRequest.getEncoded()));
             outputStream.write("-----END CERTIFICATE REQUEST-----".getBytes());
             csr = outputStream.toByteArray();
         } catch(Exception e) {
