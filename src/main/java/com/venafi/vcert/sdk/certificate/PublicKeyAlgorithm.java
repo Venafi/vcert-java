@@ -4,5 +4,6 @@ public enum PublicKeyAlgorithm {
     Unknown,
     RSA,
     DSA,
-    ECDSA
+    ECDSA,
+    EC
 }

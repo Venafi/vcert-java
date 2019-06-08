@@ -10,7 +10,14 @@ import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.util.io.pem.PemReader;
-import java.util.Base64;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.X509Extension;
+import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.Attribute;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSet;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
@@ -25,6 +32,9 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.ArrayList;
+import java.util.Vector;
+import java.util.Base64;
 
 import static java.lang.String.format;
 import static java.time.temporal.ChronoUnit.MINUTES;
@@ -95,17 +105,42 @@ public class CertificateRequest {
 
     public void generateCSR() throws VCertException {
         try {
+            List<GeneralName> sans = new ArrayList<GeneralName>();
+
+            for ( String san : dnsNames ) {
+                sans.add(new GeneralName(GeneralName.dNSName, san));
+            }
+
+            for ( InetAddress san : ipAddresses ) {
+                sans.add(new GeneralName(GeneralName.iPAddress, new DEROctetString(san.getAddress())));
+            }
+
+            for ( String san : emailAddresses ) {
+                sans.add(new GeneralName(GeneralName.rfc822Name, san));
+            }
+
+            GeneralNames names = new GeneralNames(sans.toArray(new GeneralName[] {}));
+            Vector oids = new Vector();
+            Vector values = new Vector();
+
+            oids.add(X509Extensions.SubjectAlternativeName);
+            values.add(new X509Extension(false, new DEROctetString(names)));
+
+            X509Extensions extensions = new X509Extensions(oids, values);
+            Attribute attribute = new Attribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, new DERSet(extensions));
+
             PKCS10CertificationRequest certificationRequest = new PKCS10CertificationRequest(
                     signatureAlgorithm.standardName(),
                     subject.toX500Principal(),
                     keyPair.getPublic(),
-                    null,
+                    new DERSet(attribute),
                     keyPair.getPrivate());
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write("-----BEGIN CERTIFICATE REQUEST-----".getBytes());
             outputStream.write(System.lineSeparator().getBytes());
-            outputStream.write(Base64.getEncoder().encode(certificationRequest.getEncoded()));
+            outputStream.write(Base64.getMimeEncoder().encode(certificationRequest.getEncoded()));
+            outputStream.write(System.lineSeparator().getBytes());
             outputStream.write("-----END CERTIFICATE REQUEST-----".getBytes());
             csr = outputStream.toByteArray();
         } catch(Exception e) {

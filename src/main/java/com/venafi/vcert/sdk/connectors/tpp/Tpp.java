@@ -82,7 +82,6 @@ public interface Tpp {
 
     @Data
     class Certificate {
-
         @SerializedName("DN") private String certificateRequestId;
     }
 

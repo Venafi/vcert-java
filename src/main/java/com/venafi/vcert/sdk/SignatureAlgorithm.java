@@ -6,7 +6,6 @@ public enum SignatureAlgorithm {
 
     UnknownSignatureAlgorithm(""),
     MD2withRSA("MD2withRSA"),
-
     MD5WithRSA("MD5withRSA"),
     SHA1WithRSA("SHA1withRSA"),
     SHA256WithRSA("SHA256withRSA"),
