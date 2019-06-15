@@ -213,7 +213,7 @@ public class CloudConnector implements Connector {
                     break;
             }
             String body = certificateViaCSR(request.pickupId(), chainOption);
-            PEMCollection pemCollection = PEMCollection.fromResponse(body, request.chainOption());
+            PEMCollection pemCollection = PEMCollection.fromResponse(body, request.chainOption(), request.privateKey());
             request.checkCertificate(pemCollection.certificate());
             return pemCollection;
         } else {

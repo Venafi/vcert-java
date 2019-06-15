@@ -257,7 +257,7 @@ public class TppConnector implements Connector {
             if(isNotBlank(retrieveResponse.certificateData())) {
                 PEMCollection pemCollection = PEMCollection.fromResponse(
                         org.bouncycastle.util.Strings.fromByteArray(Base64.getDecoder().decode(retrieveResponse.certificateData())),
-                        request.chainOption());
+                        request.chainOption(), request.privateKey());
                 request.checkCertificate(pemCollection.certificate());
                 return pemCollection;
             }

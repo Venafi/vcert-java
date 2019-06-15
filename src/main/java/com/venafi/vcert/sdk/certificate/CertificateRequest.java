@@ -5,7 +5,6 @@ import com.venafi.vcert.sdk.SignatureAlgorithm;
 import com.venafi.vcert.sdk.VCertException;
 import lombok.Data;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.eac.ECDSAPublicKey;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
@@ -27,6 +26,7 @@ import java.net.InetAddress;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.interfaces.RSAPublicKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Duration;
 import java.util.Collection;
@@ -82,6 +82,12 @@ public class CertificateRequest {
                 :ChainOption.ChainOptionRootFirst;
     }
 
+    public PrivateKey privateKey() {
+        return (!Objects.isNull(keyPair))
+                ?keyPair.getPrivate()
+                :null;
+    }
+
     public void generatePrivateKey() throws VCertException {
         if(keyPair != null) {
             return;
@@ -110,11 +116,9 @@ public class CertificateRequest {
             for ( String san : dnsNames ) {
                 sans.add(new GeneralName(GeneralName.dNSName, san));
             }
-
             for ( InetAddress san : ipAddresses ) {
                 sans.add(new GeneralName(GeneralName.iPAddress, new DEROctetString(san.getAddress())));
             }
-
             for ( String san : emailAddresses ) {
                 sans.add(new GeneralName(GeneralName.rfc822Name, san));
             }
@@ -232,8 +236,7 @@ public class CertificateRequest {
     }
 
     public boolean checkCertificate(Certificate certificate) throws VCertException {
-        // TODO handle enum exception
-        PublicKeyAlgorithm publicKeyAlgorithm = PublicKeyAlgorithm.valueOf(certificate.getPublicKey().getAlgorithm());
+        PublicKeyAlgorithm publicKeyAlgorithm = KeyType.from(certificate.getPublicKey().getAlgorithm()).X509Type();
 
         if(keyPair != null && keyPair.getPublic() != null && keyPair.getPrivate() != null) {
             if( keyType.X509Type() != publicKeyAlgorithm) {
@@ -249,11 +252,22 @@ public class CertificateRequest {
                     }
                     break;
                 case ECDSA:
-                    ECDSAPublicKey certEcdsaPublicKey = (ECDSAPublicKey) certificate.getPublicKey();
-                    ECDSAPublicKey reqEcdsaPublicKey = (ECDSAPublicKey) keyPair.getPublic();
-                    // TODO make sure comparison is valid
-                    if(certEcdsaPublicKey.getPrimeModulusP().compareTo(reqEcdsaPublicKey.getPrimeModulusP()) != 0) {
-                        throw new VCertException("unmatched X for eliptic keys");
+                    ECPublicKey certEcPublicKey = (ECPublicKey) certificate.getPublicKey();
+                    ECPublicKey reqEcPublicKey = (ECPublicKey) keyPair.getPublic();
+
+                    // https://stackoverflow.com/questions/24121801/how-to-verify-if-the-private-key-matches-with-the-certificate
+                    java.security.spec.ECParameterSpec certSpec = certEcPublicKey.getParams(), csrSpec = reqEcPublicKey.getParams();
+                    java.security.spec.EllipticCurve certCurve = certSpec.getCurve(), csrCurve = csrSpec.getCurve();
+                    java.security.spec.ECField certField = certCurve.getField(), csrField = csrCurve.getField();
+                    if ( certSpec != csrSpec //
+                            && ( certSpec.getCofactor() != csrSpec.getCofactor() //
+                            || ! certSpec.getOrder().equals( csrSpec.getOrder() ) //
+                        || ! certSpec.getGenerator().equals( csrSpec.getGenerator() ) //
+                        || certCurve != csrCurve //
+                            && ( ! certCurve.getA().equals( csrCurve.getA() ) //
+                            || ! certCurve.getB().equals( csrCurve.getB() ) //
+                        || certField.getFieldSize() != csrField.getFieldSize() ) ) ) {
+                        throw new VCertException("unmatched parameters for elliptic keys");
                     }
                     break;
                 default:
@@ -279,11 +293,22 @@ public class CertificateRequest {
                         }
                         break;
                     case ECDSA:
-                        ECDSAPublicKey certEcdsaPublicKey = (ECDSAPublicKey) certificate.getPublicKey();
-                        ECDSAPublicKey reqEcdsaPublicKey = (ECDSAPublicKey) csr.getPublicKey();
-                        // TODO make sure comparison is valid
-                        if(certEcdsaPublicKey.getPrimeModulusP().compareTo(reqEcdsaPublicKey.getPrimeModulusP()) != 0) {
-                            throw new VCertException("unmatched X for eliptic keys");
+                        ECPublicKey certEcPublicKey = (ECPublicKey) certificate.getPublicKey();
+                        ECPublicKey reqEcPublicKey = (ECPublicKey) csr.getPublicKey();
+
+                        // https://stackoverflow.com/questions/24121801/how-to-verify-if-the-private-key-matches-with-the-certificate
+                        java.security.spec.ECParameterSpec certSpec = certEcPublicKey.getParams(), csrSpec = reqEcPublicKey.getParams();
+                        java.security.spec.EllipticCurve certCurve = certSpec.getCurve(), csrCurve = csrSpec.getCurve();
+                        java.security.spec.ECField certField = certCurve.getField(), csrField = csrCurve.getField();
+                        if ( certSpec != csrSpec //
+                                && ( certSpec.getCofactor() != csrSpec.getCofactor() //
+                                || ! certSpec.getOrder().equals( csrSpec.getOrder() ) //
+                            || ! certSpec.getGenerator().equals( csrSpec.getGenerator() ) //
+                            || certCurve != csrCurve //
+                                && ( ! certCurve.getA().equals( csrCurve.getA() ) //
+                                || ! certCurve.getB().equals( csrCurve.getB() ) //
+                            || certField.getFieldSize() != csrField.getFieldSize() ) ) ) {
+                            throw new VCertException("unmatched parameters for elliptic keys");
                         }
                         break;
                 }
