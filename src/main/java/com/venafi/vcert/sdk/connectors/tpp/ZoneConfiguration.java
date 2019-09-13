@@ -33,7 +33,7 @@ public class ZoneConfiguration {
 
 
     /**
-     * UpdateCertificateRequest updates a certificate request based on the zone configurataion retrieved from the remote endpoint
+     * UpdateCertificateRequest updates a certificate request based on the zone configuration retrieved from the remote endpoint
      * @return
      */
     public void updateCertificateRequest(CertificateRequest request) {

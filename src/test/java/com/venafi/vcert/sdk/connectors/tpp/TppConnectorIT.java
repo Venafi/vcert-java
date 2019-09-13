@@ -10,7 +10,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static com.venafi.vcert.sdk.SignatureAlgorithm.MD2withRSA;
+import static com.venafi.vcert.sdk.SignatureAlgorithm.*;
 import static com.venafi.vcert.sdk.certificate.EllipticCurve.*;
 import static com.venafi.vcert.sdk.certificate.KeyType.ECDSA;
 import static com.venafi.vcert.sdk.certificate.KeyType.RSA;
@@ -80,7 +80,7 @@ class TppConnectorIT {
         assertThat(zoneConfiguration.policy().upnSanRegExs()).containsExactly(".*");
         assertThat(zoneConfiguration.policy().allowWildcards()).isTrue();
         assertThat(zoneConfiguration.policy().allowKeyReuse()).isFalse();
-        assertThat(zoneConfiguration.hashAlgorithm()).isEqualTo(MD2withRSA);
+        assertThat(zoneConfiguration.hashAlgorithm()).isEqualTo(SHA256WithRSA);
         assertThat(zoneConfiguration.customAttributeValues()).isNotNull();
         assertThat(zoneConfiguration.customAttributeValues()).isEmpty();
     }

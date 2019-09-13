@@ -70,6 +70,7 @@ public class TestUtils {
         outputStream.write("-----BEGIN CERTIFICATE-----".getBytes());
         outputStream.write(System.lineSeparator().getBytes());
         outputStream.write(Base64.getEncoder().encode(certificate.getEncoded()));
+        outputStream.write(System.lineSeparator().getBytes());
         outputStream.write("-----END CERTIFICATE-----".getBytes());
         return outputStream.toByteArray();
     }
