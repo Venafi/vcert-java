@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.net.InetAddress;
 
 import static java.lang.String.format;
 import static java.time.Duration.ZERO;
@@ -134,7 +135,6 @@ public class TppConnector implements Connector {
                 if("0".equals(config.customAttributeValues().get(tppAttributeManualCSR))) {
                     throw new VCertException("Unable to request certificate with user provided CSR when zone configuration is 'Manual Csr' = 0");
                 }
-                request.generatePrivateKey();
                 if(Is.blank(request.csr())) {
                     throw new VCertException("CSR was supposed to be provided by user, but it's empty");
                 }
@@ -164,11 +164,18 @@ public class TppConnector implements Connector {
         CertificateRequestsPayload payload;
         switch(request.csrOrigin()) {
             case LocalGeneratedCSR:
+                payload = new CertificateRequestsPayload()
+                    .policyDN(getPolicyDN(zone))
+                    .pkcs10(new String(request.csr()))
+                    .objectName(request.friendlyName())
+                    .disableAutomaticRenewal(true);
+                break;
             case UserProvidedCSR:
                 payload = new CertificateRequestsPayload()
                         .policyDN(getPolicyDN(zone))
                         .pkcs10(new String(request.csr()))
                         .objectName(request.friendlyName())
+                        .subjectAltNames(wrapAltNames(request))
                         .disableAutomaticRenewal(true);
                 break;
             case ServiceGeneratedCSR:
@@ -191,7 +198,7 @@ public class TppConnector implements Connector {
             }
             case ECDSA: {
                 payload.keyAlgorithm("ECC");
-                payload.ellipticCurve(request.keyCurve().name());
+                payload.ellipticCurve(request.keyCurve().value());
                 break;
             }
         }
@@ -212,7 +219,7 @@ public class TppConnector implements Connector {
                 .orElse(Collections.emptyList())
                 .stream()
                 .filter(Objects::nonNull)
-                .map(entry -> new SANItem().type(type).name(entry.toString()))
+                .map(entry -> new SANItem().type(type).name( type == 7 ? ((InetAddress)entry).getHostAddress() : entry.toString()) )
                 .collect(toList());
     }
 
@@ -224,7 +231,7 @@ public class TppConnector implements Connector {
         if(isNotBlank(request.pickupId()) && isNotBlank(request.thumbprint())) {
             Tpp.CertificateSearchResponse searchResult = searchCertificatesByFingerprint(request.thumbprint());
             if(searchResult.certificates().size() == 0) {
-                throw new VCertException(format("No certifiate found using fingerprint %s", request.thumbprint()));
+                throw new VCertException(format("No certificate found using fingerprint %s", request.thumbprint()));
             }
             if(searchResult.certificates().size() > 1) {
                 throw new VCertException(format("Error: more than one CertificateRequestId was found with the same thumbprint %s", request.thumbprint()));
@@ -250,7 +257,7 @@ public class TppConnector implements Connector {
             if(isNotBlank(retrieveResponse.certificateData())) {
                 PEMCollection pemCollection = PEMCollection.fromResponse(
                         org.bouncycastle.util.Strings.fromByteArray(Base64.getDecoder().decode(retrieveResponse.certificateData())),
-                        request.chainOption());
+                        request.chainOption(), request.privateKey());
                 request.checkCertificate(pemCollection.certificate());
                 return pemCollection;
             }
@@ -418,6 +425,7 @@ public class TppConnector implements Connector {
         private String city;
         private String state;
         private String country;
+        @SerializedName("SubjectAltNames")
         private Collection<SANItem> subjectAltNames;
         private String contact;
         @SerializedName("CASpecificAttributes")

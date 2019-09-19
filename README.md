@@ -1,4 +1,4 @@
-# VCert-Java
+# VCert Java
 
 <img src="https://www.venafi.com/sites/default/files/content/body/Light_background_logo.png" width="330px" height="69px"/>  
 
@@ -6,7 +6,8 @@ VCert is a Java library, SDK, designed to simplify key generation and enrollment
 (also known as SSL/TLS certificates and keys) that comply with enterprise security policy by using the
 [Venafi Platform](https://www.venafi.com/platform/trust-protection-platform) or [Venafi Cloud](https://pki.venafi.com/venafi-cloud/).
 
-
+#### Compatibility
+VCert releases are tested using the latest version of Trust Protection Platform.  The [latest VCert release](../../releases/latest) should be compatible with Trust Protection Platform 17.3 or higher based on the subset of API methods it consumes.
 
 
 ## Installation
@@ -20,71 +21,103 @@ mvn install
 
 ## Usage
 
-A basic example of createing a certificate using the VCert java implementation.
+A basic example of creating a certificate using VCert Java:
 
 ```
-    final Config config = Config.builder()
-            .connectorType(ConnectorType.CLOUD)
-            .zone("Default")
-            .build();
+final Config config = Config.builder()
+        .connectorType(ConnectorType.TPP)
+        .baseUrl("https://tpp.venafi.example/vedsdk")
+        .build();
+        
+/* or for Venafi Cloud
+final Config config = Config.builder()
+        .connectorType(ConnectorType.CLOUD)
+        .build();
+*/
 
-    final VCertClient client = new VCertClient(config);
-    final Authentication auth = Authentication.builder()
-            .apiKey("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
-            .build();
+final VCertClient client = new VCertClient(config);
 
-    client.authenticate(auth);
-    final ZoneConfiguration zoneConfiguration = client.readZoneConfiguration("Public");
+final Authentication auth = Authentication.builder()
+        .user("local:apiuser")
+        .password("password")
+        .build();
 
+/* or for Venafi Cloud
+final Authentication auth = Authentication.builder()
+        .apiKey("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+        .build();
+*/
 
+client.authenticate(auth);
 
-        // Generate a certificate
-        CertificateRequest certificateRequest = new CertificateRequest().subject(
-                new CertificateRequest.PKIXName()
-                        .commonName("opencredo.test")
-                        .organization(Collections.singletonList("Venafi, Inc."))
-                        .organizationalUnit(Arrays.asList("Engineering"))
-                        .country(Collections.singletonList("US"))
-                        .locality(Collections.singletonList("SLC"))
-                        .province(Collections.singletonList("Utah")))
+//////////////////////////////////////
+///// Local Generated CSR - RSA //////
+//////////////////////////////////////
 
-                .keyType(KeyType.RSA);
-        certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);
+// Generate a key pair and certificate signing request
+CertificateRequest certificateRequest = new CertificateRequest().subject(
+        new CertificateRequest.PKIXName()
+                .commonName("vcert-java.venafi.example")
+                .organization(Collections.singletonList("Example Company"))
+                .organizationalUnit(Arrays.asList("Example Division"))
+                .country(Collections.singletonList("US"))
+                .locality(Collections.singletonList("Salt Lake City"))
+                .province(Collections.singletonList("Utah")))
+        .dnsNames(Arrays.asList("alfa.venafi.example", "bravo.venafi.example", "charlie.venafi.example"))
+        .ipAddresses(Arrays.asList(InetAddress.getByName("10.20.30.40"),InetAddress.getByName("172.16.172.16")))
+        .emailAddresses(Arrays.asList("larry@venafi.example", "moe@venafi.example", "curly@venafi.example"))
+        .keyType(KeyType.RSA);
+        
+ZoneConfiguration zoneConfiguration = client.readZoneConfiguration("Certificates\\VCert");
+certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);   
 
+// Submit the certificate request
+client.requestCertificate(certificateRequest, "Certificates\\VCert");
 
-        // Submit the certificate request
-        String newCertId = client.requestCertificate(certificateRequest, "Default");
+// Retrieve PEM collection from Venafi
+PEMCollection pemCollection = client.retrieveCertificate(certificateRequest);
 
+System.out.println(pemCollection.pemPrivateKey());
+System.out.println(pemCollection.pemCertificate());
+System.out.println(pemCollection.pemCertificateChain());
 
-        // Retrieve PEM collection from Venafi
-        final CertificateRequest pickupRequest = new CertificateRequest().pickupId(newCertId);
-        PEMCollection pemCollection = client.retrieveCertificate(pickupRequest);
-        System.out.println(pemCollection.certificate());
+/////////////////////////////
+///// User Provided CSR /////
+/////////////////////////////
+        
+String csr = "-----BEGIN CERTIFICATE REQUEST-----\n" +
+        "MIIC8DCCAdgCAQAwgY4xCzAJBgNVBAYTAlVTMQ0wCwYDVQQIEwRVdGFoMRcwFQYD\n" +
+        "VQQHEw5TYWx0IExha2UgQ2l0eTEYMBYGA1UEChMPRXhhbXBsZSBDb21wYW55MRkw\n" +
+        "FwYDVQQLExBFeGFtcGxlIERpdmlzaW9uMSIwIAYDVQQDExl2Y2VydC1qYXZhLnZl\n" +
+        "bmFmaS5leGFtcGxlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA9PHk\n" +
+        "bR5i0pV6M08XXi+Z0tAJkIU3TLG0Hr0n5tY6JIcP3Sc8wrodgMN66WUP6oLV/yqR\n" +
+        "2lKom+dc9dIN9iaVUfnpPwhjyuIMyd0svmU2hnZj3InG5kvqnMnzQvRfWx0OKmMB\n" +
+        "c652qZsgR3d6I+YufhIsuMxkWMev2njXGZAnThGVMv/iD9dLTO+0lTwwSbvM1lxw\n" +
+        "YxAwdVFX1+vl0ORyOs4OUqUFv3i6qvS/U/RI45TrgR+XA2/8xPlo5gfGrnFfiyJJ\n" +
+        "jMctOak2mOVrR/2kXYcOw+37zkpJEADSZBgm/YzqdYtrI8t/M4uClkn9WQgTijC1\n" +
+        "eN4hFKyTGeOGIqKI/QIDAQABoBwwGgYJKoZIhvcNAQkOMQ0wCzAJBgNVHRMEAjAA\n" +
+        "MA0GCSqGSIb3DQEBCwUAA4IBAQDOxsP3fFsx/UOLudVm6MAuAFZfZxm7P1sZrYhb\n" +
+        "tgshSXDlruiO7/ovb8rDrRrKJjAx4+tXlQRsDfxIpvuNcAd7//WCjjIfAoNlGRW4\n" +
+        "cMtWfvCN1p7XsVer+JJHtM5UZ+oKS06hdPppDP4rfjyhTM5Y0M8JAgMcGsm7lrWU\n" +
+        "w1ly6k8k5NzadWGOZwvz75qrn0ufHuI96sPsL5wmqty34BfnBy4iMddU3m/Y1qQb\n" +
+        "VfKV2CRWybwV/QeCtogXvI7Nou2LZQDWI57498Nzif1Zvfy0/ab8XBkX2vMUXcnm\n" +
+        "1A7/9ezwgYTZvy1rbBSKBSjAx/MAOPUM93OcjT6tKtEeEnI8\n" +
+        "-----END CERTIFICATE REQUEST-----";
 
-        // Renew the certificate
-        X509Certificate cert = (X509Certificate) pemCollection.certificate();
-        String thumbprint = DigestUtils.sha1Hex(cert.getEncoded()).toUpperCase();
-        final CertificateRequest certificateRequestToRenew = new CertificateRequest().subject(
-                new CertificateRequest.PKIXName()
-                        .commonName("opencredo.test")
-                        .organization(Collections.singletonList("Venafi, Inc."))
-                        .organizationalUnit(Arrays.asList("Engineering"))
-                        .country(Collections.singletonList("US"))
-                        .locality(Collections.singletonList("SLC"))
-                        .province(Collections.singletonList("Utah")));
+certificateRequest = new CertificateRequest().csr(csr.getBytes())
+        .csrOrigin(com.venafi.vcert.sdk.certificate.CsrOriginOption.UserProvidedCSR)
+        .dnsNames(Arrays.asList("alfa.venafi.example", "bravo.venafi.example", "charlie.venafi.example"))
+        .ipAddresses(Arrays.asList(InetAddress.getByName("10.20.30.40"),InetAddress.getByName("172.16.172.16")))
+        .emailAddresses(Arrays.asList("larry@venafi.example", "moe@venafi.example", "curly@venafi.example"));
 
-        client.generateRequest(zoneConfiguration, certificateRequestToRenew);
+// Submit the certificate request
+client.requestCertificate(certificateRequest, "Certificates\\VCert");
 
-        final RenewalRequest renewalRequest = new RenewalRequest()
-                .thumbprint(thumbprint)
-                .request(certificateRequestToRenew);
-        final String renewedCertificate = client.renewCertificate(renewalRequest);
+// Retrieve PEM collection from Venafi
+pemCollection = client.retrieveCertificate(certificateRequest);
 
-        // Retrieve PEM collection from Venafi
-        final CertificateRequest renewPickupRequest = new CertificateRequest().pickupId(renewedCertificate);
-        PEMCollection pemCollectionRenewed = client.retrieveCertificate(pickupRequest);
-        System.out.println(pemCollectionRenewed.certificate());
-
+System.out.println(pemCollection.pemCertificate());
+System.out.println(pemCollection.pemCertificateChain());
 
 ```
 
@@ -132,7 +165,7 @@ mvn "-Dtest=*AT" test
 4. Implement and test your changes
 5. Commit your changes (`git commit -am 'Added some cool functionality'`)
 6. Push to the branch (`git push origin your-branch-name`)
-7. Create a new Pull Request (https://github.com/youracct/vcert-java/pull/new/working-branch)
+7. Create a new Pull Request (https://github.com/youracct/vcert-java/pull/new/your-branch-name)
 
 
 ## License

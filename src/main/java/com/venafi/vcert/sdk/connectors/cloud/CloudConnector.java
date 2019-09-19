@@ -103,7 +103,7 @@ public class CloudConnector implements Connector {
                 request.csr(null);
                 break;
             default:
-                throw new VCertException(format("Unreconginised request CSR origin %s", request.csrOrigin()));
+                throw new VCertException(format("Unrecognized request CSR origin %s", request.csrOrigin()));
         }
 
         return request;
@@ -118,7 +118,7 @@ public class CloudConnector implements Connector {
             throw new VCertException("service generated CSR is not supported by Saas service");
         }
         if (user == null || user.company() == null) {
-            throw new VCertException("Must be autheticated to request a certificate");
+            throw new VCertException("Must be authenticated to request a certificate");
         }
         Zone z = getZoneByTag(zone);
         CertificateRequestsResponse response = cloud.certificateRequest(
@@ -141,7 +141,7 @@ public class CloudConnector implements Connector {
             String certificateRequestId = null;
             Cloud.CertificateSearchResponse certificateSearchResponse = searchCertificatesByFingerprint(request.thumbprint());
             if(certificateSearchResponse.certificates().size() == 0) {
-                throw new VCertException(format("No certifiate found using fingerprint %s", request.thumbprint()));
+                throw new VCertException(format("No certificate found using fingerprint %s", request.thumbprint()));
             }
 
             List<String> reqIds = new ArrayList<>();
@@ -195,7 +195,7 @@ public class CloudConnector implements Connector {
         }
 
         if(user == null || user.company() == null) {
-            throw new VCertException("Must be autheticated to retieve certificate");
+            throw new VCertException("Must be authenticated to retieve certificate");
         }
 
         if(isNotBlank(request.pickupId())) {
@@ -213,7 +213,7 @@ public class CloudConnector implements Connector {
                     break;
             }
             String body = certificateViaCSR(request.pickupId(), chainOption);
-            PEMCollection pemCollection = PEMCollection.fromResponse(body, request.chainOption());
+            PEMCollection pemCollection = PEMCollection.fromResponse(body, request.chainOption(), request.privateKey());
             request.checkCertificate(pemCollection.certificate());
             return pemCollection;
         } else {

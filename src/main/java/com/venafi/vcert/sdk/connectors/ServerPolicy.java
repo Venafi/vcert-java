@@ -145,7 +145,7 @@ public class ServerPolicy {
     public ZoneConfiguration toZoneConfig() {
         return new ZoneConfiguration()
                 .customAttributeValues(new HashMap<>())
-                .hashAlgorithm(SignatureAlgorithm.MD2withRSA)
+                .hashAlgorithm(SignatureAlgorithm.SHA256WithRSA)
                 .country(subject.country().value())
                 .organization(subject.organization().value())
                 .organizationalUnit(subject.organizationalUnit().values())

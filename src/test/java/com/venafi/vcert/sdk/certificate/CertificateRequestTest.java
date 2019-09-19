@@ -2,13 +2,7 @@ package com.venafi.vcert.sdk.certificate;
 
 import com.venafi.vcert.sdk.SignatureAlgorithm;
 import com.venafi.vcert.sdk.VCertException;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.net.*;
 import java.security.KeyPair;
 import java.security.Security;
@@ -29,7 +23,6 @@ import java.util.Base64;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.*;
@@ -175,13 +168,19 @@ class CertificateRequestTest {
         outputStream.write("-----BEGIN CERTIFICATE REQUEST-----".getBytes());
         outputStream.write(System.lineSeparator().getBytes());
         outputStream.write(Base64.getEncoder().encode(certSigningReq.getEncoded()));
+        outputStream.write(System.lineSeparator().getBytes());
         outputStream.write("-----END CERTIFICATE REQUEST-----".getBytes());
         return new CertificateRequest().csr(outputStream.toByteArray());
     }
 
     private static KeyPair loadKeyPairFromFile(String name) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         ClassLoader classLoader = CertificateRequestTest.class.getClassLoader();
-        String body = new String(Files.readAllBytes(Paths.get(classLoader.getResource("certificates/" + name).getPath())));
+        String path = classLoader.getResource("certificates/" + name).getPath();
+        // windows platform: if it starts with /C: then remove the leading slash
+        if (path.charAt(0) == '/' && path.charAt(2) == ':') {
+            path = path.substring(1);
+        }
+        String body = new String(Files.readAllBytes( Paths.get(path).toAbsolutePath() ));
         PEMParser pemParser = new PEMParser(new StringReader(body));
         JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter();
         Object object = pemParser.readObject();
@@ -195,7 +194,12 @@ class CertificateRequestTest {
 
     private static Certificate loadCertificateFromFile(String name) throws IOException, CertificateException {
         ClassLoader classLoader = CertificateRequestTest.class.getClassLoader();
-        String body = new String(Files.readAllBytes(Paths.get(classLoader.getResource("certificates/" + name).getPath())));
+        String path = classLoader.getResource("certificates/" + name).getPath();
+        // windows platform: if it starts with /C: then remove the leading slash
+        if (path.charAt(0) == '/' && path.charAt(2) == ':') {
+            path = path.substring(1);
+        }
+        String body = new String(Files.readAllBytes( Paths.get(path).toAbsolutePath() ));
         PEMParser pemParser = new PEMParser(new StringReader(body));
         JcaX509CertificateConverter certificateConverter = new JcaX509CertificateConverter();
         Object object = pemParser.readObject();
@@ -204,7 +208,12 @@ class CertificateRequestTest {
 
     private static PKCS10CertificationRequest loadCertificateSigningRequestFromFile(String name) throws IOException {
         ClassLoader classLoader = CertificateRequestTest.class.getClassLoader();
-        String body = new String(Files.readAllBytes(Paths.get(classLoader.getResource("certificates/" + name).getPath())));
+        String path = classLoader.getResource("certificates/" + name).getPath();
+        // windows platform: if it starts with /C: then remove the leading slash
+        if (path.charAt(0) == '/' && path.charAt(2) == ':') {
+            path = path.substring(1);
+        }
+        String body = new String(Files.readAllBytes( Paths.get(path).toAbsolutePath() ));
         StringReader reader = new StringReader(body);
         try(PEMParser pemParser = new PEMParser(reader)) {
             return (PKCS10CertificationRequest) pemParser.readObject();

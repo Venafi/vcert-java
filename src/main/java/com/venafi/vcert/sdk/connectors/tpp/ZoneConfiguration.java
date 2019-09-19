@@ -33,7 +33,7 @@ public class ZoneConfiguration {
 
 
     /**
-     * UpdateCertificateRequest updates a certificate request based on the zone configurataion retrieved from the remote endpoint
+     * UpdateCertificateRequest updates a certificate request based on the zone configuration retrieved from the remote endpoint
      * @return
      */
     public void updateCertificateRequest(CertificateRequest request) {
@@ -45,23 +45,42 @@ public class ZoneConfiguration {
         subject.country(Entity.of(subject.country(), country).resolve());
         subject.province(Entity.of(subject.province(), province).resolve());
         subject.locality(Entity.of(subject.locality(), locality).resolve());
-        if(hashAlgorithm != SignatureAlgorithm.UnknownSignatureAlgorithm) {
-            request.signatureAlgorithm(hashAlgorithm);
-        } else {
-            request.signatureAlgorithm(SignatureAlgorithm.SHA256WithRSA);
+
+       // apply defaults for settings that weren't specified and then make sure they comply with policy
+       if (request.keyType() == null) {
+            request.keyType(KeyType.defaultKeyType());
+        }
+
+        switch (request.keyType())
+        {
+            case ECDSA:
+                if (request.keyCurve() == null) {
+                    request.keyCurve(EllipticCurve.ellipticCurveDefault());
+                }
+                if (request.signatureAlgorithm() == SignatureAlgorithm.UnknownSignatureAlgorithm) {
+                    request.signatureAlgorithm(SignatureAlgorithm.ECDSAWithSHA256);
+                }
+                break;
+
+            default:
+                if (request.keyLength() < 2048) {
+                    request.keyLength(2048);
+                }
+                if (request.signatureAlgorithm() == SignatureAlgorithm.UnknownSignatureAlgorithm) {
+                    request.signatureAlgorithm(SignatureAlgorithm.SHA256WithRSA);
+                }
+                break;
         }
 
         if(!Is.blank(policy.allowedKeyConfigurations())) {
-            boolean foundMatch = false;
             for(AllowedKeyConfiguration keyConf : policy.allowedKeyConfigurations()) {
                 if(keyConf.keyType() == request.keyType()) {
-                    foundMatch = true;
                     switch (request.keyType()) {
                         case ECDSA: {
                             if(!Is.blank(keyConf.keyCurves())) {
-                                request.keyCurve(keyConf.keyCurves().get(0));
-                            } else {
-                                request.keyCurve(EllipticCurve.ellipticCurveDefault());
+                                if (!keyConf.keyCurves().contains(request.keyCurve())) {
+                                    request.keyCurve(keyConf.keyCurves().get(0));
+                                }
                             }
                             break;
                         }
@@ -74,46 +93,13 @@ public class ZoneConfiguration {
                                     }
                                 }
                                 if(!sizeOK) {
-                                    List<Integer> reversedKeySizes = new ArrayList<>(keyConf.keySizes()); // not reversing the original
-                                    reversedKeySizes.sort(Collections.reverseOrder());
-                                    request.keyLength(reversedKeySizes.get(0));
+                                    request.keyLength(keyConf.keySizes().get(0));
                                 }
-                            } else {
-                                request.keyLength(keyConf.keySizes().get(0));
                             }
                             break;
                         }
                     }
                 }
-            }
-            if(!foundMatch) {
-                AllowedKeyConfiguration configuration = policy.allowedKeyConfigurations().get(0);
-                request.keyType(configuration.keyType());
-                switch (request.keyType()) {
-                    case ECDSA: {
-                        if(!Is.blank(configuration.keyCurves())) {
-                            request.keyCurve(configuration.keyCurves().get(0));
-                        } else {
-                            request.keyCurve(EllipticCurve.ellipticCurveDefault());
-                        }
-                        break;
-                    }
-                    case RSA: {
-                        if(!Is.blank(configuration.keySizes())) {
-                            List<Integer> reversedKeySizes = new ArrayList<>(configuration.keySizes());
-                            reversedKeySizes.sort(Comparator.reverseOrder());
-                            request.keyLength(reversedKeySizes.get(0));
-                        } else {
-                            request.keyLength(2048);
-                        }
-                        break;
-                    }
-                }
-            }
-        } else {
-            // Zone config has no key length parameters, so we just pass user's -key-size or fall to default 2048
-            if(KeyType.RSA.equals(request.keyType()) && request.keyLength() == 0) {
-                request.keyLength(2048);
             }
         }
     }
