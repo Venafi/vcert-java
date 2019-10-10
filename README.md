@@ -12,7 +12,7 @@ VCert releases are tested using the latest version of Trust Protection Platform.
 
 ## Installation
 
-The current version of this library can be install using
+The current version of this library can be installed using Maven:
 
 ```
 mvn install
@@ -143,13 +143,13 @@ To run the acceptance tests the following environment variables must be set:
 
 | NAME | NOTES |
 |------|-------|
-| VENAFI_USER | |
-| VENAFI_PASSWORD | |
+| VENAFI_USER | Only for TPP connector tests |
+| VENAFI_PASSWORD | Only for TPP connector tests |
 | VENAFI_TPP_URL | Only for TPP connector tests |
-| VENAFI_API_KEY | Taken from account after logged in |
+| VENAFI_API_KEY | Taken from account after logged into TPP |
 | VENAFI_CERT_COMMON_NAME | Used for cert creation, should match configured domains |
 | VENAFI_CLOUD_URL | Only for cloud connector tests |
-| VENAFI_ZONE | Only for cloud connector tests |
+| VENAFI_ZONE | Policy folder for TPP |
 
 Acceptance test  are executed with:
 ```
