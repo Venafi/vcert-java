@@ -8,6 +8,6 @@ import lombok.Data;
 @AllArgsConstructor
 @VisibleForTesting
 public class LockableValue<T> {
-    boolean locked;
-    T value;
+  boolean locked;
+  T value;
 }

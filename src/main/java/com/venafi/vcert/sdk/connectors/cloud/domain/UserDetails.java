@@ -5,8 +5,7 @@ import lombok.Data;
 @Data
 public class UserDetails {
 
-    private User user;
-    private Company company;
-    private ApiKey apiKey;
-
+  private User user;
+  private Company company;
+  private ApiKey apiKey;
 }
