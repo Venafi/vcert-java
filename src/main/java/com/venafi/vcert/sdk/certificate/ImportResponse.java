@@ -4,8 +4,8 @@ import lombok.Data;
 
 @Data
 public class ImportResponse {
-    private String certificateDN;
-    private int certificateVaultId;
-    private String guid;
-    private int privateKeyVaultId;
+  private String certificateDN;
+  private int certificateVaultId;
+  private String guid;
+  private int privateKeyVaultId;
 }

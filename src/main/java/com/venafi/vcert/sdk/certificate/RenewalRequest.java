@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class RenewalRequest {
-    private String certificateDN;
-    private String thumbprint;
-    private CertificateRequest request;
+  private String certificateDN;
+  private String thumbprint;
+  private CertificateRequest request;
 }
