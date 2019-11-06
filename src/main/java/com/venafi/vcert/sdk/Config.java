@@ -80,12 +80,12 @@ public class Config {
         }
       }
       if (!defaultSection.containsKey("tpp_user")) {
-        throw new VCertException(String.format("configuration issue section %s: missing TTP user",
+        throw new VCertException(String.format("configuration issue section %s: missing TPP user",
             defaultSection.getName()));
       }
       if (!defaultSection.containsKey("tpp_password")) {
         throw new VCertException(String.format(
-            "configuration issue section %s: missing TTP password", defaultSection.getName()));
+            "configuration issue section %s: missing TPP password", defaultSection.getName()));
       }
     } else if (defaultSection.containsKey("cloud_apikey")) {
       for (String key : defaultSection.keySet()) {
