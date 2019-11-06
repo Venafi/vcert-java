@@ -69,7 +69,6 @@ class TppConnectorIT {
     assertThat(zoneConfiguration.policy().subjectLRegexes()).containsExactly(".*");
     assertThat(zoneConfiguration.policy().subjectCRegexes()).containsExactly(".*");
     assertThat(zoneConfiguration.policy().allowedKeyConfigurations()).isNotNull();
-    assertThat(zoneConfiguration.policy().allowedKeyConfigurations()).isNotNull();
     assertThat(zoneConfiguration.policy().allowedKeyConfigurations()).hasSize(2);//
     assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keyType())
         .isEqualTo(RSA);
