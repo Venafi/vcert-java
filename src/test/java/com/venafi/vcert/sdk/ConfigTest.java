@@ -28,7 +28,7 @@ class ConfigTest {
     Throwable throwable = assertThrows(VCertException.class,
         () -> Config.loadConfigFromFile(getFilePath("invalidTPPMissingPassword.ini")));
 
-    assertThat(throwable.getMessage()).contains("missing TTP password");
+    assertThat(throwable.getMessage()).contains("missing TPP password");
   }
 
   @Test
