@@ -34,6 +34,18 @@ public interface Connector {
   void setZone(String zone);
 
   /**
+   * Set the vendor name and version
+   * 
+   * @param vendorNameAndVersion
+   */
+  void setVendorNameAndVersion(String vendorNameAndVersion);
+
+  /**
+   * @return the vendor name and version
+   */
+  String getVendorNameAndVersion();
+
+  /**
    * Attempt to connect the Venafi API and returns an error if it cannot
    * 
    * @throws VCertException
@@ -52,7 +64,8 @@ public interface Connector {
   /**
    * Reads the zone configuration needed for generating and requesting a certificate
    * 
-   * @param zone
+   * @param zone ID (e.g. 2ebd4ec1-57f7-4994-8651-e396b286a3a8) or zone path (e.g.
+   *        "ProjectName\ZoneName")
    * @return
    * @throws VCertException
    */
@@ -63,7 +76,7 @@ public interface Connector {
    * the user data
    * 
    * @param config
-   * @return
+   * @return the zone configuration
    * @throws VCertException
    */
   CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request)
@@ -73,11 +86,12 @@ public interface Connector {
    * Submits the CSR to venafi for processing
    * 
    * @param request
-   * @param zone
+   * @param zoneConfiguration
    * @return request id to track the certificate status.
    * @throws VCertException
    */
-  String requestCertificate(CertificateRequest request, String zone) throws VCertException;
+  String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration)
+      throws VCertException;
 
   /**
    * Retrives the certificate for the specific ID

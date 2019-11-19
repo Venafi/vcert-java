@@ -49,7 +49,6 @@ import com.venafi.vcert.sdk.utils.Is;
 public class TppConnector implements Connector {
 
   private static final Pattern policy = Pattern.compile("^\\\\VED\\\\Policy");
-  private static final Pattern path = Pattern.compile("^\\\\");
   private final Tpp tpp;
 
   @VisibleForTesting
@@ -59,10 +58,13 @@ public class TppConnector implements Connector {
 
   @Getter
   private String zone;
+  @Getter
+  private String vendorNameAndVersion;
   private static final String tppAttributeManagementType = "Management Type";
   private static final String tppAttributeManualCSR = "Manual Csr";
 
   // TODO can be enum
+  @SuppressWarnings("serial")
   private static Map<String, Integer> revocationReasons = new HashMap<String, Integer>() {
     {
       put("", 0); // NoReason
@@ -95,6 +97,16 @@ public class TppConnector implements Connector {
   }
 
   @Override
+  public void setVendorNameAndVersion(String vendorNameAndVersion) {
+    this.vendorNameAndVersion = vendorNameAndVersion;
+  }
+
+  @Override
+  public String getVendorNameAndVersion() {
+    return vendorNameAndVersion;
+  }
+
+  @Override
   public void ping() throws VCertException {
     Response response = doPing();
     if (response.status() != 200) {
@@ -123,6 +135,7 @@ public class TppConnector implements Connector {
     Policy policy = serverPolicy.toPolicy();
     ZoneConfiguration zoneConfig = serverPolicy.toZoneConfig();
     zoneConfig.policy(policy);
+    zoneConfig.zoneId(zone);
     return zoneConfig;
   }
 
@@ -171,11 +184,12 @@ public class TppConnector implements Connector {
   }
 
   @Override
-  public String requestCertificate(CertificateRequest request, String zone) throws VCertException {
-    if (isBlank(zone)) {
-      zone = this.zone;
+  public String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration)
+      throws VCertException {
+    if (isBlank(zoneConfiguration.zoneId())) {
+      zoneConfiguration.zoneId(this.zone);
     }
-    CertificateRequestsPayload payload = prepareRequest(request, zone);
+    CertificateRequestsPayload payload = prepareRequest(request, zoneConfiguration.zoneId());
     Tpp.CertificateRequestResponse response = tpp.requestCertificate(payload, apiKey);
     String requestId = response.certificateDN();
     request.pickupId(requestId);
@@ -185,16 +199,26 @@ public class TppConnector implements Connector {
   private CertificateRequestsPayload prepareRequest(CertificateRequest request, String zone)
       throws VCertException {
     CertificateRequestsPayload payload;
+    Collection<NameValuePair<String, String>> caSpecificAttributes =
+        new ArrayList<NameValuePair<String, String>>();
+
+    // Workaround to send Origin to TPP versions that does not support it in the payload
+    if (!isBlank(vendorNameAndVersion)) {
+      caSpecificAttributes.add(new NameValuePair<String, String>("Origin", vendorNameAndVersion));
+    }
+
     switch (request.csrOrigin()) {
       case LocalGeneratedCSR:
         payload = new CertificateRequestsPayload().policyDN(getPolicyDN(zone))
             .pkcs10(new String(request.csr())).objectName(request.friendlyName())
-            .disableAutomaticRenewal(true);
+            .disableAutomaticRenewal(true).origin(vendorNameAndVersion)
+            .caSpecificAttributes(caSpecificAttributes);
         break;
       case UserProvidedCSR:
         payload = new CertificateRequestsPayload().policyDN(getPolicyDN(zone))
             .pkcs10(new String(request.csr())).objectName(request.friendlyName())
-            .subjectAltNames(wrapAltNames(request)).disableAutomaticRenewal(true);
+            .subjectAltNames(wrapAltNames(request)).disableAutomaticRenewal(true)
+            .origin(vendorNameAndVersion).caSpecificAttributes(caSpecificAttributes);
         break;
       case ServiceGeneratedCSR:
         payload = new CertificateRequestsPayload().policyDN(getPolicyDN(zone))
@@ -207,7 +231,8 @@ public class TppConnector implements Connector {
                                                                                         // Subject
                                                                                         // is not
                                                                                         // only CN
-            .subjectAltNames(wrapAltNames(request)).disableAutomaticRenewal(true);
+            .subjectAltNames(wrapAltNames(request)).disableAutomaticRenewal(true)
+            .origin(vendorNameAndVersion).caSpecificAttributes(caSpecificAttributes);
         break;
       default:
         throw new VCertException(MessageFormat.format("Unexpected option in PrivateKeyOrigin: {0}",
@@ -314,9 +339,6 @@ public class TppConnector implements Connector {
 
 
   private Tpp.CertificateSearchResponse searchCertificatesByFingerprint(String fingerprint) {
-    final String cleanFingerprint =
-        fingerprint.replaceAll(":", "").replaceAll("/.", "").toUpperCase();
-
     final Map<String, String> searchRequest = new HashMap<String, String>();
     searchRequest.put("Thumbprint", fingerprint);
 
@@ -434,7 +456,6 @@ public class TppConnector implements Connector {
   }
 
   @Data
-  @SuppressWarnings("WeakerAccess")
   public static class ReadZoneConfigurationResponse {
     Object error;
     ServerPolicy policy;
@@ -464,6 +485,7 @@ public class TppConnector implements Connector {
     private int keyBitSize;
     private String ellipticCurve;
     private boolean disableAutomaticRenewal;
+    private String origin;
   }
 
   @Data
@@ -473,8 +495,9 @@ public class TppConnector implements Connector {
   }
 
   @Data
+  @AllArgsConstructor
   private static class NameValuePair<K, V> {
-    private K key;
+    private K name;
     private V value;
   }
 

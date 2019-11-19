@@ -1,7 +1,6 @@
 package com.venafi.vcert.sdk;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import java.security.Security;
 import com.google.common.annotations.VisibleForTesting;
 import feign.FeignException;
@@ -23,34 +22,32 @@ import com.venafi.vcert.sdk.endpoint.ConnectorType;
 
 public class VCertClient implements Connector {
 
-  private Config config;
   private Connector connector;
 
   public VCertClient(Config config) throws VCertException {
-    this.config = config;
     Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
     switch (config.connectorType()) {
       case TPP:
         if (isBlank(config.baseUrl()))
           throw new VCertException("TPP client requires a base url");
 
-        connector = new TppConnector(Tpp.connect(config.baseUrl()));
+        connector = new TppConnector(Tpp.connect(config));
         break;
 
       case CLOUD:
-        connector = new CloudConnector(Cloud
-            .connect(isNotBlank(config.baseUrl()) ? config.baseUrl() : "https://api.venafi.cloud"));
+        connector = new CloudConnector(Cloud.connect(config));
         break;
       default:
         throw new VCertException("ConnectorType is not defined");
+
     }
+    connector.setVendorNameAndVersion(config.productNameAndVersion());
   }
 
   @VisibleForTesting
   VCertClient(Connector connector) {
     this.connector = connector;
   }
-
 
   /**
    * {@inheritDoc}
@@ -66,7 +63,6 @@ public class VCertClient implements Connector {
   @Override
   public void setBaseUrl(String url) throws VCertException {
     connector.setBaseUrl(url);
-
   }
 
   /**
@@ -75,6 +71,22 @@ public class VCertClient implements Connector {
   @Override
   public void setZone(String zone) {
     connector.setZone(zone);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void setVendorNameAndVersion(String vendorNameAndVersion) {
+    connector.setVendorNameAndVersion(vendorNameAndVersion);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public String getVendorNameAndVersion() {
+    return connector.getVendorNameAndVersion();
   }
 
   /**
@@ -138,9 +150,10 @@ public class VCertClient implements Connector {
    * {@inheritDoc}
    */
   @Override
-  public String requestCertificate(CertificateRequest request, String zone) throws VCertException {
+  public String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration)
+      throws VCertException {
     try {
-      return connector.requestCertificate(request, zone);
+      return connector.requestCertificate(request, zoneConfiguration);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
     } catch (Exception e) {

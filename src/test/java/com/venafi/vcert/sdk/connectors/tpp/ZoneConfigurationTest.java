@@ -64,7 +64,7 @@ class ZoneConfigurationTest {
   }
 
   private CertificateRequest getDefaultCertificateRequest() {
-    final ZoneConfiguration zoneConfiguration = getBaseZoneConfiguration();
+    getBaseZoneConfiguration();
     final CertificateRequest request = new CertificateRequest();
     final CertificateRequest.PKIXName subject = new CertificateRequest.PKIXName();
     subject.commonName("vcert.text.vfidev.com");

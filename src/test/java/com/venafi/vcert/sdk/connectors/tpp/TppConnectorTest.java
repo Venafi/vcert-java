@@ -103,8 +103,10 @@ class TppConnectorTest {
         .friendlyName(cn).keyLength(512);
     classUnderTest.generateRequest(zoneConfig, request);
     logger.info("getPolicyDN(ZoneTag) = %s", classUnderTest.getPolicyDN(zoneTag));
-    String requestId =
-        classUnderTest.requestCertificate(request, classUnderTest.getPolicyDN(zoneTag));
+
+    ZoneConfiguration zoneConfiguration = new ZoneConfiguration();
+    zoneConfiguration.zoneId(classUnderTest.getPolicyDN(zoneTag));
+    String requestId = classUnderTest.requestCertificate(request, zoneConfiguration);
     assertEquals("reqId", requestId);
   }
 

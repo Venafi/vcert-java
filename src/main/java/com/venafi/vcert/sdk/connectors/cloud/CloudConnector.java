@@ -8,12 +8,14 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.Strings;
 import com.google.common.io.CharStreams;
@@ -34,6 +36,9 @@ import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
+import com.venafi.vcert.sdk.connectors.cloud.domain.Project;
+import com.venafi.vcert.sdk.connectors.cloud.domain.ProjectZone;
+import com.venafi.vcert.sdk.connectors.cloud.domain.Projects;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
@@ -47,6 +52,8 @@ public class CloudConnector implements Connector {
   private UserDetails user;
   private Authentication auth;
   private String zone;
+  @Getter
+  private String vendorNameAndVersion;
 
   public CloudConnector(Cloud cloud) {
     this.cloud = cloud;
@@ -65,6 +72,16 @@ public class CloudConnector implements Connector {
   @Override
   public void setZone(String zone) {
     this.zone = zone;
+  }
+
+  @Override
+  public void setVendorNameAndVersion(String vendorNameAndVersion) {
+    this.vendorNameAndVersion = vendorNameAndVersion;
+  }
+
+  @Override
+  public String getVendorNameAndVersion() {
+    return vendorNameAndVersion;
   }
 
   @Override
@@ -87,25 +104,85 @@ public class CloudConnector implements Connector {
     this.user = cloud.authorize(auth.apiKey());
   }
 
-  @Override
-  public ZoneConfiguration readZoneConfiguration(String tag) throws VCertException {
-    VCertException.throwIfNull(tag, "empty zone name");
-    Zone zone = getZoneByTag(tag);
-    CertificatePolicy policy = getPoliciesById(
-        Arrays.asList(zone.defaultCertificateIdentityPolicy(), zone.defaultCertificateUsePolicy()));
-    return zone.getZoneConfiguration(user, policy);
+  ZoneConfiguration getZoneConfiguration(UserDetails user, CertificatePolicy policy) {
+    ZoneConfiguration zoneConfig = new ZoneConfiguration().customAttributeValues(new HashMap<>());
+    if (policy == null) {
+      return zoneConfig;
+    }
+    zoneConfig.policy(policy.toPolicy());
+    policy.toZoneConfig(zoneConfig);
+    return zoneConfig;
   }
 
   @Override
-  public CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request)
-      throws VCertException {
+  public ZoneConfiguration readZoneConfiguration(String zone) throws VCertException {
+    ProjectZone projectZone = null;
+    String[] zoneIdentifiers = parseZoneIdentifiers(zone);
+
+    Projects projects = cloud.projects(auth.apiKey());
+    if (projects.projects().isEmpty()) {
+      throw new VCertException("No projects present.");
+    }
+
+    if (zoneIdentifiers[0] != null) {
+      // Find zone by ID
+      String zoneId = zoneIdentifiers[0];
+
+      for (Project project : projects.projects()) {
+        for (ProjectZone projZone : project.zones()) {
+          if (zoneId.equals(projZone.id())) {
+            projectZone = projZone;
+            break;
+          }
+        }
+      }
+
+      if (projectZone == null) {
+        throw new VCertException(format("No zone with ID '%s'.", zoneId));
+      }
+    } else {
+      // Find zone by project name and zone name
+      String projectName = zoneIdentifiers[1];
+      String zoneName = zoneIdentifiers[2];
+
+      for (Project project : projects.projects()) {
+        if (project.name().equals(projectName)) {
+          for (ProjectZone projZone : project.zones()) {
+            if (zoneName.equals(projZone.name())) {
+              projectZone = projZone;
+              break;
+            }
+          }
+        }
+      }
+
+      if (projectZone == null) {
+        throw new VCertException(
+            format("No zone with name '%s' in '%s' project.", zoneName, projectName));
+      }
+    }
+
+    if (projectZone.cit() == null) {
+      throw new VCertException(format("No certificate issuing template ID for '%s' zone.", zone));
+    }
+
+    ZoneConfiguration zoneConfig = new ZoneConfiguration().customAttributeValues(new HashMap<>());
+    zoneConfig.policy(projectZone.cit().toPolicy());
+    zoneConfig.zoneId(projectZone.id());
+
+    return zoneConfig;
+  }
+
+  @Override
+  public CertificateRequest generateRequest(ZoneConfiguration zoneConfig,
+      CertificateRequest request) throws VCertException {
     switch (request.csrOrigin()) {
       case LocalGeneratedCSR:
-        if (config == null) {
-          config = readZoneConfiguration(zone);
+        if (zoneConfig == null) {
+          zoneConfig = readZoneConfiguration(zone);
         }
-        config.validateCertificateRequest(request);
-        config.updateCertificateRequest(request);
+        zoneConfig.validateCertificateRequest(request);
+        zoneConfig.updateCertificateRequest(request);
         request.generatePrivateKey();
         request.generateCSR();
         break;
@@ -125,19 +202,23 @@ public class CloudConnector implements Connector {
   }
 
   @Override
-  public String requestCertificate(CertificateRequest request, String zone) throws VCertException {
-    if (isBlank(zone)) {
-      zone = this.zone;
+  public String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration)
+      throws VCertException {
+
+    if (isBlank(zoneConfiguration.zoneId())) {
+      zoneConfiguration.zoneId(this.zone);
     }
+
     if (CsrOriginOption.ServiceGeneratedCSR == request.csrOrigin()) {
       throw new VCertException("service generated CSR is not supported by Saas service");
     }
     if (user == null || user.company() == null) {
       throw new VCertException("Must be authenticated to request a certificate");
     }
-    Zone z = getZoneByTag(zone);
-    CertificateRequestsResponse response = cloud.certificateRequest(auth.apiKey(),
-        new CertificateRequestsPayload().zoneId(z.id()).csr(new String(request.csr())));
+    CertificateRequestsResponse response =
+        cloud.certificateRequest(auth.apiKey(), new CertificateRequestsPayload()
+            .zoneId(zoneConfiguration.zoneId()).csr(new String(request.csr())));
+
     String requestId = response.certificateRequests().get(0).id();
     request.pickupId(requestId);
     return requestId;
@@ -302,7 +383,6 @@ public class CloudConnector implements Connector {
           "failed to create renewal request: CertificateDN or Thumbprint required");
     }
 
-
     final CertificateStatus status = cloud.certificateStatus(certificateRequestId, auth.apiKey());
     VCertException.throwIfNull(status.managedCertificateId(), String.format(
         "failed to submit renewal request for certificate: ManagedCertificateId is empty, certificate status is %s",
@@ -310,7 +390,6 @@ public class CloudConnector implements Connector {
     VCertException.throwIfNull(status.zoneId(), String.format(
         "failed to submit renewal request for certificate: ZoneId is empty, certificate status is %s",
         status.status()));
-
 
     ManagedCertificate managedCertificate =
         cloud.managedCertificate(status.managedCertificateId(), auth.apiKey());
@@ -353,40 +432,6 @@ public class CloudConnector implements Connector {
     throw new UnsupportedOperationException("Method not yet implemented");
   }
 
-  private CertificatePolicy getPoliciesById(Collection<String> ids) throws VCertException {
-    CertificatePolicy policy = new CertificatePolicy();
-    VCertException.throwIfNull(user, "must be authenticated to read the zone configuration");
-    for (String id : ids) {
-      CertificatePolicy certificatePolicy = cloud.policyById(id, auth.apiKey());
-      switch (certificatePolicy.certificatePolicyType()) {
-        case "CERTIFICATE_IDENTITY": {
-          policy.subjectCNRegexes(certificatePolicy.subjectCNRegexes());
-          policy.subjectORegexes(certificatePolicy.subjectORegexes());
-          policy.subjectOURegexes(certificatePolicy.subjectOURegexes());
-          policy.subjectSTRegexes(certificatePolicy.subjectSTRegexes());
-          policy.subjectLRegexes(certificatePolicy.subjectLRegexes());
-          policy.subjectCRegexes(certificatePolicy.subjectCRegexes());
-          policy.sanRegexes(certificatePolicy.sanRegexes());
-          break;
-        }
-        case "CERTIFICATE_USE": {
-          policy.keyTypes(certificatePolicy.keyTypes());
-          policy.keyReuse(certificatePolicy.keyReuse());
-          break;
-        }
-        default:
-          throw new IllegalArgumentException(
-              format("unknown type %s", certificatePolicy.certificatePolicyType()));
-      }
-    }
-    return policy;
-  }
-
-  private Zone getZoneByTag(String zone) throws VCertException {
-    VCertException.throwIfNull(user, "must be authenticated to read the zone configuration");
-    return cloud.zoneByTag(zone, auth.apiKey());
-  }
-
   private Cloud.CertificateSearchResponse searchCertificates(Cloud.SearchRequest searchRequest) {
     return cloud.searchCertificates(auth.apiKey(), searchRequest);
   }
@@ -395,6 +440,32 @@ public class CloudConnector implements Connector {
     String cleanFingerprint = fingerprint.replaceAll(":", "").replaceAll("/.", "");
 
     return searchCertificates(Cloud.SearchRequest.findByFingerPrint(cleanFingerprint));
+  }
+
+  private String[] parseZoneIdentifiers(String zone) throws VCertException {
+    try {
+      // Check if zone is UUID
+      UUID.fromString(zone);
+      return new String[] {zone, null, null};
+    } catch (IllegalArgumentException iae) {
+      // The zone argument is not UUID, so we expect to be ProjectName\ZoneName
+      String zoneParsed[] = zone.split(Pattern.quote("\\"));
+
+      if (zoneParsed.length != 2) {
+        throw new VCertException(format(
+            "Invalid zone ID or path. We expect UUID or 'ProjectName\\ZoneName', but we got '%s'.",
+            zone));
+      }
+
+      if (isBlank(zoneParsed[0])) {
+        throw new VCertException(format("Unable to get Project Name from '%s'", zone));
+      }
+
+      if (isBlank(zoneParsed[1])) {
+        throw new VCertException(format("Unable to get Zone Name from '%s'", zone));
+      }
+      return new String[] {null, zoneParsed[0], zoneParsed[1]};
+    }
   }
 
   @Data
@@ -409,7 +480,6 @@ public class CloudConnector implements Connector {
   }
 
   @Data
-  @SuppressWarnings("WeakerAccess")
   public static class CertificateRequestsResponse {
     private List<CertificateRequestsResponseData> certificateRequests;
   }

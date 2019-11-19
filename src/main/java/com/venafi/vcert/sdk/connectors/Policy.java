@@ -2,10 +2,16 @@ package com.venafi.vcert.sdk.connectors;
 
 import java.util.Collection;
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import com.venafi.vcert.sdk.endpoint.AllowedKeyConfiguration;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Policy {
   private Collection<String> subjectCNRegexes;
   private Collection<String> subjectORegexes;

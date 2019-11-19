@@ -10,6 +10,7 @@ import feign.QueryMap;
 import feign.RequestLine;
 import feign.Response;
 import lombok.Data;
+import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.utils.FeignUtils;
@@ -64,7 +65,11 @@ public interface Tpp {
   Response ping(@Param("apiKey") String apiKey);
 
   static Tpp connect(String baseUrl) {
-    return FeignUtils.client(Tpp.class, baseUrl);
+    return FeignUtils.client(Tpp.class, Config.builder().baseUrl(baseUrl).build());
+  }
+
+  static Tpp connect(Config config) {
+    return FeignUtils.client(Tpp.class, config);
   }
 
   @Data

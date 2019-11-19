@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -44,6 +45,7 @@ public class TestUtils {
     PEMParser pemParser = new PEMParser(new StringReader(loadFileContents("certificates/" + name)));
     JcaX509CertificateConverter certificateConverter = new JcaX509CertificateConverter();
     Object object = pemParser.readObject();
+    pemParser.close();
     return certificateConverter.getCertificate((X509CertificateHolder) object);
   }
 
@@ -52,6 +54,7 @@ public class TestUtils {
     PEMParser pemParser = new PEMParser(new StringReader(loadFileContents("certificates/" + name)));
     JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter();
     Object object = pemParser.readObject();
+    pemParser.close();
     PrivateKey privateKey = keyConverter.getPrivateKey((PrivateKeyInfo) object);
     RSAPrivateCrtKey privk = (RSAPrivateCrtKey) privateKey;
     RSAPublicKeySpec publicKeySpec =
@@ -65,6 +68,7 @@ public class TestUtils {
     PEMParser pemParser = new PEMParser(new StringReader(loadFileContents("certificates/" + name)));
     JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter();
     PEMKeyPair keyPair = (PEMKeyPair) pemParser.readObject();
+    pemParser.close();
     PrivateKey privateKey = keyConverter.getPrivateKey(keyPair.getPrivateKeyInfo());
     PublicKey publicKey = keyConverter.getPublicKey(keyPair.getPublicKeyInfo());
     return new KeyPair(publicKey, privateKey);
@@ -101,5 +105,10 @@ public class TestUtils {
       }
     }
     return ips;
+  }
+
+  public static String randomCN() {
+    return String.format("t%d-%s.venafi.example.com", System.currentTimeMillis(),
+        RandomStringUtils.randomAlphabetic(4));
   }
 }

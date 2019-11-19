@@ -72,10 +72,10 @@ ZoneConfiguration zoneConfiguration = client.readZoneConfiguration("Certificates
 certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);   
 
 // Submit the certificate request
-client.requestCertificate(certificateRequest, "Certificates\\VCert");
+client.requestCertificate(certificateRequest, zoneConfiguration);
 
 // Retrieve PEM collection from Venafi
-PEMCollection pemCollection = client.retrieveCertificate(certificateRequest);
+pemCollection = client.retrieveCertificate(certificateRequest);
 
 System.out.println(pemCollection.pemPrivateKey());
 System.out.println(pemCollection.pemCertificate());
@@ -111,7 +111,7 @@ certificateRequest = new CertificateRequest().csr(csr.getBytes())
         .emailAddresses(Arrays.asList("larry@venafi.example", "moe@venafi.example", "curly@venafi.example"));
 
 // Submit the certificate request
-client.requestCertificate(certificateRequest, "Certificates\\VCert");
+client.requestCertificate(certificateRequest, zoneConfiguration);
 
 // Retrieve PEM collection from Venafi
 pemCollection = client.retrieveCertificate(certificateRequest);
@@ -143,13 +143,13 @@ To run the acceptance tests the following environment variables must be set:
 
 | NAME | NOTES |
 |------|-------|
-| VENAFI_USER | Only for TPP connector tests |
-| VENAFI_PASSWORD | Only for TPP connector tests |
-| VENAFI_TPP_URL | Only for TPP connector tests |
-| VENAFI_API_KEY | Taken from account after logged into TPP |
-| VENAFI_CERT_COMMON_NAME | Used for cert creation, should match configured domains |
-| VENAFI_CLOUD_URL | Only for cloud connector tests |
-| VENAFI_ZONE | Policy folder for TPP |
+| TPPURL | Only for TPP connector tests |
+| TPPUSER | Only for TPP connector tests |
+| TPPPASSWORD | Only for TPP connector tests |
+| TPPZONE | Policy folder for TPP |
+| CLOUDURL | Only for Venafi Cloud connector tests |
+| TOKEN | Taken from account after logged into Venafi Cloud |
+| CLOUDZONE | Zone ID or ProjectName\ZoneName for Venafi Cloud |
 
 Acceptance test  are executed with:
 ```

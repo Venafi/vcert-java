@@ -75,7 +75,8 @@ class CloudConnectorIT {
   @Test // todo: unit test for mapping code to check whatever is null here is mapped correctly.
   void readZoneConfiguration() throws VCertException {
 
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration("Default");
+    ZoneConfiguration zoneConfiguration =
+        classUnderTest.readZoneConfiguration("My Project\\My Zone");
 
     assertThat(zoneConfiguration).isNotNull();
     assertThat(zoneConfiguration.organization()).isNull();
@@ -101,11 +102,11 @@ class CloudConnectorIT {
         .containsExactly(2048);
     assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keyCurves()).isNull();
     assertThat(zoneConfiguration.policy().dnsSanRegExs()).containsExactly("^.*$");
-    assertThat(zoneConfiguration.policy().ipSanRegExs()).isNull();
-    assertThat(zoneConfiguration.policy().emailSanRegExs()).isNull();
+    assertThat(zoneConfiguration.policy().ipSanRegExs()).isEmpty();
+    assertThat(zoneConfiguration.policy().emailSanRegExs()).isEmpty();
     assertThat(zoneConfiguration.policy().uriSanRegExs()).isNull();
     assertThat(zoneConfiguration.policy().upnSanRegExs()).isNull();
-    assertThat(zoneConfiguration.policy().allowWildcards()).isTrue();
+    assertThat(zoneConfiguration.policy().allowWildcards()).isFalse();
     assertThat(zoneConfiguration.policy().allowKeyReuse()).isFalse();
     assertThat(zoneConfiguration.hashAlgorithm())
         .isEqualTo(SignatureAlgorithm.UnknownSignatureAlgorithm);
@@ -124,7 +125,9 @@ class CloudConnectorIT {
                 .getBytes());
     // todo: improve test: add request matcher (and add data to request to ensure it gets passed
     // through all right)
-    String requestId = classUnderTest.requestCertificate(certificateRequest, "Default");
+    ZoneConfiguration zoneConfiguration = new ZoneConfiguration();
+    zoneConfiguration.zoneId("Default");
+    String requestId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
     assertThat(requestId).isEqualTo("04c051d0-f118-11e5-8b33-d96cf8021ce5");
   }
 }
