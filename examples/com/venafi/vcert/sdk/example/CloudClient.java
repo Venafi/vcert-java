@@ -23,7 +23,7 @@ public class CloudClient {
     String url = System.getenv("CLOUDURL");
     String zone = System.getenv("CLOUDZONE");
     String productNameAndVersion = System.getenv("PRODUCT");
-    String apiKey = System.getenv("TOKEN");
+    String apiKey = System.getenv("APIKEY");
 
     url = "https://api.dev01.qa.venafi.io";
     

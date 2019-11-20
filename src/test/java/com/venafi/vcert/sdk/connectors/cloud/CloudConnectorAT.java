@@ -42,7 +42,7 @@ class CloudConnectorAT {
     Security.addProvider(new BouncyCastleProvider());
     Cloud cloud = Cloud.connect(System.getenv("CLOUDURL"));
     classUnderTest = new CloudConnector(cloud);
-    Authentication authentication = new Authentication(null, null, System.getenv("TOKEN"));
+    Authentication authentication = new Authentication(null, null, System.getenv("APIKEY"));
     classUnderTest.authenticate(authentication);
   }
 

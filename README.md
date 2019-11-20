@@ -148,7 +148,7 @@ To run the acceptance tests the following environment variables must be set:
 | TPPPASSWORD | Only for TPP connector tests |
 | TPPZONE | Policy folder for TPP |
 | CLOUDURL | Only for Venafi Cloud connector tests |
-| TOKEN | Taken from account after logged into Venafi Cloud |
+| APIKEY | Taken from account after logged into Venafi Cloud |
 | CLOUDZONE | Zone ID or ProjectName\ZoneName for Venafi Cloud |
 
 Acceptance test  are executed with:
