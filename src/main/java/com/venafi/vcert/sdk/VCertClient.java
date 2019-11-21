@@ -146,6 +146,17 @@ public class VCertClient implements Connector {
     }
   }
 
+  @Override
+  public String requestCertificate(CertificateRequest request, String zone) throws VCertException {
+    try {
+      return connector.requestCertificate(request, zone);
+    } catch (FeignException e) {
+      throw VCertException.fromFeignException(e);
+    } catch (Exception e) {
+      throw new VCertException("Unexpected exception", e);
+    }
+  }
+
   /**
    * {@inheritDoc}
    */

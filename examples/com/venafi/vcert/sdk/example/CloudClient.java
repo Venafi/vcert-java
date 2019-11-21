@@ -1,7 +1,5 @@
 package com.venafi.vcert.sdk.example;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -25,24 +23,20 @@ public class CloudClient {
     String productNameAndVersion = System.getenv("PRODUCT");
     String apiKey = System.getenv("APIKEY");
 
-    url = "https://api.dev01.qa.venafi.io";
-    
     if (zone == null) {
-      zone = "My Project\\My Zone";
-//      zone = "38992cc0-0177-11ea-a3f0-2b5db8116980";
+      zone = "My Project\\My Zone"; // or by ID "38992cc0-0177-11ea-a3f0-2b5db8116980";
     }
     if (productNameAndVersion == null)
       productNameAndVersion = "My Application 1.0.0.0";
     if (apiKey == null)
       apiKey = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
-    apiKey = "b951a227-3c84-41ff-b6db-93b6f4476192";
-    
+
     Config config = Config.builder().connectorType(ConnectorType.CLOUD).baseUrl(url)
         .productNameAndVersion(productNameAndVersion)
         // To use proxy uncomment the lines below
-         .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888)))
-         .proxyUser("myUser")
-         .proxyPassword("myPasscode")
+        // .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888)))
+        // .proxyUser("myUser")
+        // .proxyPassword("myPasscode")
         .build();
 
     Authentication auth = Authentication.builder().apiKey(apiKey).build();

@@ -53,7 +53,7 @@ public interface Connector {
   void ping() throws VCertException;
 
   /**
-   * Authenticate the user with Venafi using either API key for venafi Cloud or user and password
+   * Authenticate the user with Venafi using either API key for Venafi Cloud or user and password
    * for TPP
    * 
    * @param auth
@@ -83,7 +83,7 @@ public interface Connector {
       throws VCertException;
 
   /**
-   * Submits the CSR to venafi for processing
+   * Submits the CSR to Venafi for processing
    * 
    * @param request
    * @param zoneConfiguration
@@ -91,6 +91,17 @@ public interface Connector {
    * @throws VCertException
    */
   String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration)
+      throws VCertException;
+
+  /**
+   * Submits the CSR to Venafi for processing
+   * 
+   * @param request
+   * @param zone
+   * @return request id to track the certificate status.
+   * @throws VCertException
+   */
+  String requestCertificate(CertificateRequest request, String zone)
       throws VCertException;
 
   /**
@@ -120,7 +131,7 @@ public interface Connector {
   String renewCertificate(RenewalRequest request) throws VCertException;
 
   /**
-   * Import an external certificate into venafi.
+   * Import an external certificate into Venafi.
    * 
    * @param request
    * @return
@@ -129,7 +140,7 @@ public interface Connector {
   ImportResponse importCertificate(ImportRequest request) throws VCertException;
 
   /**
-   * Reads the policy configuration for a specific zone in venafi
+   * Reads the policy configuration for a specific zone in Venafi
    * 
    * @param zone
    * @return

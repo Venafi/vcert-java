@@ -1,7 +1,6 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.IOException;
 import java.io.StringReader;

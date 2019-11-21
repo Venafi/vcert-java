@@ -202,6 +202,11 @@ public class CloudConnector implements Connector {
   }
 
   @Override
+  public String requestCertificate(CertificateRequest request, String zone) throws VCertException {
+    return requestCertificate(request, new ZoneConfiguration().zoneId(zone));
+  }
+
+  @Override
   public String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration)
       throws VCertException {
 
