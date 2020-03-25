@@ -53,7 +53,7 @@ public class CloudConnector implements Connector {
   private Authentication auth;
   private String zone;
   @Getter
-  private String vendorNameAndVersion;
+  private String vendorAndProductName;
 
   public CloudConnector(Cloud cloud) {
     this.cloud = cloud;
@@ -75,13 +75,13 @@ public class CloudConnector implements Connector {
   }
 
   @Override
-  public void setVendorNameAndVersion(String vendorNameAndVersion) {
-    this.vendorNameAndVersion = vendorNameAndVersion;
+  public void setVendorAndProductName(String vendorAndProductName) {
+    this.vendorAndProductName = vendorAndProductName;
   }
 
   @Override
-  public String getVendorNameAndVersion() {
-    return vendorNameAndVersion;
+  public String getVendorAndProductName() {
+    return vendorAndProductName;
   }
 
   @Override

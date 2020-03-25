@@ -34,16 +34,16 @@ public interface Connector {
   void setZone(String zone);
 
   /**
-   * Set the vendor name and version
+   * Set the vendor and product name
    * 
-   * @param vendorNameAndVersion
+   * @param vendorAndProductName
    */
-  void setVendorNameAndVersion(String vendorNameAndVersion);
+  void setVendorAndProductName(String vendorAndProductName);
 
   /**
-   * @return the vendor name and version
+   * @return the vendor and product name
    */
-  String getVendorNameAndVersion();
+  String getVendorAndProductName();
 
   /**
    * Attempt to connect the Venafi API and returns an error if it cannot

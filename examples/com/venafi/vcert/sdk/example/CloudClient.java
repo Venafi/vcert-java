@@ -20,19 +20,18 @@ public class CloudClient {
       NoSuchAlgorithmException, KeyManagementException {
     String url = System.getenv("CLOUDURL");
     String zone = System.getenv("CLOUDZONE");
-    String productNameAndVersion = System.getenv("PRODUCT");
+    String appInfo = System.getenv("PRODUCT");
     String apiKey = System.getenv("APIKEY");
 
     if (zone == null) {
       zone = "My Project\\My Zone"; // or by ID "38992cc0-0177-11ea-a3f0-2b5db8116980";
     }
-    if (productNameAndVersion == null)
-      productNameAndVersion = "My Application 1.0.0.0";
+    if (appInfo == null)
+      appInfo = "My Application 1.0.0.0";
     if (apiKey == null)
       apiKey = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 
-    Config config = Config.builder().connectorType(ConnectorType.CLOUD).baseUrl(url)
-        .productNameAndVersion(productNameAndVersion)
+    Config config = Config.builder().connectorType(ConnectorType.CLOUD).baseUrl(url).appInfo(appInfo)
         // To use proxy uncomment the lines below
         // .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888)))
         // .proxyUser("myUser")

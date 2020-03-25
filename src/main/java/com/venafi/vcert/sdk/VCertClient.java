@@ -23,6 +23,7 @@ import com.venafi.vcert.sdk.endpoint.ConnectorType;
 public class VCertClient implements Connector {
 
   private Connector connector;
+  private static final String defaultVendorAndProductName = "Venafi VCert-Java";
 
   public VCertClient(Config config) throws VCertException {
     Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
@@ -39,9 +40,9 @@ public class VCertClient implements Connector {
         break;
       default:
         throw new VCertException("ConnectorType is not defined");
-
     }
-    connector.setVendorNameAndVersion(config.productNameAndVersion());
+
+    connector.setVendorAndProductName(isBlank(config.appInfo()) ? defaultVendorAndProductName : config.appInfo());
   }
 
   @VisibleForTesting
@@ -77,16 +78,16 @@ public class VCertClient implements Connector {
    * {@inheritDoc}
    */
   @Override
-  public void setVendorNameAndVersion(String vendorNameAndVersion) {
-    connector.setVendorNameAndVersion(vendorNameAndVersion);
+  public void setVendorAndProductName(String vendorAndProductName) {
+    connector.setVendorAndProductName(vendorAndProductName);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public String getVendorNameAndVersion() {
-    return connector.getVendorNameAndVersion();
+  public String getVendorAndProductName() {
+    return connector.getVendorAndProductName();
   }
 
   /**

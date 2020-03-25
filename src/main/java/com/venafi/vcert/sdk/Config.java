@@ -19,10 +19,10 @@ import com.venafi.vcert.sdk.endpoint.ConnectorType;
 public class Config {
   public static final String DEFAULT_SECTION = "?";
   public static final List<String> VALID_TPP_KEYS = asList("tpp_url", "tpp_user", "tpp_password",
-      "tpp_zone", "trust_bundle", "product_name_and_version");
+      "tpp_zone", "trust_bundle", "app_info");
 
   public static final List<String> VALID_CLOUD_KEYS = asList("cloud_url", "cloud_apikey",
-      "cloud_zone", "trust_bundle", "cloud_project", "vendor_name_and_version");
+      "cloud_zone", "trust_bundle", "cloud_project", "app_info");
 
   private ConnectorType connectorType;
   private String baseUrl;
@@ -33,7 +33,7 @@ public class Config {
   private boolean logVerbose;
   private String configFile;
   private String configSection;
-  private String productNameAndVersion;
+  private String appInfo;
   private Proxy proxy;
   private String proxyUser;
   private String proxyPassword;
@@ -73,8 +73,8 @@ public class Config {
         }
       }
 
-      if (defaultSection.containsKey("product_name_and_version")) {
-        builder.productNameAndVersion(defaultSection.get("product_name_and_version"));
+      if (defaultSection.containsKey("app_info")) {
+        builder.appInfo(defaultSection.get("app_info"));
       }
 
       builder.credentials(authBuilder.build());

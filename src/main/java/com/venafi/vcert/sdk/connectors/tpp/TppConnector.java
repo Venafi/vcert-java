@@ -59,7 +59,7 @@ public class TppConnector implements Connector {
   @Getter
   private String zone;
   @Getter
-  private String vendorNameAndVersion;
+  private String vendorAndProductName;
   private static final String tppAttributeManagementType = "Management Type";
   private static final String tppAttributeManualCSR = "Manual Csr";
 
@@ -97,13 +97,13 @@ public class TppConnector implements Connector {
   }
 
   @Override
-  public void setVendorNameAndVersion(String vendorNameAndVersion) {
-    this.vendorNameAndVersion = vendorNameAndVersion;
+  public void setVendorAndProductName(String vendorAndProductName) {
+    this.vendorAndProductName = vendorAndProductName;
   }
 
   @Override
-  public String getVendorNameAndVersion() {
-    return vendorNameAndVersion;
+  public String getVendorAndProductName() {
+    return vendorAndProductName;
   }
 
   @Override
@@ -208,22 +208,22 @@ public class TppConnector implements Connector {
         new ArrayList<NameValuePair<String, String>>();
 
     // Workaround to send Origin to TPP versions that does not support it in the payload
-    if (!isBlank(vendorNameAndVersion)) {
-      caSpecificAttributes.add(new NameValuePair<String, String>("Origin", vendorNameAndVersion));
+    if (!isBlank(vendorAndProductName)) {
+      caSpecificAttributes.add(new NameValuePair<String, String>("Origin", vendorAndProductName));
     }
 
     switch (request.csrOrigin()) {
       case LocalGeneratedCSR:
         payload = new CertificateRequestsPayload().policyDN(getPolicyDN(zone))
             .pkcs10(new String(request.csr())).objectName(request.friendlyName())
-            .disableAutomaticRenewal(true).origin(vendorNameAndVersion)
+            .disableAutomaticRenewal(true).origin(vendorAndProductName)
             .caSpecificAttributes(caSpecificAttributes);
         break;
       case UserProvidedCSR:
         payload = new CertificateRequestsPayload().policyDN(getPolicyDN(zone))
             .pkcs10(new String(request.csr())).objectName(request.friendlyName())
             .subjectAltNames(wrapAltNames(request)).disableAutomaticRenewal(true)
-            .origin(vendorNameAndVersion).caSpecificAttributes(caSpecificAttributes);
+            .origin(vendorAndProductName).caSpecificAttributes(caSpecificAttributes);
         break;
       case ServiceGeneratedCSR:
         payload = new CertificateRequestsPayload().policyDN(getPolicyDN(zone))
@@ -237,7 +237,7 @@ public class TppConnector implements Connector {
                                                                                         // is not
                                                                                         // only CN
             .subjectAltNames(wrapAltNames(request)).disableAutomaticRenewal(true)
-            .origin(vendorNameAndVersion).caSpecificAttributes(caSpecificAttributes);
+            .origin(vendorAndProductName).caSpecificAttributes(caSpecificAttributes);
         break;
       default:
         throw new VCertException(MessageFormat.format("Unexpected option in PrivateKeyOrigin: {0}",

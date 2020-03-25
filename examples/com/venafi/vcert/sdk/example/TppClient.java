@@ -21,7 +21,7 @@ public class TppClient {
 
     String url = System.getenv("TPPURL");
     String zone = System.getenv("TPPZONE");
-    String productNameAndVersion = System.getenv("PRODUCT");
+    String appInfo = System.getenv("PRODUCT");
     String tpp_user = System.getenv("TPPUSER");
     String tpp_passwd = System.getenv("TPPPASSWORD");
 
@@ -33,12 +33,11 @@ public class TppClient {
       url = "https://tpp.venafi.example/vedsdk";
     if (zone == null)
       zone = "Certificates\\vcert\\";
-    if (productNameAndVersion == null)
-      productNameAndVersion = "My Application 1.0.0.0";
+    if (appInfo == null)
+      appInfo = "My Application 1.0.0.0";
 
     // Configuration
-    Config config = Config.builder().connectorType(ConnectorType.TPP).baseUrl(url)
-        .productNameAndVersion(productNameAndVersion)
+    Config config = Config.builder().connectorType(ConnectorType.TPP).baseUrl(url).appInfo(appInfo)
         // To use proxy uncomment the lines below
         // .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888)))
         // .proxyUser("myUser")
