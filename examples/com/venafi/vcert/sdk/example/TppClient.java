@@ -1,3 +1,7 @@
+package com.venafi.vcert.sdk.example;
+
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,31 +16,40 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 
 public class TppClient {
-  public static void main(String... args) throws VCertException, CertificateEncodingException {
-    String tpp_user = System.getenv("TPP_USER");
-    String tpp_passwd = System.getenv("TPP_PASSWORD");
-    String url = System.getenv("VENAFI_URL");
-    String zone = System.getenv("VENAFI_ZONE");
+  public static void main(String[] args) throws VCertException, CertificateEncodingException,
+      NoSuchAlgorithmException, KeyManagementException {
+
+    String url = System.getenv("TPPURL");
+    String zone = System.getenv("TPPZONE");
+    String appInfo = System.getenv("PRODUCT");
+    String tpp_user = System.getenv("TPPUSER");
+    String tpp_passwd = System.getenv("TPPPASSWORD");
 
     if (tpp_user == null)
       tpp_user = "local:admin";
     if (tpp_passwd == null)
-      tpp_passwd = "Passw0rd";
+      tpp_passwd = "password";
     if (url == null)
       url = "https://tpp.venafi.example/vedsdk";
     if (zone == null)
-      zone = "Default";
+      zone = "Certificates\\vcert\\";
+    if (appInfo == null)
+      appInfo = "My Application 1.0.0.0";
 
-    final Config config = Config.builder().connectorType(ConnectorType.TPP).baseUrl(url).build();
+    // Configuration
+    Config config = Config.builder().connectorType(ConnectorType.TPP).baseUrl(url).appInfo(appInfo)
+        // To use proxy uncomment the lines below
+        // .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888)))
+        // .proxyUser("myUser")
+        // .proxyPassword("myPasscode")
+        .build();
 
-    final VCertClient client = new VCertClient(config);
+    Authentication auth = Authentication.builder().user(tpp_user).password(tpp_passwd).build();
 
-    final Authentication auth =
-        Authentication.builder().user(tpp_user).password(tpp_passwd).build();
-
+    VCertClient client = new VCertClient(config);
     client.authenticate(auth);
 
-    final ZoneConfiguration zoneConfiguration = client.readZoneConfiguration(zone);
+    ZoneConfiguration zoneConfiguration = client.readZoneConfiguration(zone);
 
     // Generate a certificate
     CertificateRequest certificateRequest = new CertificateRequest()
@@ -46,17 +59,15 @@ public class TppClient {
             .country(Collections.singletonList("US"))
             .locality(Collections.singletonList("Salt Lake City"))
             .province(Collections.singletonList("Utah")))
-
         .keyType(KeyType.RSA).keyLength(2048);
 
     certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);
 
     // Submit the certificate request
-    String newCertId = client.requestCertificate(certificateRequest, zone);
+    client.requestCertificate(certificateRequest, zoneConfiguration);
 
     // Retrieve PEM collection from Venafi
-    final CertificateRequest pickupRequest = new CertificateRequest().pickupId(newCertId);
-    PEMCollection pemCollection = client.retrieveCertificate(pickupRequest);
+    PEMCollection pemCollection = client.retrieveCertificate(certificateRequest);
     System.out.println(pemCollection.certificate());
   }
 }

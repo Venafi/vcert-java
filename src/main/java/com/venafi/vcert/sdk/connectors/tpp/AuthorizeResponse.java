@@ -5,7 +5,6 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 
 @Data
-@SuppressWarnings("WeakerAccess")
 public class AuthorizeResponse {
 
   @SerializedName("APIKey")

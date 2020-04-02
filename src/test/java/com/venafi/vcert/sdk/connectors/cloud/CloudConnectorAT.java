@@ -1,8 +1,6 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
-import static com.venafi.vcert.sdk.TestUtils.getTestIps;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.IOException;
 import java.io.StringReader;
@@ -23,6 +21,7 @@ import org.bouncycastle.util.Strings;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import feign.FeignException;
+import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
@@ -40,32 +39,26 @@ class CloudConnectorAT {
   @BeforeEach
   public void authenticate() throws VCertException {
     Security.addProvider(new BouncyCastleProvider());
-    Cloud cloud = Cloud.connect(System.getenv("VENAFI_CLOUD_URL"));
+    Cloud cloud = Cloud.connect(System.getenv("CLOUDURL"));
     classUnderTest = new CloudConnector(cloud);
-    Authentication authentication = new Authentication(null, null, System.getenv("VENAFI_API_KEY"));
+    Authentication authentication = new Authentication(null, null, System.getenv("APIKEY"));
     classUnderTest.authenticate(authentication);
   }
 
   @Test
   void readZoneConfiguration() throws VCertException {
     try {
-      ZoneConfiguration zoneConfiguration =
-          classUnderTest.readZoneConfiguration(System.getenv("VENAFI_ZONE"));
+      classUnderTest.readZoneConfiguration(System.getenv("CLOUDZONE"));
     } catch (FeignException fe) {
       throw VCertException.fromFeignException(fe);
     }
   }
 
   @Test
-  void ping() throws VCertException {
-    assertThatCode(() -> classUnderTest.ping()).doesNotThrowAnyException();
-  }
-
-  @Test
   void generateRequest() throws VCertException, IOException {
-    String zone = System.getenv("VENAFI_ZONE");
-    String commonName = System.getenv("VENAFI_CERT_COMMON_NAME");
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zone);
+    String zoneName = System.getenv("CLOUDZONE");
+    String commonName = TestUtils.randomCN();
+    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
     CertificateRequest certificateRequest = new CertificateRequest()
         .subject(new CertificateRequest.PKIXName().commonName(commonName)
             .organization(Collections.singletonList("Venafi, Inc."))
@@ -73,7 +66,7 @@ class CloudConnectorAT {
             .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
             .province(Collections.singletonList("Utah")))
         .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
-        .ipAddresses(getTestIps()).keyType(KeyType.RSA);
+        .keyType(KeyType.RSA);
 
     certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
     assertThat(certificateRequest.csr()).isNotEmpty();
@@ -93,38 +86,36 @@ class CloudConnectorAT {
 
   @Test
   void requestCertificate() throws VCertException, SocketException, UnknownHostException {
-    String zone = System.getenv("VENAFI_ZONE");
-    String commonName = System.getenv("VENAFI_CERT_COMMON_NAME");
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zone);
+    String zoneName = System.getenv("CLOUDZONE");
+    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
     CertificateRequest certificateRequest = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(commonName)
+        .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
             .organization(Collections.singletonList("Venafi, Inc."))
             .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
             .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
             .province(Collections.singletonList("Utah")))
         .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
-        .ipAddresses(getTestIps()).keyType(KeyType.RSA);
+        .keyType(KeyType.RSA);
     certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zone);
+    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
     assertThat(certificateId).isNotNull();
   }
 
   @Test
   void retrieveCertificate() throws VCertException, SocketException, UnknownHostException {
-    String zone = System.getenv("VENAFI_ZONE");
-    String commonName = System.getenv("VENAFI_CERT_COMMON_NAME");
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zone);
+    String zoneName = System.getenv("CLOUDZONE");
+    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
     CertificateRequest certificateRequest = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(commonName)
+        .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
             .organization(Collections.singletonList("Venafi, Inc."))
             .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
             .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
             .province(Collections.singletonList("Utah")))
         .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
-        .ipAddresses(getTestIps()).keyType(KeyType.RSA);
+        .keyType(KeyType.RSA);
 
     certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zone);
+    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
     assertThat(certificateId).isNotNull();
 
     certificateRequest.pickupId(certificateId);
@@ -132,7 +123,7 @@ class CloudConnectorAT {
 
     assertThat(pemCollection.certificate()).isNotNull();
     assertThat(pemCollection.chain()).hasSize(2);
-    assertThat(pemCollection.privateKey()).isNull();
+    assertThat(pemCollection.privateKey()).isNotNull();
   }
 
   @Test
@@ -145,9 +136,9 @@ class CloudConnectorAT {
   @Test
   void renewCertificate() throws VCertException, UnknownHostException, SocketException,
       CertificateException, NoSuchAlgorithmException {
-    String zone = System.getenv("VENAFI_ZONE");
-    String commonName = System.getenv("VENAFI_CERT_COMMON_NAME");
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zone);
+    String zoneName = System.getenv("CLOUDZONE");
+    String commonName = TestUtils.randomCN();
+    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
     CertificateRequest certificateRequest = new CertificateRequest()
         .subject(new CertificateRequest.PKIXName().commonName(commonName)
             .organization(Collections.singletonList("Venafi, Inc."))
@@ -155,10 +146,10 @@ class CloudConnectorAT {
             .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
             .province(Collections.singletonList("Utah")))
         .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
-        .ipAddresses(getTestIps()).keyType(KeyType.RSA);
+        .keyType(KeyType.RSA);
 
     certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zone);
+    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
     assertThat(certificateId).isNotNull();
 
     certificateRequest.pickupId(certificateId);
@@ -175,7 +166,7 @@ class CloudConnectorAT {
             .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
             .province(Collections.singletonList("Utah")))
         .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
-        .ipAddresses(getTestIps()).keyType(KeyType.RSA);
+        .keyType(KeyType.RSA);
     classUnderTest.generateRequest(zoneConfiguration, certificateRequestToRenew);
 
     String renewRequestId = classUnderTest.renewCertificate(

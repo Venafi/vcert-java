@@ -1,4 +1,4 @@
-package com.venafi.vcert.sdk.connectors.tpp;
+package com.venafi.vcert.sdk.connectors.cloud;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import java.util.Collection;
@@ -21,7 +21,7 @@ import com.venafi.vcert.sdk.utils.Is;
 
 @Data
 // TODO move up one package
-public class ZoneConfiguration {
+public class IssuingTemplateConfiguration {
 
   private String organization;
   private List<String> organizationalUnit;
@@ -35,7 +35,6 @@ public class ZoneConfiguration {
   private Map<String, String> customAttributeValues = new HashMap<>(); // Go SDK factory sets an
                                                                        // empty map
 
-  private String zoneId;
 
   /**
    * UpdateCertificateRequest updates a certificate request based on the zone configuration

@@ -25,7 +25,12 @@ import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.CertificateStatus;
 import com.venafi.vcert.sdk.certificate.ManagedCertificate;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
+import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
+import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate.AllowedKeyType;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Company;
+import com.venafi.vcert.sdk.connectors.cloud.domain.Project;
+import com.venafi.vcert.sdk.connectors.cloud.domain.ProjectZone;
+import com.venafi.vcert.sdk.connectors.cloud.domain.Projects;
 import com.venafi.vcert.sdk.connectors.cloud.domain.User;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
@@ -63,15 +68,29 @@ class CloudConnectorTest {
     Security.addProvider(new BouncyCastleProvider());
 
     String apiKey = "12345678-1234-1234-1234-123456789012";
-    Zone zone = new Zone().defaultCertificateIdentityPolicy("defaultCertificateIdentityPolicy")
-        .defaultCertificateUsePolicy("defaultCertificateUsePolicy");
-    when(cloud.zoneByTag(eq("Default"), eq(apiKey))).thenReturn(zone);
-    when(cloud.policyById(eq("defaultCertificateIdentityPolicy"), eq(apiKey)))
-        .thenReturn(new CertificatePolicy().certificatePolicyType("CERTIFICATE_IDENTITY"));
-    // TODO: To add checks for policies see
-    // com.venafi.vcert.sdk.connectors.cloud.CloudConnector.getPoliciesById and adapt test
-    when(cloud.policyById(eq("defaultCertificateUsePolicy"), eq(apiKey)))
-        .thenReturn(new CertificatePolicy().certificatePolicyType("CERTIFICATE_USE"));
+
+    CertificateIssuingTemplate cit = new CertificateIssuingTemplate();
+    cit.id("15c7e3f0-ff0a-11e9-a3f0-2b5db8116980");
+    cit.keyTypes(Arrays.asList(new AllowedKeyType("RSA", Arrays.asList(2048))));
+    cit.keyReuse(true);
+    cit.subjectCNRegexes(Arrays.asList("^random name$", "^.*.example.com$", "^.*.example.org$",
+        "^.*.example.net$", "^.*.invalid$", "^.*.local$", "^.*.localhost$", "^.*.test$"));
+    cit.subjectORegexes(Arrays.asList("^.*$"));
+    cit.subjectOURegexes(Arrays.asList("^.*$"));
+    cit.subjectSTRegexes(Arrays.asList());
+    cit.subjectLRegexes(Arrays.asList());
+    cit.subjectCValues(Arrays.asList());
+    cit.sanDnsNameRegexes(Arrays.asList());
+    cit.sanIpAddressRegexes(Arrays.asList());
+    cit.sanRfc822NameRegexes(Arrays.asList());
+
+    ProjectZone projectZone = new ProjectZone("12215be0-ff0a-11e9-a3f0-2b5db8116980",
+        "1a972260-fee7-11e9-a554-e72621a8452f", "My Zone", null, cit);
+
+    when(cloud.projects(eq(apiKey))).thenReturn(new Projects(Arrays.asList(
+        new Project("11f47f80-ff0a-11e9-a3f0-2b5db8116980", "1a972260-fee7-11e9-a554-e72621a8452f",
+            "My Project", "", Arrays.asList(), Arrays.asList(projectZone)))));
+
     when(cloud.certificateRequest(eq(apiKey), any(CloudConnector.CertificateRequestsPayload.class))) // todo:
                                                                                                      // check
                                                                                                      // request
@@ -87,10 +106,10 @@ class CloudConnectorTest {
     final Authentication auth = new Authentication(null, null, apiKey);
     classUnderTest.authenticate(auth);
 
-    ZoneConfiguration zoneConfig = classUnderTest.readZoneConfiguration("Default");
+    ZoneConfiguration zoneConfig = classUnderTest.readZoneConfiguration("My Project\\My Zone");
     classUnderTest.generateRequest(zoneConfig, request);
 
-    String actual = classUnderTest.requestCertificate(request, "Default");
+    String actual = classUnderTest.requestCertificate(request, zoneConfig);
 
     assertThat(actual).isEqualTo("jackpot");
   }

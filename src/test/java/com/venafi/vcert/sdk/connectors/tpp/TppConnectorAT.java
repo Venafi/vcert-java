@@ -23,6 +23,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import feign.FeignException;
+import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
@@ -35,22 +36,20 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 
 class TppConnectorAT {
 
-  private TppConnector classUnderTest =
-      new TppConnector(Tpp.connect(System.getenv("VENAFI_TPP_URL")));
+  private TppConnector classUnderTest = new TppConnector(Tpp.connect(System.getenv("TPPURL")));
 
   @BeforeEach
   void authenticate() throws VCertException {
     Security.addProvider(new BouncyCastleProvider());
     Authentication authentication =
-        new Authentication(System.getenv("VENAFI_USER"), System.getenv("VENAFI_PASSWORD"), null);
+        new Authentication(System.getenv("TPPUSER"), System.getenv("TPPPASSWORD"), null);
     classUnderTest.authenticate(authentication);
   }
 
   @Test
   void readZoneConfiguration() throws VCertException {
     try {
-      ZoneConfiguration zoneConfig =
-          classUnderTest.readZoneConfiguration(System.getenv("VENAFI_ZONE"));
+      classUnderTest.readZoneConfiguration(System.getenv("TPPZONE"));
     } catch (FeignException fe) {
       throw VCertException.fromFeignException(fe);
     }
@@ -63,8 +62,8 @@ class TppConnectorAT {
 
   @Test
   void generateRequest() throws VCertException, IOException {
-    String zone = System.getenv("VENAFI_ZONE");
-    String commonName = System.getenv("VENAFI_CERT_COMMON_NAME");
+    String zone = System.getenv("TPPZONE");
+    String commonName = TestUtils.randomCN();
     ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zone);
     CertificateRequest certificateRequest = new CertificateRequest()
         .subject(new CertificateRequest.PKIXName().commonName(commonName)
@@ -90,11 +89,10 @@ class TppConnectorAT {
 
   @Test
   void requestCertificate() throws VCertException, SocketException, UnknownHostException {
-    String zone = System.getenv("VENAFI_ZONE");
-    String commonName = System.getenv("VENAFI_CERT_COMMON_NAME");
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zone);
+    String zoneName = System.getenv("TPPZONE");
+    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
     CertificateRequest certificateRequest = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(commonName)
+        .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
             .organization(Collections.singletonList("Venafi"))
             .organizationalUnit(Collections.singletonList("Demo"))
             .country(Collections.singletonList("GB"))
@@ -104,17 +102,16 @@ class TppConnectorAT {
         .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
 
     certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zone);
+    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
     assertThat(certificateId).isNotNull();
   }
 
   @Test
   void retrieveCertificate() throws VCertException, SocketException, UnknownHostException {
-    String zone = System.getenv("VENAFI_ZONE");
-    String commonName = System.getenv("VENAFI_CERT_COMMON_NAME");
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zone);
+    String zoneName = System.getenv("TPPZONE");
+    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
     CertificateRequest certificateRequest = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(commonName)
+        .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
             .organization(Collections.singletonList("Venafi"))
             .organizationalUnit(Collections.singletonList("Demo"))
             .country(Collections.singletonList("GB"))
@@ -124,22 +121,21 @@ class TppConnectorAT {
         .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
 
     certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zone);
+    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
     assertThat(certificateId).isNotNull();
 
     PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest);
 
     assertThat(pemCollection.certificate()).isNotNull();
-    assertThat(pemCollection.privateKey()).isNull();
+    assertThat(pemCollection.privateKey()).isNotNull();
   }
 
   @Test
   void revokeCertificate() throws VCertException, SocketException, UnknownHostException {
-    String zone = System.getenv("VENAFI_ZONE");
-    String commonName = System.getenv("VENAFI_CERT_COMMON_NAME");
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zone);
+    String zoneName = System.getenv("TPPZONE");
+    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
     CertificateRequest certificateRequest = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(commonName)
+        .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
             .organization(Collections.singletonList("Venafi"))
             .organizationalUnit(Collections.singletonList("Demo"))
             .country(Collections.singletonList("GB"))
@@ -149,8 +145,11 @@ class TppConnectorAT {
         .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
 
     certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zone);
+    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
     assertThat(certificateId).isNotNull();
+
+    // just wait for the certificate issuance
+    classUnderTest.retrieveCertificate(certificateRequest);
 
     RevocationRequest revocationRequest = new RevocationRequest();
     revocationRequest.reason("key-compromise");
@@ -162,9 +161,9 @@ class TppConnectorAT {
   @Test
   void renewCertificate() throws VCertException, UnknownHostException, SocketException,
       CertificateException, NoSuchAlgorithmException {
-    String zone = System.getenv("VENAFI_ZONE");
-    String commonName = System.getenv("VENAFI_CERT_COMMON_NAME");
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zone);
+    String zoneName = System.getenv("TPPZONE");
+    String commonName = TestUtils.randomCN();
+    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
     CertificateRequest certificateRequest = new CertificateRequest()
         .subject(new CertificateRequest.PKIXName().commonName(commonName)
             .organization(Collections.singletonList("Venafi"))
@@ -176,7 +175,7 @@ class TppConnectorAT {
         .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
 
     certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zone);
+    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
     assertThat(certificateId).isNotNull();
 
     PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest);
@@ -252,7 +251,7 @@ class TppConnectorAT {
         + "ZtIVl/CH/az0xqLKWIlmWOip9SfUVlZdgege+PlQtRqoFVOsH8+MEg==\n"
         + "-----END RSA PRIVATE KEY-----";
 
-    String zone = System.getenv("VENAFI_ZONE");
+    String zone = System.getenv("TPPZONE");
     ImportRequest importRequest = new ImportRequest();
     importRequest.certificateData(cert);
     importRequest.privateKeyData(pk);

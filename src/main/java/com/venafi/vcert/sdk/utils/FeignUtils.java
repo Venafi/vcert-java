@@ -14,21 +14,37 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
+import feign.Client;
 import feign.Feign;
 import feign.Logger;
 import feign.gson.GsonDecoder;
 import feign.gson.GsonEncoder;
 import feign.slf4j.Slf4jLogger;
+import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.connectors.tpp.Tpp;
 
 public class FeignUtils {
 
   static Supplier<GsonBuilder> gsonBuilderFactory = GsonBuilder::new;
 
-  public static <T> T client(Class<T> clazz, String baseUrl) {
+  public static <T> T client(Class<T> clazz, Config config) {
     GsonBuilder builder = gsonBuilderFor(clazz);
-    return Feign.builder().encoder(encoder(builder)).decoder(decoder(builder))
-        .logger(new Slf4jLogger()).logLevel(Logger.Level.BASIC).target(clazz, baseUrl);
+    Client client = config.client();
+
+    if (client == null) {
+      if (config.proxy() == null) {
+        client = new Client.Default(null, null);
+      } else {
+        if (config.proxyUser() != null && config.proxyPassword() != null) {
+          client = new Client.Proxied(null, null, config.proxy(), config.proxyUser(),
+              config.proxyPassword());
+        } else {
+          client = new Client.Proxied(null, null, config.proxy());
+        }
+      }
+    }
+    return Feign.builder().client(client).encoder(encoder(builder)).decoder(decoder(builder))
+        .logger(new Slf4jLogger()).logLevel(Logger.Level.BASIC).target(clazz, config.baseUrl());
   }
 
   private static <T> GsonBuilder gsonBuilderFor(Class<T> clazz) {
@@ -76,13 +92,11 @@ public class FeignUtils {
       if (!input.matches()) {
         return OffsetDateTime.parse(dateString, formatter);
       }
-      // There is apocryphal, anecdotal evidence that the format can have an offset, although the
-      // original blog
-      // post doesn't seem to mention it - and it would, indeed, be counterproductive, as the
-      // JavaScript Date()
-      // constructor doesn't accept epoch with offset as an argument - but we can't rule out the
-      // existence
-      // of such time stamps in the wild, so we support them.
+      // There is apocryphal, anecdotal evidence that the format can have an offset,
+      // although the original blog post doesn't seem to mention it - and it would, indeed, be
+      // counterproductive, as the JavaScript Date() constructor doesn't accept epoch with offset as
+      // an argument - but we can't rule out the existence of such time stamps in the wild, so we
+      // support them.
       if (input.group("offset") != null) {
         return OffsetDateTime.from(Instant.ofEpochMilli(Long.parseLong(input.group("epoch"))))
             .withOffsetSameInstant(ZoneOffset.of(input.group("offset")));

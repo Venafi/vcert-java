@@ -41,9 +41,9 @@ import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.util.io.pem.PemReader;
 import com.google.common.annotations.VisibleForTesting;
-import lombok.Data;
 import com.venafi.vcert.sdk.SignatureAlgorithm;
 import com.venafi.vcert.sdk.VCertException;
+import lombok.Data;
 
 @Data
 public class CertificateRequest {

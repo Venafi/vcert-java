@@ -199,6 +199,7 @@ class CertificateRequestTest {
     PEMParser pemParser = new PEMParser(new StringReader(body));
     JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter();
     Object object = pemParser.readObject();
+    pemParser.close();
     PrivateKey privateKey = keyConverter.getPrivateKey((PrivateKeyInfo) object);
     RSAPrivateCrtKey privk = (RSAPrivateCrtKey) privateKey;
     RSAPublicKeySpec publicKeySpec =
@@ -220,6 +221,7 @@ class CertificateRequestTest {
     PEMParser pemParser = new PEMParser(new StringReader(body));
     JcaX509CertificateConverter certificateConverter = new JcaX509CertificateConverter();
     Object object = pemParser.readObject();
+    pemParser.close();
     return certificateConverter.getCertificate((X509CertificateHolder) object);
   }
 

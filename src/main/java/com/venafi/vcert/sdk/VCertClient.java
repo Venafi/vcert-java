@@ -1,7 +1,6 @@
 package com.venafi.vcert.sdk;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import java.security.Security;
 import com.google.common.annotations.VisibleForTesting;
 import feign.FeignException;
@@ -23,34 +22,33 @@ import com.venafi.vcert.sdk.endpoint.ConnectorType;
 
 public class VCertClient implements Connector {
 
-  private Config config;
   private Connector connector;
+  private static final String defaultVendorAndProductName = "Venafi VCert-Java";
 
   public VCertClient(Config config) throws VCertException {
-    this.config = config;
     Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
     switch (config.connectorType()) {
       case TPP:
         if (isBlank(config.baseUrl()))
           throw new VCertException("TPP client requires a base url");
 
-        connector = new TppConnector(Tpp.connect(config.baseUrl()));
+        connector = new TppConnector(Tpp.connect(config));
         break;
 
       case CLOUD:
-        connector = new CloudConnector(Cloud
-            .connect(isNotBlank(config.baseUrl()) ? config.baseUrl() : "https://api.venafi.cloud"));
+        connector = new CloudConnector(Cloud.connect(config));
         break;
       default:
         throw new VCertException("ConnectorType is not defined");
     }
+
+    connector.setVendorAndProductName(isBlank(config.appInfo()) ? defaultVendorAndProductName : config.appInfo());
   }
 
   @VisibleForTesting
   VCertClient(Connector connector) {
     this.connector = connector;
   }
-
 
   /**
    * {@inheritDoc}
@@ -66,7 +64,6 @@ public class VCertClient implements Connector {
   @Override
   public void setBaseUrl(String url) throws VCertException {
     connector.setBaseUrl(url);
-
   }
 
   /**
@@ -75,6 +72,22 @@ public class VCertClient implements Connector {
   @Override
   public void setZone(String zone) {
     connector.setZone(zone);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void setVendorAndProductName(String vendorAndProductName) {
+    connector.setVendorAndProductName(vendorAndProductName);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public String getVendorAndProductName() {
+    return connector.getVendorAndProductName();
   }
 
   /**
@@ -134,13 +147,25 @@ public class VCertClient implements Connector {
     }
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public String requestCertificate(CertificateRequest request, String zone) throws VCertException {
     try {
       return connector.requestCertificate(request, zone);
+    } catch (FeignException e) {
+      throw VCertException.fromFeignException(e);
+    } catch (Exception e) {
+      throw new VCertException("Unexpected exception", e);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration)
+      throws VCertException {
+    try {
+      return connector.requestCertificate(request, zoneConfiguration);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
     } catch (Exception e) {

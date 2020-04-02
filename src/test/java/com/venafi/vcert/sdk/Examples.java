@@ -25,7 +25,7 @@ public class Examples {
         Authentication.builder().apiKey("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx").build();
 
     client.authenticate(auth);
-    final ZoneConfiguration zoneConfiguration = client.readZoneConfiguration("Default");
+    final ZoneConfiguration zoneConfiguration = client.readZoneConfiguration("My Project\\My Zone");
 
     // Generate a certificate
     CertificateRequest certificateRequest = new CertificateRequest()
@@ -38,10 +38,8 @@ public class Examples {
         .keyType(KeyType.RSA);
     certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);
 
-
     // Submit the certificate request
-    String newCertId = client.requestCertificate(certificateRequest, "Default");
-
+    String newCertId = client.requestCertificate(certificateRequest, zoneConfiguration);
 
     // Retrieve PEM collection from Venafi
     final CertificateRequest pickupRequest = new CertificateRequest().pickupId(newCertId);

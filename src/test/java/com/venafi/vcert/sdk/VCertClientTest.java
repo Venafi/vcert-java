@@ -6,10 +6,14 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import java.security.Security;
+import java.util.Collection;
+import java.util.HashMap;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import feign.FeignException;
+import feign.Request;
+import feign.Request.HttpMethod;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
@@ -23,6 +27,8 @@ class VCertClientTest {
 
   private final Connector connector = mock(Connector.class);
   private final VCertClient classUnderTest = new VCertClient(connector);
+  private final Request request = Request.create(HttpMethod.GET, "https://base_url_test/",
+      new HashMap<String, Collection<String>>(), Request.Body.empty());
 
   @Test
   @DisplayName("Create venafi cloud client")
@@ -73,7 +79,8 @@ class VCertClientTest {
   @Test
   @DisplayName("Ping venafi service with server error")
   void pingWithException() throws VCertException {
-    doThrow(new FeignException.InternalServerError("Error", "".getBytes())).when(connector).ping();
+    doThrow(new FeignException.InternalServerError("Error", request, "".getBytes())).when(connector)
+        .ping();
 
     assertThrows(VCertException.class, () -> classUnderTest.ping());
   }
@@ -83,7 +90,7 @@ class VCertClientTest {
   void authenticateWithException() throws VCertException {
     final Authentication auth = mock(Authentication.class);
 
-    doThrow(new FeignException.InternalServerError("Error", "".getBytes())).when(connector)
+    doThrow(new FeignException.InternalServerError("Error", request, "".getBytes())).when(connector)
         .authenticate(auth);
 
     assertThrows(VCertException.class, () -> classUnderTest.authenticate(auth));
@@ -101,18 +108,19 @@ class VCertClientTest {
   @Test
   @DisplayName("Read zone configuration")
   void readZoneConfiguration() throws VCertException {
-    classUnderTest.readZoneConfiguration("test_zone");
+    classUnderTest.readZoneConfiguration("test_project\\test_zone");
 
-    verify(connector).readZoneConfiguration("test_zone");
+    verify(connector).readZoneConfiguration("test_project\\test_zone");
   }
 
   @Test
   @DisplayName("Read zone configuration with server error")
   void readZoneConfigurationWithServerError() throws VCertException {
-    doThrow(new FeignException.InternalServerError("Error", "".getBytes())).when(connector)
-        .readZoneConfiguration("test_zone");
+    doThrow(new FeignException.InternalServerError("Error", request, "".getBytes())).when(connector)
+        .readZoneConfiguration("test_project\\test_zone");
 
-    assertThrows(VCertException.class, () -> classUnderTest.readZoneConfiguration("test_zone"));
+    assertThrows(VCertException.class,
+        () -> classUnderTest.readZoneConfiguration("test_project\\test_zone"));
   }
 
   @Test
@@ -131,7 +139,7 @@ class VCertClientTest {
     final ZoneConfiguration zoneConfiguration = mock(ZoneConfiguration.class);
     final CertificateRequest certificateRequest = mock(CertificateRequest.class);
 
-    doThrow(new FeignException.InternalServerError("Error", "".getBytes())).when(connector)
+    doThrow(new FeignException.InternalServerError("Error", request, "".getBytes())).when(connector)
         .generateRequest(zoneConfiguration, certificateRequest);
 
     assertThrows(VCertException.class,
@@ -142,21 +150,26 @@ class VCertClientTest {
   @DisplayName("Request certificate")
   void requestCertificate() throws VCertException {
     final CertificateRequest certificateRequest = mock(CertificateRequest.class);
-    classUnderTest.requestCertificate(certificateRequest, "test_zone");
+    final ZoneConfiguration zoneConfiguration = mock(ZoneConfiguration.class);
+    zoneConfiguration.zoneId("test_zone");
 
-    verify(connector).requestCertificate(certificateRequest, "test_zone");
+    classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
+
+    verify(connector).requestCertificate(certificateRequest, zoneConfiguration);
   }
 
   @Test
   @DisplayName("Request certificate with server error")
   void requestCertificateWithServerError() throws VCertException {
     final CertificateRequest certificateRequest = mock(CertificateRequest.class);
+    final ZoneConfiguration zoneConfiguration = mock(ZoneConfiguration.class);
+    zoneConfiguration.zoneId("test_zone");
 
-    doThrow(new FeignException.InternalServerError("Error", "".getBytes())).when(connector)
-        .requestCertificate(certificateRequest, "test_zone");
+    doThrow(new FeignException.InternalServerError("Error", request, "".getBytes())).when(connector)
+        .requestCertificate(certificateRequest, zoneConfiguration);
 
     assertThrows(VCertException.class,
-        () -> classUnderTest.requestCertificate(certificateRequest, "test_zone"));
+        () -> classUnderTest.requestCertificate(certificateRequest, zoneConfiguration));
   }
 
   @Test
@@ -174,7 +187,7 @@ class VCertClientTest {
   void retrieveCertificateWithServerError() throws VCertException {
     final CertificateRequest certificateRequest = mock(CertificateRequest.class);
 
-    doThrow(new FeignException.InternalServerError("Error", "".getBytes())).when(connector)
+    doThrow(new FeignException.InternalServerError("Error", request, "".getBytes())).when(connector)
         .retrieveCertificate(certificateRequest);
 
     assertThrows(VCertException.class,
@@ -195,7 +208,7 @@ class VCertClientTest {
   void revokeCertificateWithServerError() throws VCertException {
     final RevocationRequest revocationRequest = mock(RevocationRequest.class);
 
-    doThrow(new FeignException.InternalServerError("Error", "".getBytes())).when(connector)
+    doThrow(new FeignException.InternalServerError("Error", request, "".getBytes())).when(connector)
         .revokeCertificate(revocationRequest);
 
     assertThrows(VCertException.class, () -> classUnderTest.revokeCertificate(revocationRequest));
@@ -216,7 +229,7 @@ class VCertClientTest {
   void renewCertificateWithServerError() throws VCertException {
     final RenewalRequest renewalRequest = mock(RenewalRequest.class);
 
-    doThrow(new FeignException.InternalServerError("Error", "".getBytes())).when(connector)
+    doThrow(new FeignException.InternalServerError("Error", request, "".getBytes())).when(connector)
         .renewCertificate(renewalRequest);
 
     assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
@@ -236,7 +249,7 @@ class VCertClientTest {
   void importCertificateWithServerError() throws VCertException {
     final ImportRequest importRequest = mock(ImportRequest.class);
 
-    doThrow(new FeignException.InternalServerError("Error", "".getBytes())).when(connector)
+    doThrow(new FeignException.InternalServerError("Error", request, "".getBytes())).when(connector)
         .importCertificate(importRequest);
 
     assertThrows(VCertException.class, () -> classUnderTest.importCertificate(importRequest));
@@ -245,14 +258,14 @@ class VCertClientTest {
   @Test
   @DisplayName("Read policy configuration")
   void readPolicyConfiguration() throws VCertException {
-    classUnderTest.readZoneConfiguration("test_zone");
-    verify(connector).readZoneConfiguration("test_zone");
+    classUnderTest.readZoneConfiguration("test_project\\test_zone");
+    verify(connector).readZoneConfiguration("test_project\\test_zone");
   }
 
   @Test
   @DisplayName("Read policy configuration with server error")
   void readPolicyConfigurationWithServerError() throws VCertException {
-    doThrow(new FeignException.InternalServerError("Error", "".getBytes())).when(connector)
+    doThrow(new FeignException.InternalServerError("Error", request, "".getBytes())).when(connector)
         .readPolicyConfiguration("test_zone");
 
     assertThrows(VCertException.class, () -> classUnderTest.readPolicyConfiguration("test_zone"));

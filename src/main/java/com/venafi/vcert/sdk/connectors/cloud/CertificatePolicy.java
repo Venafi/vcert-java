@@ -18,7 +18,6 @@ import com.venafi.vcert.sdk.endpoint.AllowedKeyConfiguration;
 import com.venafi.vcert.sdk.utils.Is;
 
 @Data
-@SuppressWarnings("WeakerAccess")
 public class CertificatePolicy {
 
   private String certificatePolicyType;

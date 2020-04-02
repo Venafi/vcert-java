@@ -1,0 +1,94 @@
+{
+  "request":{
+    "method":"GET",
+    "url":"/v1/devopsprojects?zoneDetails=true"
+  },
+  "response":{
+    "status":200,
+    "jsonBody":{
+      "devopsProjects":[
+        {
+          "id":"11f47f80-ff0a-11e9-a3f0-2b5db8116980",
+          "companyId":"1a972260-fee7-11e9-a554-e72621a8452f",
+          "name":"My Project",
+          "description":"",
+          "zones":[
+            {
+              "companyId":"1a972260-fee7-11e9-a554-e72621a8452f",
+              "devopsProjectId":"61f47f80-ff0a-11e9-a3f0-2b5db8116980",
+              "version":0,
+              "id":"12215be0-ff0a-11e9-a3f0-2b5db8116980",
+              "name":"My Zone",
+              "creationDate":"2019-11-04T13:52:46.968+0000",
+              "modificationDate":"2019-11-04T13:52:46.968+0000",
+              "cit":{
+                "companyId":"fa972260-fee7-11e9-a554-e72621a8452f",
+                "certificateAuthorityApi":"BUILTIN_CA",
+                "name":"My Template",
+                "version":1,
+                "id":"15c7e3f0-ff0a-11e9-a3f0-2b5db8116980",
+                "certificateAuthorityAccountId":"1c133b10-fee7-11e9-a3f0-2b5db8116980",
+                "certificateAuthorityProductOptionId":"1c147390-fee7-11e9-a3f0-2b5db8116980",
+                "systemGenerated":false,
+                "creationDate":"2019-11-04T13:52:26.543+0000",
+                "modificationDate":"2019-11-04T15:13:33.587+0000",
+                "status":"AVAILABLE",
+                "reason":"",
+                "subjectCNRegexes":[
+                  "^.*.example.com$",
+                  "^.*.example.org$",
+                  "^.*.example.net$",
+                  "^.*.invalid$",
+                  "^.*.local$",
+                  "^.*.localhost$",
+                  "^.*.test$"
+                ],
+                "subjectORegexes":[
+                  "^.*$"
+                ],
+                "subjectOURegexes":[
+                  "^.*$"
+                ],
+                "subjectLRegexes":[
+                  "^.*$"
+                ],
+                "subjectSTRegexes":[
+                  "^.*$"
+                ],
+                "subjectCValues":[
+                  "^.*$"
+                ],
+                "sanDnsNameRegexes":[
+                  "^.*$"
+                ],
+                "sanRfc822NameRegexes":[
+
+                ],
+                "sanIpAddressRegexes":[
+
+                ],
+                "rsaKeyLengths":[
+                  2048
+                ],
+                "ecKeyLengths":[
+
+                ],
+                "keyReuse":false,
+                "keyTypes":[
+                  {
+                    "keyType":"RSA",
+                    "keyLengths":[
+                      2048
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "creationDate":"2019-11-04T13:52:46.968+0000",
+          "modificationDate":"2019-11-04T14:52:11.567+0000"
+        }
+      ]
+    }
+  }
+}

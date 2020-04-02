@@ -2,11 +2,13 @@ package com.venafi.vcert.sdk;
 
 import static java.util.Arrays.asList;
 import java.io.IOException;
+import java.net.Proxy;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import org.ini4j.Profile;
 import org.ini4j.Wini;
+import feign.Client;
 import lombok.Builder;
 import lombok.Data;
 import com.venafi.vcert.sdk.endpoint.Authentication;
@@ -16,20 +18,26 @@ import com.venafi.vcert.sdk.endpoint.ConnectorType;
 @Builder
 public class Config {
   public static final String DEFAULT_SECTION = "?";
-  public static final List<String> VALID_TPP_KEYS =
-      asList("tpp_url", "tpp_user", "tpp_password", "tpp_zone", "trust_bundle");
+  public static final List<String> VALID_TPP_KEYS = asList("tpp_url", "tpp_user", "tpp_password",
+      "tpp_zone", "trust_bundle", "app_info");
 
-  public static final List<String> VALID_CLOUD_KEYS =
-      asList("cloud_url", "cloud_apikey", "cloud_zone", "trust_bundle");
+  public static final List<String> VALID_CLOUD_KEYS = asList("cloud_url", "cloud_apikey",
+      "cloud_zone", "trust_bundle", "cloud_project", "app_info");
 
   private ConnectorType connectorType;
   private String baseUrl;
+  private String project;
   private String zone;
   private Authentication credentials;
   private String connectionTrust;
   private boolean logVerbose;
   private String configFile;
   private String configSection;
+  private String appInfo;
+  private Proxy proxy;
+  private String proxyUser;
+  private String proxyPassword;
+  private Client client;
 
 
   public static Config loadConfigFromFile(Path path) throws VCertException {
@@ -55,10 +63,20 @@ public class Config {
         if (defaultSection.containsKey("cloud_url")) {
           builder.baseUrl(defaultSection.get("cloud_url"));
         }
+
         if (defaultSection.containsKey("cloud_zone")) {
           builder.zone(defaultSection.get("cloud_zone"));
         }
+
+        if (defaultSection.containsKey("cloud_project")) {
+          builder.project(defaultSection.get("cloud_project"));
+        }
       }
+
+      if (defaultSection.containsKey("app_info")) {
+        builder.appInfo(defaultSection.get("app_info"));
+      }
+
       builder.credentials(authBuilder.build());
       return builder.build();
     } catch (IOException e) {
@@ -99,5 +117,4 @@ public class Config {
           defaultSection.getName()));
     }
   }
-
 }
