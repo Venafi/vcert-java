@@ -34,7 +34,7 @@ public class TppClient {
     if (zone == null)
       zone = "Certificates\\vcert\\";
     if (appInfo == null)
-      appInfo = "My Application 1.0.0.0";
+      appInfo = "CompanyName AppName";
 
     // Configuration
     Config config = Config.builder().connectorType(ConnectorType.TPP).baseUrl(url).appInfo(appInfo)
