@@ -102,8 +102,8 @@ class CloudConnectorIT {
         .containsExactly(2048);
     assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keyCurves()).isNull();
     assertThat(zoneConfiguration.policy().dnsSanRegExs()).containsExactly("^.*$");
-    assertThat(zoneConfiguration.policy().ipSanRegExs()).isEmpty();
-    assertThat(zoneConfiguration.policy().emailSanRegExs()).isEmpty();
+    assertThat(zoneConfiguration.policy().ipSanRegExs()).isNull();
+    assertThat(zoneConfiguration.policy().emailSanRegExs()).isNull();
     assertThat(zoneConfiguration.policy().uriSanRegExs()).isNull();
     assertThat(zoneConfiguration.policy().upnSanRegExs()).isNull();
     assertThat(zoneConfiguration.policy().allowWildcards()).isFalse();

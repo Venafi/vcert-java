@@ -58,14 +58,8 @@
                 "subjectCValues":[
                   "^.*$"
                 ],
-                "sanDnsNameRegexes":[
+                "sanRegexes":[
                   "^.*$"
-                ],
-                "sanRfc822NameRegexes":[
-
-                ],
-                "sanIpAddressRegexes":[
-
                 ],
                 "rsaKeyLengths":[
                   2048

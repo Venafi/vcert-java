@@ -81,8 +81,6 @@ class CloudConnectorTest {
     cit.subjectLRegexes(Arrays.asList());
     cit.subjectCValues(Arrays.asList());
     cit.sanDnsNameRegexes(Arrays.asList());
-    cit.sanIpAddressRegexes(Arrays.asList());
-    cit.sanRfc822NameRegexes(Arrays.asList());
 
     ProjectZone projectZone = new ProjectZone("12215be0-ff0a-11e9-a3f0-2b5db8116980",
         "1a972260-fee7-11e9-a554-e72621a8452f", "My Zone", null, cit);

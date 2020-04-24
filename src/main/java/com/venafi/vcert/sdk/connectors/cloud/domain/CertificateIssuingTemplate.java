@@ -3,6 +3,7 @@ package com.venafi.vcert.sdk.connectors.cloud.domain;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import com.venafi.vcert.sdk.certificate.KeyType;
@@ -29,9 +30,8 @@ public class CertificateIssuingTemplate {
   public List<String> subjectSTRegexes;
   public List<String> subjectLRegexes;
   public List<String> subjectCValues;
+  @SerializedName("sanRegexes")
   public List<String> sanDnsNameRegexes;
-  public List<String> sanIpAddressRegexes;
-  public List<String> sanRfc822NameRegexes;
   public List<AllowedKeyType> keyTypes;
   public Boolean keyReuse;
 
@@ -52,7 +52,6 @@ public class CertificateIssuingTemplate {
         .subjectCRegexes(subjectCValues).subjectLRegexes(subjectLRegexes)
         .subjectORegexes(subjectORegexes).subjectOURegexes(subjectOURegexes)
         .subjectSTRegexes(subjectSTRegexes).dnsSanRegExs(sanDnsNameRegexes)
-        .ipSanRegExs(sanIpAddressRegexes).emailSanRegExs(sanRfc822NameRegexes)
         .allowedKeyConfigurations(allowedKeyConfigurations).allowKeyReuse(keyReuse).build();
     return policy;
   }
