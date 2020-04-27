@@ -19,7 +19,7 @@ import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
-import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 

@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
 import com.venafi.vcert.sdk.SignatureAlgorithm;
 import com.venafi.vcert.sdk.certificate.EllipticCurve;
 import com.venafi.vcert.sdk.certificate.KeyType;
-import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.AllowedKeyConfiguration;
 import com.venafi.vcert.sdk.utils.Is;
 

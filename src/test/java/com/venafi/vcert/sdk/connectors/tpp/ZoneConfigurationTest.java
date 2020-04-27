@@ -11,6 +11,7 @@ import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.connectors.Policy;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.AllowedKeyConfiguration;
 
 class ZoneConfigurationTest {
@@ -76,6 +77,7 @@ class ZoneConfigurationTest {
 
     request.subject(subject);
     request.dnsNames(emptyList());
+    request.keyType(KeyType.defaultKeyType());
     return request;
   }
 

@@ -54,7 +54,7 @@ public class CertificateRequest {
   private Collection<AttributeTypeAndValueSET> attributes;
   private SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.UnknownSignatureAlgorithm;
   private String friendlyName;
-  private KeyType keyType = KeyType.defaultKeyType();
+  private KeyType keyType;
   private int keyLength;
   private EllipticCurve keyCurve;
   private byte[] csr;
@@ -242,6 +242,7 @@ public class CertificateRequest {
         KeyType.from(certificate.getPublicKey().getAlgorithm()).X509Type();
 
     if (keyPair != null && keyPair.getPublic() != null && keyPair.getPrivate() != null) {
+      keyType = keyType == null ? KeyType.defaultKeyType() : keyType;
       if (keyType.X509Type() != publicKeyAlgorithm) {
         throw new VCertException(
             format("unmatched key type: %s, %s", keyType.X509Type(), publicKeyAlgorithm.name()));

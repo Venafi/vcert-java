@@ -41,6 +41,7 @@ import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
@@ -152,7 +153,7 @@ public class TppConnector implements Connector {
           "Unable to request certificate from TPP, current TPP configuration would not allow the request to be processed");
     }
 
-    config.updateCertificateRequest(request);
+    config.applyCertificateRequestDefaultSettingsIfNeeded(request);
 
     switch (request.csrOrigin()) {
       case LocalGeneratedCSR: {

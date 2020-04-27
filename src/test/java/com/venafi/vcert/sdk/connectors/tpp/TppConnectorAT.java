@@ -32,6 +32,7 @@ import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 
 class TppConnectorAT {

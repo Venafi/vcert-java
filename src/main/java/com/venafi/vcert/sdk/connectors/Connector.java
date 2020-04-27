@@ -7,7 +7,6 @@ import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
-import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 

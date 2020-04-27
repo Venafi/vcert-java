@@ -13,7 +13,7 @@ import lombok.Data;
 import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
-import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.AllowedKeyConfiguration;
 import com.venafi.vcert.sdk.utils.Is;
 

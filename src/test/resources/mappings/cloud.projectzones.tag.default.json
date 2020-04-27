@@ -75,7 +75,19 @@
                       2048
                     ]
                   }
-                ]
+                ],
+                "recommendedSettings": {
+                  "subjectOValue": "Venafi Inc.",
+                  "subjectOUValue": "Integrations",
+                  "subjectSTValue": "Utah",
+                  "subjectLValue": "Salt Lake",
+                  "subjectCValue": "US",
+                  "key": {
+                    "type": "RSA",
+                    "length": 4096
+                  },
+                  "keyReuse": false
+                }
               }
             }
           ],

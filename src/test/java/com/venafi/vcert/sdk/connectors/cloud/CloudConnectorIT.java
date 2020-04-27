@@ -1,7 +1,16 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.InetAddress;
 import java.time.OffsetDateTime;
+import java.util.Collections;
+
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.util.Strings;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,10 +18,11 @@ import com.github.jenspiegsa.wiremockextension.InjectServer;
 import com.github.jenspiegsa.wiremockextension.WireMockExtension;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.venafi.vcert.sdk.SignatureAlgorithm;
+import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.KeyType;
-import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 
 @ExtendWith(WireMockExtension.class)
@@ -79,11 +89,11 @@ class CloudConnectorIT {
         classUnderTest.readZoneConfiguration("My Project\\My Zone");
 
     assertThat(zoneConfiguration).isNotNull();
-    assertThat(zoneConfiguration.organization()).isNull();
-    assertThat(zoneConfiguration.organizationalUnit()).isNull();
-    assertThat(zoneConfiguration.country()).isNull();
-    assertThat(zoneConfiguration.province()).isNull();
-    assertThat(zoneConfiguration.locality()).isNull();
+    assertThat(zoneConfiguration.organization().equals("Venafi Inc."));
+    assertThat(zoneConfiguration.organizationalUnit()).containsExactly("Integrations");
+    assertThat(zoneConfiguration.country().equals("US"));
+    assertThat(zoneConfiguration.province().equals("Utah"));
+    assertThat(zoneConfiguration.locality().equals("Salt Lake"));
     assertThat(zoneConfiguration.policy()).isNotNull();
     assertThat(zoneConfiguration.policy().subjectCNRegexes()).containsExactly("^.*.example.com$",
         "^.*.example.org$", "^.*.example.net$", "^.*.invalid$", "^.*.local$", "^.*.localhost$",
@@ -129,5 +139,27 @@ class CloudConnectorIT {
     zoneConfiguration.zoneId("Default");
     String requestId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
     assertThat(requestId).isEqualTo("04c051d0-f118-11e5-8b33-d96cf8021ce5");
+  }
+  
+  @Test
+  void generateRequest() throws VCertException, IOException {
+    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration("My Project\\My Zone");
+    String commonName = TestUtils.randomCN();
+    CertificateRequest certificateRequest =
+        new CertificateRequest().subject(new CertificateRequest.PKIXName().commonName(commonName))
+            .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName())).keyType(KeyType.RSA);
+    CertificateRequest request = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
+    assertThat(certificateRequest.csr()).isNotEmpty();
+
+    try (PEMParser pemParser = new PEMParser(new StringReader(Strings.fromByteArray(request.csr())))) {
+      PKCS10CertificationRequest pkcs10Request = (PKCS10CertificationRequest) pemParser.readObject();
+      String subject = pkcs10Request.getSubject().toString();
+      assertThat(subject).contains(String.format("CN=%s", commonName));
+      assertThat(subject).contains("O=Venafi Inc.");
+      assertThat(subject).contains("OU=Integrations");
+      assertThat(subject).contains("C=US");
+      assertThat(subject).contains("L=Salt Lake");
+      assertThat(subject).contains("ST=Utah");
+    }
   }
 }
