@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
+import java.security.interfaces.RSAPrivateKey;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 
@@ -109,7 +110,7 @@ class CloudConnectorIT {
     assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keyType())
         .isEqualTo(KeyType.RSA);
     assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keySizes())
-        .containsExactly(2048);
+        .containsExactly(2048, 4096);
     assertThat(zoneConfiguration.policy().allowedKeyConfigurations().get(0).keyCurves()).isNull();
     assertThat(zoneConfiguration.policy().dnsSanRegExs()).containsExactly("^.*$");
     assertThat(zoneConfiguration.policy().ipSanRegExs()).isNull();
@@ -147,7 +148,7 @@ class CloudConnectorIT {
     String commonName = TestUtils.randomCN();
     CertificateRequest certificateRequest =
         new CertificateRequest().subject(new CertificateRequest.PKIXName().commonName(commonName))
-            .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName())).keyType(KeyType.RSA);
+            .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()));
     CertificateRequest request = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
     assertThat(certificateRequest.csr()).isNotEmpty();
 
@@ -160,6 +161,8 @@ class CloudConnectorIT {
       assertThat(subject).contains("C=US");
       assertThat(subject).contains("L=Salt Lake");
       assertThat(subject).contains("ST=Utah");
+      assertThat(certificateRequest.privateKey()).isInstanceOf(RSAPrivateKey.class);
+      assertThat(((RSAPrivateKey) certificateRequest.privateKey()).getModulus().bitLength()).isEqualTo(4096);
     }
   }
 }

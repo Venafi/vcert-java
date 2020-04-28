@@ -72,7 +72,8 @@
                   {
                     "keyType":"RSA",
                     "keyLengths":[
-                      2048
+                      2048,
+                      4096
                     ]
                   }
                 ],
