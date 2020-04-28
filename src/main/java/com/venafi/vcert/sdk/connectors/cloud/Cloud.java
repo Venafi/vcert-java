@@ -50,10 +50,6 @@ public interface Cloud {
       @Param("certificateIssuingTemplateId") String certificateIssuingTemplateId,
       @Param("apiKey") String apiKey);
 
-  @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /certificatepolicies/{id}")
-  CertificatePolicy policyById(@Param("id") String id, @Param("apiKey") String apiKey);
-
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json", "Accept: application/json"})
   @RequestLine("POST /certificatesearch")
   CertificateSearchResponse searchCertificates(@Param("apiKey") String apiKey,
