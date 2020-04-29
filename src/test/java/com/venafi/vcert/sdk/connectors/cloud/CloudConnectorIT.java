@@ -5,10 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
+import java.security.Security;
 import java.security.interfaces.RSAPrivateKey;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.Strings;
@@ -36,6 +38,7 @@ class CloudConnectorIT {
 
   @BeforeEach
   void setup() throws VCertException {
+    Security.addProvider(new BouncyCastleProvider());
     classUnderTest = new CloudConnector(Cloud.connect("http://localhost:" + serverMock.port())); // todo
                                                                                                  // String.format()
     Authentication authentication =
