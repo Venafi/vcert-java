@@ -34,6 +34,7 @@ import com.venafi.vcert.sdk.certificate.ChainOption;
 import com.venafi.vcert.sdk.certificate.CsrOriginOption;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.ImportResponse;
+import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.PublicKeyAlgorithm;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
@@ -243,6 +244,10 @@ public class TppConnector implements Connector {
       default:
         throw new VCertException(MessageFormat.format("Unexpected option in PrivateKeyOrigin: {0}",
             request.csrOrigin()));
+    }
+
+    if (request.keyType() == null) {
+      request.keyType(KeyType.defaultKeyType());
     }
 
     switch (request.keyType()) {

@@ -103,8 +103,8 @@ class TppConnectorAT {
         .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
 
     certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
-    assertThat(certificateId).isNotNull();
+    CertificateRequest csrRequestOnly = new CertificateRequest().csr(certificateRequest.csr());
+    assertThat(classUnderTest.requestCertificate(csrRequestOnly, zoneConfiguration)).isNotNull();
   }
 
   @Test
