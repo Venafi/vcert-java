@@ -25,6 +25,7 @@ import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.CertificateStatus;
 import com.venafi.vcert.sdk.certificate.ManagedCertificate;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate.AllowedKeyType;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Company;
@@ -33,7 +34,6 @@ import com.venafi.vcert.sdk.connectors.cloud.domain.ProjectZone;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Projects;
 import com.venafi.vcert.sdk.connectors.cloud.domain.User;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
-import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 
 @ExtendWith(MockitoExtension.class)

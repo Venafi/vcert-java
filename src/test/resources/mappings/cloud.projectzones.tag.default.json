@@ -72,10 +72,23 @@
                   {
                     "keyType":"RSA",
                     "keyLengths":[
-                      2048
+                      2048,
+                      4096
                     ]
                   }
-                ]
+                ],
+                "recommendedSettings": {
+                  "subjectOValue": "Venafi Inc.",
+                  "subjectOUValue": "Integrations",
+                  "subjectSTValue": "Utah",
+                  "subjectLValue": "Salt Lake",
+                  "subjectCValue": "US",
+                  "key": {
+                    "type": "RSA",
+                    "length": 4096
+                  },
+                  "keyReuse": false
+                }
               }
             }
           ],

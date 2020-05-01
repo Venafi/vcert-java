@@ -12,11 +12,11 @@ import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.connectors.cloud.Cloud;
 import com.venafi.vcert.sdk.connectors.cloud.CloudConnector;
 import com.venafi.vcert.sdk.connectors.tpp.Tpp;
 import com.venafi.vcert.sdk.connectors.tpp.TppConnector;
-import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 

@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -36,11 +35,11 @@ import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Project;
 import com.venafi.vcert.sdk.connectors.cloud.domain.ProjectZone;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Projects;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
-import com.venafi.vcert.sdk.connectors.tpp.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 
@@ -104,16 +103,6 @@ public class CloudConnector implements Connector {
     this.user = cloud.authorize(auth.apiKey());
   }
 
-  ZoneConfiguration getZoneConfiguration(UserDetails user, CertificatePolicy policy) {
-    ZoneConfiguration zoneConfig = new ZoneConfiguration().customAttributeValues(new HashMap<>());
-    if (policy == null) {
-      return zoneConfig;
-    }
-    zoneConfig.policy(policy.toPolicy());
-    policy.toZoneConfig(zoneConfig);
-    return zoneConfig;
-  }
-
   @Override
   public ZoneConfiguration readZoneConfiguration(String zone) throws VCertException {
     ProjectZone projectZone = null;
@@ -166,7 +155,7 @@ public class CloudConnector implements Connector {
       throw new VCertException(format("No certificate issuing template ID for '%s' zone.", zone));
     }
 
-    ZoneConfiguration zoneConfig = new ZoneConfiguration().customAttributeValues(new HashMap<>());
+    ZoneConfiguration zoneConfig = projectZone.cit().toZoneConfig();
     zoneConfig.policy(projectZone.cit().toPolicy());
     zoneConfig.zoneId(projectZone.id());
 
@@ -181,8 +170,8 @@ public class CloudConnector implements Connector {
         if (zoneConfig == null) {
           zoneConfig = readZoneConfiguration(zone);
         }
+        zoneConfig.applyCertificateRequestDefaultSettingsIfNeeded(request);
         zoneConfig.validateCertificateRequest(request);
-        zoneConfig.updateCertificateRequest(request);
         request.generatePrivateKey();
         request.generateCSR();
         break;

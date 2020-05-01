@@ -16,6 +16,7 @@ import com.github.jenspiegsa.wiremockextension.InjectServer;
 import com.github.jenspiegsa.wiremockextension.WireMockExtension;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 
 

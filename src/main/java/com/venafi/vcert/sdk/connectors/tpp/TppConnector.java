@@ -34,6 +34,7 @@ import com.venafi.vcert.sdk.certificate.ChainOption;
 import com.venafi.vcert.sdk.certificate.CsrOriginOption;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.ImportResponse;
+import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.PublicKeyAlgorithm;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
@@ -41,6 +42,7 @@ import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
@@ -152,7 +154,7 @@ public class TppConnector implements Connector {
           "Unable to request certificate from TPP, current TPP configuration would not allow the request to be processed");
     }
 
-    config.updateCertificateRequest(request);
+    config.applyCertificateRequestDefaultSettingsIfNeeded(request);
 
     switch (request.csrOrigin()) {
       case LocalGeneratedCSR: {
@@ -242,6 +244,10 @@ public class TppConnector implements Connector {
       default:
         throw new VCertException(MessageFormat.format("Unexpected option in PrivateKeyOrigin: {0}",
             request.csrOrigin()));
+    }
+
+    if (request.keyType() == null) {
+      request.keyType(KeyType.defaultKeyType());
     }
 
     switch (request.keyType()) {

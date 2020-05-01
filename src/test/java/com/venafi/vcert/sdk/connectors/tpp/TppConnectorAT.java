@@ -32,6 +32,7 @@ import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 
 class TppConnectorAT {
@@ -102,8 +103,8 @@ class TppConnectorAT {
         .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
 
     certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
-    assertThat(certificateId).isNotNull();
+    CertificateRequest csrRequestOnly = new CertificateRequest().csr(certificateRequest.csr());
+    assertThat(classUnderTest.requestCertificate(csrRequestOnly, zoneConfiguration)).isNotNull();
   }
 
   @Test
