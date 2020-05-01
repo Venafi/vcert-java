@@ -10,6 +10,7 @@ import feign.FeignException;
 import lombok.Data;
 
 public class VCertException extends Exception {
+  private static final long serialVersionUID = 1L;
 
   public VCertException() {
     super();
@@ -71,6 +72,6 @@ public class VCertException extends Exception {
   private static class VenafiServerError {
     private int code;
     private String message;
-    private Collection<String> args;
+    private Collection<Object> args;
   }
 }
