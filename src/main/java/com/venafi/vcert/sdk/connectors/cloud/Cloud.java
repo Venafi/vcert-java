@@ -82,7 +82,9 @@ public interface Cloud {
   Response ping(@Param("apiKey") String apiKey);
 
   static Cloud connect(String baseUrl) {
-    return FeignUtils.client(Cloud.class, Config.builder().baseUrl(normalizeUrl(baseUrl)).build());
+    return FeignUtils.client(Cloud.class, 
+        Config.builder().baseUrl(
+          normalizeUrl(isNotBlank(baseUrl) ? baseUrl : "https://api.venafi.cloud")).build());
   }
 
   static Cloud connect(Config config) {
