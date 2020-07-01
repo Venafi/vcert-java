@@ -13,7 +13,7 @@
         <bouncycastle.version>1.61</bouncycastle.version>
         <feign.version>10.4.0</feign.version>
         <guava.version>29.0-jre</guava.version>
-        <log4j.version>2.11.2</log4j.version>
+        <log4j.version>2.13.3</log4j.version>
         <junit.version>5.3.1</junit.version>
         <mockito.version>2.25.1</mockito.version>
         <wiremock.version>2.22.0</wiremock.version>
