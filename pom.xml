@@ -16,7 +16,7 @@
         <log4j.version>2.13.3</log4j.version>
         <junit.version>5.3.1</junit.version>
         <mockito.version>2.25.1</mockito.version>
-        <wiremock.version>2.22.0</wiremock.version>
+        <wiremock.version>2.26.3</wiremock.version>
         <wiremock-extension.version>0.4.0</wiremock-extension.version>
         <assertj.version>3.12.2</assertj.version>
         <ini4j.version>0.5.4</ini4j.version>
