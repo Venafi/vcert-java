@@ -22,12 +22,11 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.naming.OperationNotSupportedException;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.annotations.SerializedName;
-import feign.Response;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ChainOption;
@@ -47,6 +46,10 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
 
+import feign.Response;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.Getter;
 
 public class TppConnector implements Connector {
 
@@ -64,6 +67,7 @@ public class TppConnector implements Connector {
   private String vendorAndProductName;
   private static final String tppAttributeManagementType = "Management Type";
   private static final String tppAttributeManualCSR = "Manual Csr";
+  private static final String MISSING_CREDENTIALS_MESSAGE = "failed to authenticate: missing credentials";
 
   // TODO can be enum
   @SuppressWarnings("serial")
@@ -122,10 +126,38 @@ public class TppConnector implements Connector {
   }
 
   public void authenticate(Authentication auth) throws VCertException {
-    VCertException.throwIfNull(auth, "failed to authenticate: missing credentials");
+	VCertException.throwIfNull(auth, MISSING_CREDENTIALS_MESSAGE);
     AuthorizeResponse response = tpp.authorize(new AuthorizeRequest(auth.user(), auth.password()));
     apiKey = response.apiKey();
     bestBeforeEnd = response.validUntil();
+  }
+  
+  
+  @Override
+  public TokenInfo getAccessToken(Authentication auth) throws OperationNotSupportedException, VCertException {
+
+	  VCertException.throwIfNull( auth, MISSING_CREDENTIALS_MESSAGE );
+
+	  AuthorizeRequestV2 info = new AuthorizeRequestV2( auth.user(), auth.password(), auth.clientId(), auth.scope(), auth.state(), auth.redirectUri() );
+
+	  AuthorizeResponseV2 response = tpp.authorize( info );
+	  
+	  TokenInfo accessTokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(), response.tokenType(), response.scope(), response.identity(), response.refreshUntil());
+
+	  return accessTokenInfo;
+  }
+  
+  @Override
+  public TokenInfo refreshToken(String refreshToken, String clientId ) throws OperationNotSupportedException{
+
+	  RefreshTokenRequest request = new RefreshTokenRequest(refreshToken, clientId);
+	  ResfreshTokenResponse response = tpp.refreshToken( request );
+
+	  TokenInfo tokenInfo = new TokenInfo( response.accessToken(), response.refreshToken(), response.expire(),
+										   response.tokenType(), response.scope(), "",
+										   response.refreshUntil());
+
+	  return tokenInfo;
   }
 
   @Override
@@ -453,11 +485,57 @@ public class TppConnector implements Connector {
     return result;
   }
 
-  @Data
+  @Override
+  public int revokeAccessToken( String accessToken ) throws OperationNotSupportedException {
+
+	 String requestHeader = "Bearer "+accessToken;
+	  
+	  Response response = tpp.revokeToken( requestHeader );
+
+	  return response.status() == 200 ? 1 : 0; 
+
+  }
+
+  
+@Data
   @AllArgsConstructor
   static class AuthorizeRequest {
     private String username;
     private String password;
+    
+  }
+  
+  @Data
+  @AllArgsConstructor
+  static class AuthorizeRequestV2{
+	  
+	  @SerializedName("username")
+	  private String username;
+	  
+	  @SerializedName("password")
+	  private String password;
+	  
+	  @SerializedName("client_id")
+	  private String client_id;
+	  
+	  @SerializedName("scope")
+	  private String scope;
+	  
+	  @SerializedName("state")
+	  private String state;
+	  
+	  @SerializedName("redirect_uri")
+	  private String redirect_uri;
+	 
+  }
+  
+  @Data
+  @AllArgsConstructor
+  static class RefreshTokenRequest{
+	  @SerializedName("refresh_token")
+	  private String refresh_token;
+	  @SerializedName("client_id")
+	  private String client_id;
   }
 
   @Data

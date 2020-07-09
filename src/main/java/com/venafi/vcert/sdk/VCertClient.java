@@ -1,9 +1,12 @@
 package com.venafi.vcert.sdk;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import java.security.Security;
+
+import javax.naming.OperationNotSupportedException;
+
 import com.google.common.annotations.VisibleForTesting;
-import feign.FeignException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.ImportResponse;
@@ -15,10 +18,13 @@ import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.connectors.cloud.Cloud;
 import com.venafi.vcert.sdk.connectors.cloud.CloudConnector;
+import com.venafi.vcert.sdk.connectors.tpp.TokenInfo;
 import com.venafi.vcert.sdk.connectors.tpp.Tpp;
 import com.venafi.vcert.sdk.connectors.tpp.TppConnector;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
+
+import feign.FeignException;
 
 public class VCertClient implements Connector {
 
@@ -245,5 +251,25 @@ public class VCertClient implements Connector {
     }
     return null;
   }
+  
+  @Override
+  public TokenInfo getAccessToken( Authentication auth ) throws OperationNotSupportedException, VCertException{
 
+	  return connector.getAccessToken(auth);
+
+  }
+
+  @Override
+  public TokenInfo refreshToken( String resfreshToken, String applicationId ) throws OperationNotSupportedException{
+	  
+	  return  connector.refreshToken(resfreshToken, applicationId);	
+	  
+  }
+
+  @Override
+  public int revokeAccessToken(String accessToken) throws OperationNotSupportedException {
+
+	  return connector.revokeAccessToken(accessToken);
+  }
+  
 }

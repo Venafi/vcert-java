@@ -21,6 +21,18 @@ public interface Tpp {
   @RequestLine("POST authorize/")
   @Headers("Content-Type: application/json")
   AuthorizeResponse authorize(TppConnector.AuthorizeRequest authorizeRequest);
+  
+  @RequestLine("POST vedauth/authorize/OAuth")
+  @Headers("Content-Type: application/json")
+  AuthorizeResponseV2 authorize(TppConnector.AuthorizeRequestV2 authorizeRequest);
+  
+  @RequestLine("POST vedauth/authorize/token")
+  @Headers("Content-Type: application/json")
+  ResfreshTokenResponse refreshToken(TppConnector.RefreshTokenRequest request);
+  
+  @RequestLine("GET vedauth/revoke/token")
+  @Headers("Authorization: {token}")
+  Response revokeToken(@Param("token") String token);
 
   @RequestLine("POST certificates/checkpolicy")
   @Headers({"Content-Type: application/json", "x-venafi-api-key: {apiKey}"})

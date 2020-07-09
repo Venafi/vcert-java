@@ -1,5 +1,7 @@
 package com.venafi.vcert.sdk.connectors;
 
+import javax.naming.OperationNotSupportedException;
+
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
@@ -7,6 +9,7 @@ import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.connectors.tpp.TokenInfo;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 
@@ -146,4 +149,36 @@ public interface Connector {
    * @throws VCertException
    */
   Policy readPolicyConfiguration(String zone) throws VCertException;
+
+  /**
+   * 
+   * @return 1 if the access token was revoked and 0 if not.
+   * @throws OperationNotSupportedException for some types of applications this is not valid.
+   */
+  default int revokeAccessToken( String accessToken ) throws OperationNotSupportedException {
+	  throw new OperationNotSupportedException();
+  }
+
+  /**
+   * returns a new access token.
+   * @param auth authentication info
+   * @return the new token.
+   * @throws OperationNotSupportedException for some types of applications this is not valid.
+   * @throws VCertException throws this exception when authentication info is null.
+   */
+  default TokenInfo getAccessToken ( Authentication auth ) throws OperationNotSupportedException, VCertException {
+	  throw new OperationNotSupportedException();
+  }
+
+  /**
+   * this is for refreshing a token.
+   * @param resfreshToken the refresh token.
+   * @param applicationId the application id.
+   * @return a complete info about the new access token, refresh token, expires.
+   * @throws javax.naming.OperationNotSupportedException 
+   */
+  default TokenInfo refreshToken( String resfreshToken, String applicationId ) throws OperationNotSupportedException{
+	  throw new OperationNotSupportedException();
+  }
+  
 }
