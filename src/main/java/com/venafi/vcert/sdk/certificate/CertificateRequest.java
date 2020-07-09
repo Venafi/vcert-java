@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -25,20 +24,18 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.Vector;
 import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.util.io.pem.PemReader;
 import com.google.common.annotations.VisibleForTesting;
 import com.venafi.vcert.sdk.SignatureAlgorithm;
@@ -111,7 +108,11 @@ public class CertificateRequest {
 
   public void generateCSR() throws VCertException {
     try {
-      List<GeneralName> sans = new ArrayList<GeneralName>();
+      List<GeneralName> sans = new ArrayList<>();
+          PKCS10CertificationRequestBuilder requestBuilder =
+                  new JcaPKCS10CertificationRequestBuilder(subject.toX500Principal(), keyPair.getPublic());
+          JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256withRSA");
+          ContentSigner signer = signerBuilder.build(keyPair.getPrivate());
 
       for (String san : dnsNames) {
         sans.add(new GeneralName(GeneralName.dNSName, san));
@@ -122,21 +123,14 @@ public class CertificateRequest {
       for (String san : emailAddresses) {
         sans.add(new GeneralName(GeneralName.rfc822Name, san));
       }
+      if (!sans.isEmpty()){
+        GeneralNames names = new GeneralNames(sans.toArray(new GeneralName[]{}));
 
-      GeneralNames names = new GeneralNames(sans.toArray(new GeneralName[] {}));
-      Vector oids = new Vector();
-      Vector values = new Vector();
-
-      oids.add(X509Extensions.SubjectAlternativeName);
-      values.add(new X509Extension(false, new DEROctetString(names)));
-
-      X509Extensions extensions = new X509Extensions(oids, values);
-      Attribute attribute =
-          new Attribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, new DERSet(extensions));
-
-      PKCS10CertificationRequest certificationRequest = new PKCS10CertificationRequest(
-          signatureAlgorithm.standardName(), subject.toX500Principal(), keyPair.getPublic(),
-          new DERSet(attribute), keyPair.getPrivate());
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+        extGen.addExtension(Extension.subjectAlternativeName, false, names);
+        requestBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
+  }
+      PKCS10CertificationRequest certificationRequest = requestBuilder.build(signer);
 
       ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
       outputStream.write("-----BEGIN CERTIFICATE REQUEST-----".getBytes());
@@ -289,7 +283,7 @@ public class CertificateRequest {
         pemReader.close();
 
         PublicKeyAlgorithm csrPublicKeyAlgorithm =
-            PublicKeyAlgorithm.valueOf(csr.getPublicKey("BC").getAlgorithm());
+            PublicKeyAlgorithm.valueOf(String.valueOf(csr.getSignatureAlgorithm()));
         if (publicKeyAlgorithm != csrPublicKeyAlgorithm) {
           throw new VCertException(
               format("unmatched key type: %s, %s", publicKeyAlgorithm, csrPublicKeyAlgorithm));
@@ -298,14 +292,14 @@ public class CertificateRequest {
         switch (csrPublicKeyAlgorithm) {
           case RSA:
             RSAPublicKey certPublicKey = (RSAPublicKey) certificate.getPublicKey();
-            RSAPublicKey reqPublicKey = (RSAPublicKey) csr.getPublicKey();
+            RSAPublicKey reqPublicKey = (RSAPublicKey) csr.getSubjectPublicKeyInfo().parsePublicKey();
             if (certPublicKey.getModulus().compareTo(reqPublicKey.getModulus()) != 0) {
               throw new VCertException("unmatched key modules");
             }
             break;
           case ECDSA:
             ECPublicKey certEcPublicKey = (ECPublicKey) certificate.getPublicKey();
-            ECPublicKey reqEcPublicKey = (ECPublicKey) csr.getPublicKey();
+            ECPublicKey reqEcPublicKey = (ECPublicKey) csr.getSubjectPublicKeyInfo().parsePublicKey();
 
             // https://stackoverflow.com/questions/24121801/how-to-verify-if-the-private-key-matches-with-the-certificate
             java.security.spec.ECParameterSpec certSpec = certEcPublicKey.getParams(),
@@ -326,8 +320,7 @@ public class CertificateRequest {
             }
             break;
         }
-      } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException
-          | IOException e) {
+      } catch (IOException e) {
         throw new VCertException(format("bad csr: %s", e.getMessage()), e);
       }
     }
