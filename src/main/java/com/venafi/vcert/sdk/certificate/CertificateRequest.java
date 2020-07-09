@@ -109,10 +109,11 @@ public class CertificateRequest {
   public void generateCSR() throws VCertException {
     try {
       List<GeneralName> sans = new ArrayList<>();
-          PKCS10CertificationRequestBuilder requestBuilder =
-                  new JcaPKCS10CertificationRequestBuilder(subject.toX500Principal(), keyPair.getPublic());
-          JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256withRSA");
-          ContentSigner signer = signerBuilder.build(keyPair.getPrivate());
+
+      PKCS10CertificationRequestBuilder requestBuilder =
+              new JcaPKCS10CertificationRequestBuilder(subject.toX500Principal(), keyPair.getPublic());
+      JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256withRSA");
+      ContentSigner signer = signerBuilder.build(keyPair.getPrivate());
 
       for (String san : dnsNames) {
         sans.add(new GeneralName(GeneralName.dNSName, san));
@@ -129,7 +130,7 @@ public class CertificateRequest {
         ExtensionsGenerator extGen = new ExtensionsGenerator();
         extGen.addExtension(Extension.subjectAlternativeName, false, names);
         requestBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
-  }
+      }
       PKCS10CertificationRequest certificationRequest = requestBuilder.build(signer);
 
       ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
