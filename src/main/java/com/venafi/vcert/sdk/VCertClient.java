@@ -1,12 +1,10 @@
 package com.venafi.vcert.sdk;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
-
 import java.security.Security;
-
-import javax.naming.OperationNotSupportedException;
-
 import com.google.common.annotations.VisibleForTesting;
+import com.venafi.vcert.sdk.connectors.tpp.TppVedAuthConnector;
+import feign.FeignException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.ImportResponse;
@@ -23,8 +21,6 @@ import com.venafi.vcert.sdk.connectors.tpp.Tpp;
 import com.venafi.vcert.sdk.connectors.tpp.TppConnector;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
-
-import feign.FeignException;
 
 public class VCertClient implements Connector {
 
@@ -43,6 +39,9 @@ public class VCertClient implements Connector {
 
       case CLOUD:
         connector = new CloudConnector(Cloud.connect(config));
+        break;
+      case TPP_VEDAUTH:
+        connector = new TppVedAuthConnector(Tpp.connect(config));
         break;
       default:
         throw new VCertException("ConnectorType is not defined");
@@ -251,9 +250,15 @@ public class VCertClient implements Connector {
     }
     return null;
   }
-  
+
   @Override
   public TokenInfo getAccessToken( Authentication auth ) throws OperationNotSupportedException, VCertException{
+
+  //=========================================================================================\\
+  //=============================== VENAFI 20.2 OAUTH METHODS ===============================\\
+  //=========================================================================================\\
+
+
 
 	  return connector.getAccessToken(auth);
 
@@ -261,9 +266,9 @@ public class VCertClient implements Connector {
 
   @Override
   public TokenInfo refreshToken( String resfreshToken, String applicationId ) throws OperationNotSupportedException{
-	  
-	  return  connector.refreshToken(resfreshToken, applicationId);	
-	  
+
+	  return  connector.refreshToken(resfreshToken, applicationId);
+
   }
 
   @Override
@@ -271,5 +276,5 @@ public class VCertClient implements Connector {
 
 	  return connector.revokeAccessToken(accessToken);
   }
-  
+
 }

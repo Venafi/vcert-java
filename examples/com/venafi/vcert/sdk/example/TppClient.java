@@ -37,7 +37,7 @@ public class TppClient {
       appInfo = "CompanyName AppName";
 
     // Configuration
-    Config config = Config.builder().connectorType(ConnectorType.TPP).baseUrl(url).appInfo(appInfo)
+    Config config = Config.builder().connectorType(ConnectorType.TPP_VEDAUTH).baseUrl(url).appInfo(appInfo)
         // To use proxy uncomment the lines below
         // .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888)))
         // .proxyUser("myUser")
@@ -61,7 +61,7 @@ public class TppClient {
             .province(Collections.singletonList("Utah")))
         .keyType(KeyType.RSA).keyLength(2048);
 
-    certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);
+    certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest, access_token);
 
     // Submit the certificate request
     client.requestCertificate(certificateRequest, zoneConfiguration);

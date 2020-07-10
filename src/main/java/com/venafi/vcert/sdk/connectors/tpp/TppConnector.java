@@ -22,11 +22,12 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.naming.OperationNotSupportedException;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.annotations.SerializedName;
+import feign.Response;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.Getter;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ChainOption;
@@ -46,28 +47,16 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
 
-import feign.Response;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
 
-public class TppConnector implements Connector {
+public class TppConnector extends AbstractTPPConnector implements Connector {
 
   private static final Pattern policy = Pattern.compile("^\\\\VED\\\\Policy");
-  private final Tpp tpp;
+  private static final String MISSING_CREDENTIALS_MESSAGE = "failed to authenticate: missing credentials";
 
   @VisibleForTesting
   OffsetDateTime bestBeforeEnd;
   @Getter
   private String apiKey;
-
-  @Getter
-  private String zone;
-  @Getter
-  private String vendorAndProductName;
-  private static final String tppAttributeManagementType = "Management Type";
-  private static final String tppAttributeManualCSR = "Manual Csr";
-  private static final String MISSING_CREDENTIALS_MESSAGE = "failed to authenticate: missing credentials";
 
   // TODO can be enum
   @SuppressWarnings("serial")
@@ -84,7 +73,7 @@ public class TppConnector implements Connector {
   };
 
   public TppConnector(Tpp tpp) {
-    this.tpp = tpp;
+    super(tpp);
   }
 
   @Override
@@ -131,8 +120,8 @@ public class TppConnector implements Connector {
     apiKey = response.apiKey();
     bestBeforeEnd = response.validUntil();
   }
-  
-  
+
+
   @Override
   public TokenInfo getAccessToken(Authentication auth) throws OperationNotSupportedException, VCertException {
 
@@ -141,12 +130,12 @@ public class TppConnector implements Connector {
 	  AuthorizeRequestV2 info = new AuthorizeRequestV2( auth.user(), auth.password(), auth.clientId(), auth.scope(), auth.state(), auth.redirectUri() );
 
 	  AuthorizeResponseV2 response = tpp.authorize( info );
-	  
+
 	  TokenInfo accessTokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(), response.tokenType(), response.scope(), response.identity(), response.refreshUntil());
 
 	  return accessTokenInfo;
   }
-  
+
   @Override
   public TokenInfo refreshToken(String refreshToken, String clientId ) throws OperationNotSupportedException{
 
@@ -442,7 +431,8 @@ public class TppConnector implements Connector {
     renewalRequest.certificateDN(certificateDN);
 
     if (Objects.nonNull(request.request()) && request.request().csr().length > 0) {
-      renewalRequest.PKCS10 = org.bouncycastle.util.Strings.fromByteArray(request.request().csr());
+      String pkcs10 = org.bouncycastle.util.Strings.fromByteArray(request.request().csr());
+      renewalRequest.PKCS10(pkcs10);
     }
 
     final Tpp.CertificateRenewalResponse response = tpp.renewCertificate(renewalRequest, apiKey());
@@ -484,136 +474,4 @@ public class TppConnector implements Connector {
     }
     return result;
   }
-
-  @Override
-  public int revokeAccessToken( String accessToken ) throws OperationNotSupportedException {
-
-	 String requestHeader = "Bearer "+accessToken;
-	  
-	  Response response = tpp.revokeToken( requestHeader );
-
-	  return response.status() == 200 ? 1 : 0; 
-
-  }
-
-  
-@Data
-  @AllArgsConstructor
-  static class AuthorizeRequest {
-    private String username;
-    private String password;
-    
-  }
-  
-  @Data
-  @AllArgsConstructor
-  static class AuthorizeRequestV2{
-	  
-	  @SerializedName("username")
-	  private String username;
-	  
-	  @SerializedName("password")
-	  private String password;
-	  
-	  @SerializedName("client_id")
-	  private String client_id;
-	  
-	  @SerializedName("scope")
-	  private String scope;
-	  
-	  @SerializedName("state")
-	  private String state;
-	  
-	  @SerializedName("redirect_uri")
-	  private String redirect_uri;
-	 
-  }
-  
-  @Data
-  @AllArgsConstructor
-  static class RefreshTokenRequest{
-	  @SerializedName("refresh_token")
-	  private String refresh_token;
-	  @SerializedName("client_id")
-	  private String client_id;
-  }
-
-  @Data
-  @AllArgsConstructor
-  static class ReadZoneConfigurationRequest {
-    String policyDN;
-  }
-
-  @Data
-  public static class ReadZoneConfigurationResponse {
-    Object error;
-    ServerPolicy policy;
-  }
-
-  @Data
-  static class CertificateRequestsPayload {
-    @SerializedName("PolicyDN")
-    private String policyDN;
-    @SerializedName("CADN")
-    private String cadn;
-    private String objectName;
-    private String subject;
-    private String organizationalUnit;
-    private String organization;
-    private String city;
-    private String state;
-    private String country;
-    @SerializedName("SubjectAltNames")
-    private Collection<SANItem> subjectAltNames;
-    private String contact;
-    @SerializedName("CASpecificAttributes")
-    private Collection<NameValuePair<String, String>> caSpecificAttributes;
-    @SerializedName("PKCS10")
-    private String pkcs10;
-    private String keyAlgorithm;
-    private int keyBitSize;
-    private String ellipticCurve;
-    private boolean disableAutomaticRenewal;
-    private String origin;
-  }
-
-  @Data
-  private static class SANItem {
-    private int type;
-    private String name;
-  }
-
-  @Data
-  @AllArgsConstructor
-  private static class NameValuePair<K, V> {
-    private K name;
-    private V value;
-  }
-
-  @Data
-  class CertificateRetrieveRequest {
-    private String certificateDN;
-    private String format;
-    private String password;
-    private boolean includePrivateKey;
-    private boolean includeChain;
-    private String friendlyName;
-    private boolean rootFirstOrder;
-  }
-
-  @Data
-  class CertificateRevokeRequest {
-    private String certificateDN;
-    private String thumbprint;
-    private Integer reason;
-    private String comments;
-    private boolean disable;
-  }
-
-  @Data
-  class CertificateRenewalRequest {
-    private String certificateDN;
-    private String PKCS10;
-  }
-
 }

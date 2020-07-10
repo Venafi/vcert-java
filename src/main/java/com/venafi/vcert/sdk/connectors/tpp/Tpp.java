@@ -35,46 +35,46 @@ public interface Tpp {
   Response revokeToken(@Param("token") String token);
 
   @RequestLine("POST certificates/checkpolicy")
-  @Headers({"Content-Type: application/json", "x-venafi-api-key: {apiKey}"})
+  @Headers({"Content-Type: application/json", "{header}: {value}"})
   TppConnector.ReadZoneConfigurationResponse readZoneConfiguration(
-      TppConnector.ReadZoneConfigurationRequest readZoneConfigurationRequest,
-      @Param("apiKey") String apiKey);
+      TppConnector.ReadZoneConfigurationRequest readZoneConfigurationRequest, @Param("header") String header,
+      @Param("value") String value);
 
   @RequestLine("POST certificates/request")
-  @Headers({"Content-Type: application/json", "x-venafi-api-key: {apiKey}"})
-  CertificateRequestResponse requestCertificate(TppConnector.CertificateRequestsPayload payload,
-      @Param("apiKey") String apiKey);
+  @Headers({"Content-Type: application/json", "{header}: {value}"})
+  CertificateRequestResponse requestCertificate(TppConnector.CertificateRequestsPayload payload, @Param("header") String header,
+      @Param("value") String value);
 
   @RequestLine("GET certificates/")
-  @Headers("x-venafi-api-key: {apiKey}")
-  Tpp.CertificateSearchResponse searchCertificates(@QueryMap Map<String, String> query,
-      @Param("apiKey") String apiKey);
+  @Headers("{header}: {value}")
+  Tpp.CertificateSearchResponse searchCertificates(@QueryMap Map<String, String> query, @Param("header") String header,
+      @Param("value") String value);
 
   @RequestLine("POST certificates/retrieve")
-  @Headers({"Content-Type: application/json", "x-venafi-api-key: {apiKey}"})
+  @Headers({"Content-Type: application/json", "{header}: {value}"})
   CertificateRetrieveResponse certificateRetrieve(
-      TppConnector.CertificateRetrieveRequest certificateRetrieveRequest,
-      @Param("apiKey") String apiKey);
+      TppConnector.CertificateRetrieveRequest certificateRetrieveRequest, @Param("header") String header,
+      @Param("value") String value);
 
   @RequestLine("POST certificates/revoke")
-  @Headers({"Content-Type: application/json", "x-venafi-api-key: {apiKey}"})
-  Tpp.CertificateRevokeResponse revokeCertificate(TppConnector.CertificateRevokeRequest request,
-      @Param("apiKey") String apiKey);
+  @Headers({"Content-Type: application/json", "{header}: {value}"})
+  Tpp.CertificateRevokeResponse revokeCertificate(TppConnector.CertificateRevokeRequest request, @Param("header") String header,
+      @Param("value") String value);
 
 
   @RequestLine("POST certificates/renew")
-  @Headers({"Content-Type: application/json", "x-venafi-api-key: {apiKey}"})
-  Tpp.CertificateRenewalResponse renewCertificate(TppConnector.CertificateRenewalRequest request,
-      @Param("apiKey") String apiKey);
+  @Headers({"Content-Type: application/json", "{header}: {value}"})
+  Tpp.CertificateRenewalResponse renewCertificate(TppConnector.CertificateRenewalRequest request, @Param("header") String header,
+      @Param("value") String value);
 
 
   @RequestLine("POST certificates/import")
-  @Headers({"Content-Type: application/json", "x-venafi-api-key: {apiKey}"})
-  ImportResponse importCertificate(ImportRequest request, @Param("apiKey") String apiKey);
+  @Headers({"Content-Type: application/json", "{header}: {value}"})
+  ImportResponse importCertificate(ImportRequest request, @Param("header") String header, @Param("value") String value);
 
   @RequestLine("GET /")
-  @Headers("x-venafi-api-key: {apiKey}")
-  Response ping(@Param("apiKey") String apiKey);
+  @Headers("{header}: {value}")
+  Response ping(@Param("header") String header, @Param("value") String value);
 
   static Tpp connect(String baseUrl) {
     return FeignUtils.client(Tpp.class, Config.builder().baseUrl(baseUrl).build());
