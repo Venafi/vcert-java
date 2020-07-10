@@ -30,7 +30,13 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.ExtensionsGenerator;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.operator.AlgorithmNameFinder;
+import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -112,7 +118,7 @@ public class CertificateRequest {
 
       PKCS10CertificationRequestBuilder requestBuilder =
               new JcaPKCS10CertificationRequestBuilder(subject.toX500Principal(), keyPair.getPublic());
-      JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256withRSA");
+      JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder(signatureAlgorithm.standardName());
       ContentSigner signer = signerBuilder.build(keyPair.getPrivate());
 
       for (String san : dnsNames) {
@@ -269,7 +275,7 @@ public class CertificateRequest {
                   || certCurve != csrCurve //
                       && (!certCurve.getA().equals(csrCurve.getA()) //
                           || !certCurve.getB().equals(csrCurve.getB()) //
-                          || certField.getFieldSize() != csrField.getFieldSize()))) {
+                         || certField.getFieldSize() != csrField.getFieldSize()))) {
             throw new VCertException("unmatched parameters for elliptic keys");
           }
           break;
@@ -282,25 +288,28 @@ public class CertificateRequest {
         PKCS10CertificationRequest csr =
             new PKCS10CertificationRequest(pemReader.readPemObject().getContent());
         pemReader.close();
+        AlgorithmNameFinder nameFinder = new DefaultAlgorithmNameFinder();
+        JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
 
         PublicKeyAlgorithm csrPublicKeyAlgorithm =
-            PublicKeyAlgorithm.valueOf(String.valueOf(csr.getSignatureAlgorithm()));
+            PublicKeyAlgorithm.valueOf(String.valueOf(nameFinder.getAlgorithmName(csr.getSubjectPublicKeyInfo().getAlgorithm())));
+
         if (publicKeyAlgorithm != csrPublicKeyAlgorithm) {
           throw new VCertException(
-              format("unmatched key type: %s, %s", publicKeyAlgorithm, csrPublicKeyAlgorithm));
+               format("unmatched key type: %s, %s", publicKeyAlgorithm, csrPublicKeyAlgorithm));
         }
 
         switch (csrPublicKeyAlgorithm) {
           case RSA:
             RSAPublicKey certPublicKey = (RSAPublicKey) certificate.getPublicKey();
-            RSAPublicKey reqPublicKey = (RSAPublicKey) csr.getSubjectPublicKeyInfo().parsePublicKey();
+            RSAPublicKey reqPublicKey = (RSAPublicKey) converter.getPublicKey(csr.getSubjectPublicKeyInfo());
             if (certPublicKey.getModulus().compareTo(reqPublicKey.getModulus()) != 0) {
               throw new VCertException("unmatched key modules");
             }
             break;
           case ECDSA:
             ECPublicKey certEcPublicKey = (ECPublicKey) certificate.getPublicKey();
-            ECPublicKey reqEcPublicKey = (ECPublicKey) csr.getSubjectPublicKeyInfo().parsePublicKey();
+            ECPublicKey reqEcPublicKey = (ECPublicKey) converter.getPublicKey(csr.getSubjectPublicKeyInfo());
 
             // https://stackoverflow.com/questions/24121801/how-to-verify-if-the-private-key-matches-with-the-certificate
             java.security.spec.ECParameterSpec certSpec = certEcPublicKey.getParams(),
