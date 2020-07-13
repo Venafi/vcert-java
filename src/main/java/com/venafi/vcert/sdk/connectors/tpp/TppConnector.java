@@ -20,13 +20,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.gson.annotations.SerializedName;
 import feign.Response;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
@@ -48,29 +43,11 @@ import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
 
 
-public class TppConnector extends AbstractTPPConnector implements Connector {
-
-  private static final Pattern policy = Pattern.compile("^\\\\VED\\\\Policy");
-  private static final String MISSING_CREDENTIALS_MESSAGE = "failed to authenticate: missing credentials";
-
+public class TppConnector extends AbstractTppConnector implements Connector {
   @VisibleForTesting
   OffsetDateTime bestBeforeEnd;
   @Getter
   private String apiKey;
-
-  // TODO can be enum
-  @SuppressWarnings("serial")
-  private static Map<String, Integer> revocationReasons = new HashMap<String, Integer>() {
-    {
-      put("", 0); // NoReason
-      put("none", 0); //
-      put("key-compromise", 1); // UserKeyCompromised
-      put("ca-compromise", 2); // CAKeyCompromised
-      put("affiliation-changed", 3); // UserChangedAffiliation
-      put("superseded", 4); // CertificateSuperseded
-      put("cessation-of-operation", 5); // OriginalUseNoLongerValid
-    }
-  };
 
   public TppConnector(Tpp tpp) {
     super(tpp);
@@ -119,34 +96,6 @@ public class TppConnector extends AbstractTPPConnector implements Connector {
     AuthorizeResponse response = tpp.authorize(new AuthorizeRequest(auth.user(), auth.password()));
     apiKey = response.apiKey();
     bestBeforeEnd = response.validUntil();
-  }
-
-
-  @Override
-  public TokenInfo getAccessToken(Authentication auth) throws OperationNotSupportedException, VCertException {
-
-	  VCertException.throwIfNull( auth, MISSING_CREDENTIALS_MESSAGE );
-
-	  AuthorizeRequestV2 info = new AuthorizeRequestV2( auth.user(), auth.password(), auth.clientId(), auth.scope(), auth.state(), auth.redirectUri() );
-
-	  AuthorizeResponseV2 response = tpp.authorize( info );
-
-	  TokenInfo accessTokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(), response.tokenType(), response.scope(), response.identity(), response.refreshUntil());
-
-	  return accessTokenInfo;
-  }
-
-  @Override
-  public TokenInfo refreshToken(String refreshToken, String clientId ) throws OperationNotSupportedException{
-
-	  RefreshTokenRequest request = new RefreshTokenRequest(refreshToken, clientId);
-	  ResfreshTokenResponse response = tpp.refreshToken( request );
-
-	  TokenInfo tokenInfo = new TokenInfo( response.accessToken(), response.refreshToken(), response.expire(),
-										   response.tokenType(), response.scope(), "",
-										   response.refreshUntil());
-
-	  return tokenInfo;
   }
 
   @Override
@@ -443,7 +392,6 @@ public class TppConnector extends AbstractTPPConnector implements Connector {
     return certificateDN;
   }
 
-
   @Override
   public ImportResponse importCertificate(ImportRequest request) throws VCertException {
     if (isBlank(request.policyDN())) {
@@ -460,18 +408,5 @@ public class TppConnector extends AbstractTPPConnector implements Connector {
   @Override
   public Policy readPolicyConfiguration(String zone) throws VCertException {
     throw new UnsupportedOperationException("Method not yet implemented");
-  }
-
-  @VisibleForTesting
-  String getPolicyDN(final String zone) {
-    String result = zone;
-    Matcher candidate = policy.matcher(zone);
-    if (!candidate.matches()) {
-      if (!policy.matcher(zone).matches()) {
-        result = "\\" + result;
-      }
-      result = "\\VED\\Policy" + result;
-    }
-    return result;
   }
 }

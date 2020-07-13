@@ -3,7 +3,6 @@ package com.venafi.vcert.sdk;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import java.security.Security;
 import com.google.common.annotations.VisibleForTesting;
-import com.venafi.vcert.sdk.connectors.tpp.TppVedAuthConnector;
 import feign.FeignException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
@@ -16,16 +15,15 @@ import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.connectors.cloud.Cloud;
 import com.venafi.vcert.sdk.connectors.cloud.CloudConnector;
-import com.venafi.vcert.sdk.connectors.tpp.TokenInfo;
 import com.venafi.vcert.sdk.connectors.tpp.Tpp;
 import com.venafi.vcert.sdk.connectors.tpp.TppConnector;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 
 public class VCertClient implements Connector {
+  private static final String DEFAULT_VENDOR_AND_PRODUCT_NAME = "Venafi VCert-Java";
 
   private Connector connector;
-  private static final String defaultVendorAndProductName = "Venafi VCert-Java";
 
   public VCertClient(Config config) throws VCertException {
     Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
@@ -40,14 +38,11 @@ public class VCertClient implements Connector {
       case CLOUD:
         connector = new CloudConnector(Cloud.connect(config));
         break;
-      case TPP_VEDAUTH:
-        connector = new TppVedAuthConnector(Tpp.connect(config));
-        break;
       default:
         throw new VCertException("ConnectorType is not defined");
     }
 
-    connector.setVendorAndProductName(isBlank(config.appInfo()) ? defaultVendorAndProductName : config.appInfo());
+    connector.setVendorAndProductName(isBlank(config.appInfo()) ? DEFAULT_VENDOR_AND_PRODUCT_NAME : config.appInfo());
   }
 
   @VisibleForTesting
@@ -250,31 +245,4 @@ public class VCertClient implements Connector {
     }
     return null;
   }
-
-  @Override
-  public TokenInfo getAccessToken( Authentication auth ) throws OperationNotSupportedException, VCertException{
-
-  //=========================================================================================\\
-  //=============================== VENAFI 20.2 OAUTH METHODS ===============================\\
-  //=========================================================================================\\
-
-
-
-	  return connector.getAccessToken(auth);
-
-  }
-
-  @Override
-  public TokenInfo refreshToken( String resfreshToken, String applicationId ) throws OperationNotSupportedException{
-
-	  return  connector.refreshToken(resfreshToken, applicationId);
-
-  }
-
-  @Override
-  public int revokeAccessToken(String accessToken) throws OperationNotSupportedException {
-
-	  return connector.revokeAccessToken(accessToken);
-  }
-
 }

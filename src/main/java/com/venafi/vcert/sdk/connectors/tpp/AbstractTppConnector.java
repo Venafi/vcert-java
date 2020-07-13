@@ -1,5 +1,6 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.annotations.SerializedName;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import lombok.AllArgsConstructor;
@@ -9,13 +10,15 @@ import lombok.Getter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public abstract class AbstractTPPConnector {
-    protected static final Pattern policy = Pattern.compile("^\\\\VED\\\\Policy");
-    protected static final String HEADER_API_KEY = "x-venafi-api-key";
-    protected static final String HEADER_AUTHORIZATION = "Authorization";
+public abstract class AbstractTppConnector {
+    protected static final Pattern POLICY_REGEX = Pattern.compile("^\\\\VED\\\\Policy");
     protected static final String HEADER_VALUE_AUTHORIZATION = "Bearer %s";
+
+    protected static final String MISSING_CREDENTIALS_MESSAGE = "failed to authenticate: missing credentials";
+
 
     protected final Tpp tpp;
 
@@ -28,7 +31,7 @@ public abstract class AbstractTPPConnector {
 
     // TODO can be enum
     @SuppressWarnings("serial")
-    protected static Map<String, Integer> revocationReasons = new HashMap<String, Integer>() {
+    protected static final Map<String, Integer> revocationReasons = new HashMap<String, Integer>() {
         {
             put("", 0); // NoReason
             put("none", 0); //
@@ -40,8 +43,21 @@ public abstract class AbstractTPPConnector {
         }
     };
 
-    public AbstractTPPConnector(Tpp tpp) {
+    public AbstractTppConnector(Tpp tpp) {
         this.tpp = tpp;
+    }
+
+    @VisibleForTesting
+    String getPolicyDN(final String zone) {
+        String result = zone;
+        Matcher candidate = POLICY_REGEX.matcher(zone);
+        if (!candidate.matches()) {
+            if (!POLICY_REGEX.matcher(zone).matches()) {
+                result = "\\" + result;
+            }
+            result = "\\VED\\Policy" + result;
+        }
+        return result;
     }
 
     @Data
@@ -49,6 +65,39 @@ public abstract class AbstractTPPConnector {
     public static class AuthorizeRequest {
         private String username;
         private String password;
+    }
+
+    @Data
+    @AllArgsConstructor
+    static class AuthorizeTokenRequest{
+
+        @SerializedName("username")
+        private String username;
+
+        @SerializedName("password")
+        private String password;
+
+        @SerializedName("client_id")
+        private String client_id;
+
+        @SerializedName("scope")
+        private String scope;
+
+        @SerializedName("state")
+        private String state;
+
+        @SerializedName("redirect_uri")
+        private String redirect_uri;
+
+    }
+
+    @Data
+    @AllArgsConstructor
+    static class RefreshTokenRequest{
+        @SerializedName("refresh_token")
+        private String refresh_token;
+        @SerializedName("client_id")
+        private String client_id;
     }
 
     @Data

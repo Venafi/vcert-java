@@ -13,12 +13,12 @@ public class Authentication {
 	@Builder.Default
 	private String clientId = "vcert-sdk";
 	@Builder.Default
-	private String scope = "certificate:manage, revoke";
+	private String scope = "certificate:manage,revoke";
 	@Builder.Default
 	private String state = "";
 	@Builder.Default
 	private String redirectUri ="";
-	
+
 	public Authentication() {}
 
 	public Authentication(String user, String password, String apiKey) {

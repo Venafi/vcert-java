@@ -1,15 +1,12 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.*;
-import com.venafi.vcert.sdk.connectors.Connector;
-import com.venafi.vcert.sdk.connectors.Policy;
-import com.venafi.vcert.sdk.connectors.ServerPolicy;
-import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.*;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
+import feign.FeignException;
 import feign.Response;
 
 import java.net.InetAddress;
@@ -17,7 +14,6 @@ import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
 
 import static java.lang.String.format;
 import static java.time.Duration.ZERO;
@@ -26,13 +22,13 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-public class TppVedAuthConnector extends AbstractTPPConnector implements Connector {
+public class TppTokenConnector extends AbstractTppConnector implements TokenConnector {
 
-    public TppVedAuthConnector(Tpp tpp){ super(tpp); }
+    public TppTokenConnector(Tpp tpp){ super(tpp); }
 
     @Override
     public ConnectorType getType() {
-        return ConnectorType.TPP_VEDAUTH;
+        return ConnectorType.TPP_TOKEN;
     }
 
     @Override
@@ -63,8 +59,6 @@ public class TppVedAuthConnector extends AbstractTPPConnector implements Connect
         return String.format(HEADER_VALUE_AUTHORIZATION, token);
     }
 
-    //TODO ADD AUTHENTICATE METHOD HERE
-
     @Override
     public void ping(String accessToken) throws VCertException {
         Response response = doPing(accessToken);
@@ -75,15 +69,58 @@ public class TppVedAuthConnector extends AbstractTPPConnector implements Connect
     }
 
     private Response doPing(String accessToken) throws VCertException{
-        return tpp.ping(HEADER_AUTHORIZATION, getAuthHeaderValue(accessToken));
+        return tpp.pingToken(getAuthHeaderValue(accessToken));
     }
 
+    @Override
+    public TokenInfo getAccessToken(Authentication auth) throws VCertException {
+
+        VCertException.throwIfNull( auth, MISSING_CREDENTIALS_MESSAGE );
+
+        AuthorizeTokenRequest info = new AuthorizeTokenRequest( auth.user(), auth.password(), auth.clientId(), auth.scope(), auth.state(), auth.redirectUri() );
+
+        AuthorizeTokenResponse response = tpp.authorizeToken( info );
+
+        TokenInfo accessTokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(), response.tokenType(), response.scope(), response.identity(), response.refreshUntil());
+
+        return accessTokenInfo;
+    }
+
+    @Override
+    public TokenInfo refreshAccessToken(String refreshToken, String clientId ) throws VCertException{
+        try {
+            RefreshTokenRequest request = new RefreshTokenRequest(refreshToken, clientId);
+            ResfreshTokenResponse response = tpp.refreshToken( request );
+
+            TokenInfo tokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(),
+                    response.tokenType(), response.scope(), "",
+                    response.refreshUntil());
+
+            return tokenInfo;
+        }catch (FeignException.BadRequest e){
+            throw new VCertException(e.getMessage());
+        }
+    }
+
+    @Override
+    public int revokeAccessToken( String accessToken ) throws VCertException {
+
+        String requestHeader = getAuthHeaderValue(accessToken);//"Bearer "+accessToken;
+
+        Response response = tpp.revokeToken( requestHeader );
+        if(response.status() == 200){
+            return response.status();
+        }else{
+            throw new VCertException(response.toString());
+        }
+
+    }
 
     @Override
     public ZoneConfiguration readZoneConfiguration(String zone, String accessToken) throws VCertException {
         VCertException.throwIfNull(zone, "empty zone");
         ReadZoneConfigurationRequest request = new ReadZoneConfigurationRequest(getPolicyDN(zone));
-        ReadZoneConfigurationResponse response = tpp.readZoneConfiguration(request, HEADER_AUTHORIZATION, getAuthHeaderValue(accessToken));
+        ReadZoneConfigurationResponse response = tpp.readZoneConfigurationToken(request, getAuthHeaderValue(accessToken));
         ServerPolicy serverPolicy = response.policy();
         Policy policy = serverPolicy.toPolicy();
         ZoneConfiguration zoneConfig = serverPolicy.toZoneConfig();
@@ -148,7 +185,7 @@ public class TppVedAuthConnector extends AbstractTPPConnector implements Connect
             zoneConfiguration.zoneId(this.zone);
         }
         CertificateRequestsPayload payload = prepareRequest(request, zoneConfiguration.zoneId());
-        Tpp.CertificateRequestResponse response = tpp.requestCertificate(payload, HEADER_AUTHORIZATION, getAuthHeaderValue(accessToken));
+        Tpp.CertificateRequestResponse response = tpp.requestCertificateToken(payload, getAuthHeaderValue(accessToken));
         String requestId = response.certificateDN();
         request.pickupId(requestId);
         return requestId;
@@ -296,7 +333,7 @@ public class TppVedAuthConnector extends AbstractTPPConnector implements Connect
 
     private Tpp.CertificateRetrieveResponse retrieveCertificateOnce(
             CertificateRetrieveRequest certificateRetrieveRequest, String accessToken) throws VCertException {
-        return tpp.certificateRetrieve(certificateRetrieveRequest, HEADER_AUTHORIZATION, getAuthHeaderValue(accessToken));
+        return tpp.certificateRetrieveToken(certificateRetrieveRequest, getAuthHeaderValue(accessToken));
     }
 
 
@@ -308,7 +345,7 @@ public class TppVedAuthConnector extends AbstractTPPConnector implements Connect
     }
 
     private Tpp.CertificateSearchResponse searchCertificates(Map<String, String> searchRequest, String accessToken) throws VCertException {
-        return tpp.searchCertificates(searchRequest, HEADER_AUTHORIZATION, getAuthHeaderValue(accessToken));
+        return tpp.searchCertificatesToken(searchRequest, getAuthHeaderValue(accessToken));
     }
 
     @Override
@@ -329,7 +366,7 @@ public class TppVedAuthConnector extends AbstractTPPConnector implements Connect
     }
 
     private Tpp.CertificateRevokeResponse revokeCertificate(CertificateRevokeRequest request, String accessToken) throws VCertException {
-        return tpp.revokeCertificate(request, HEADER_AUTHORIZATION, getAuthHeaderValue(accessToken));
+        return tpp.revokeCertificateToken(request, getAuthHeaderValue(accessToken));
     }
 
     @Override
@@ -365,7 +402,7 @@ public class TppVedAuthConnector extends AbstractTPPConnector implements Connect
             renewalRequest.PKCS10(pkcs10);
         }
 
-        final Tpp.CertificateRenewalResponse response = tpp.renewCertificate(renewalRequest, HEADER_AUTHORIZATION, getAuthHeaderValue(accessToken));
+        final Tpp.CertificateRenewalResponse response = tpp.renewCertificateToken(renewalRequest, getAuthHeaderValue(accessToken));
         if (!response.success()) {
             throw new VCertException(String.format("Certificate renewal error: %s", response.error()));
         }
@@ -384,24 +421,11 @@ public class TppVedAuthConnector extends AbstractTPPConnector implements Connect
     }
 
     private ImportResponse doImportCertificate(ImportRequest request, String accessToken) throws VCertException {
-        return tpp.importCertificate(request, HEADER_AUTHORIZATION, getAuthHeaderValue(accessToken));
+        return tpp.importCertificateToken(request, getAuthHeaderValue(accessToken));
     }
 
     @Override
-    public Policy readPolicyConfiguration(String zone) throws VCertException {
+    public Policy readPolicyConfiguration(String zone, String accessToken) throws VCertException {
         throw new UnsupportedOperationException("Method not yet implemented");
-    }
-
-    @VisibleForTesting
-    String getPolicyDN(final String zone) {
-        String result = zone;
-        Matcher candidate = policy.matcher(zone);
-        if (!candidate.matches()) {
-            if (!policy.matcher(zone).matches()) {
-                result = "\\" + result;
-            }
-            result = "\\VED\\Policy" + result;
-        }
-        return result;
     }
 }
