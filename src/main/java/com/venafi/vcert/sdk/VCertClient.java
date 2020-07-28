@@ -19,9 +19,9 @@ import com.venafi.vcert.sdk.connectors.tpp.Tpp;
 import com.venafi.vcert.sdk.connectors.tpp.TppConnector;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import com.venafi.vcert.sdk.utils.VCertConstants;
 
 public class VCertClient implements Connector {
-  private static final String DEFAULT_VENDOR_AND_PRODUCT_NAME = "Venafi VCert-Java";
 
   private Connector connector;
 
@@ -42,7 +42,8 @@ public class VCertClient implements Connector {
         throw new VCertException("ConnectorType is not defined");
     }
 
-    connector.setVendorAndProductName(isBlank(config.appInfo()) ? DEFAULT_VENDOR_AND_PRODUCT_NAME : config.appInfo());
+    connector.setVendorAndProductName(isBlank(config.appInfo()) ? VCertConstants.DEFAULT_VENDOR_AND_PRODUCT_NAME :
+        config.appInfo());
   }
 
   @VisibleForTesting
@@ -59,7 +60,10 @@ public class VCertClient implements Connector {
   }
 
   /**
-   * {@inheritDoc}
+   * Method not implemented yet.
+   * Guaranteed to throw an exception.
+   *
+   * @throws UnsupportedOperationException always
    */
   @Override
   public void setBaseUrl(String url) throws VCertException {
@@ -207,13 +211,12 @@ public class VCertClient implements Connector {
   @Override
   public String renewCertificate(RenewalRequest request) throws VCertException {
     try {
-      connector.renewCertificate(request);
+      return connector.renewCertificate(request);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
     } catch (Exception e) {
       throw new VCertException("Unexpected exception", e);
     }
-    return null;
   }
 
   /**
@@ -222,13 +225,12 @@ public class VCertClient implements Connector {
   @Override
   public ImportResponse importCertificate(ImportRequest request) throws VCertException {
     try {
-      connector.importCertificate(request);
+      return connector.importCertificate(request);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
     } catch (Exception e) {
       throw new VCertException("Unexpected exception", e);
     }
-    return null;
   }
 
   /**
@@ -237,12 +239,11 @@ public class VCertClient implements Connector {
   @Override
   public Policy readPolicyConfiguration(String zone) throws VCertException {
     try {
-      connector.readPolicyConfiguration(zone);
+      return connector.readPolicyConfiguration(zone);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
     } catch (Exception e) {
       throw new VCertException("Unexpected exception", e);
     }
-    return null;
   }
 }

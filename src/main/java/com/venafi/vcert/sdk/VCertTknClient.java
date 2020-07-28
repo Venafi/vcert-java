@@ -1,7 +1,15 @@
 package com.venafi.vcert.sdk;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import java.security.Security;
 import com.google.common.annotations.VisibleForTesting;
-import com.venafi.vcert.sdk.certificate.*;
+import feign.FeignException;
+import com.venafi.vcert.sdk.certificate.CertificateRequest;
+import com.venafi.vcert.sdk.certificate.ImportRequest;
+import com.venafi.vcert.sdk.certificate.ImportResponse;
+import com.venafi.vcert.sdk.certificate.PEMCollection;
+import com.venafi.vcert.sdk.certificate.RenewalRequest;
+import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.TokenConnector;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
@@ -10,14 +18,10 @@ import com.venafi.vcert.sdk.connectors.tpp.Tpp;
 import com.venafi.vcert.sdk.connectors.tpp.TppTokenConnector;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
-import feign.FeignException;
+import com.venafi.vcert.sdk.utils.VCertConstants;
 
-import java.security.Security;
-
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class VCertTknClient implements TokenConnector {
-    private static final String defaultVendorAndProductName = "Venafi VCert-Java";
 
     private TokenConnector connector;
 
@@ -30,7 +34,8 @@ public class VCertTknClient implements TokenConnector {
             default:
                 throw new VCertException("ConnectorType is not defined");
         }
-        connector.setVendorAndProductName(isBlank(config.appInfo()) ? defaultVendorAndProductName : config.appInfo());
+        connector.setVendorAndProductName(isBlank(config.appInfo()) ? VCertConstants.DEFAULT_VENDOR_AND_PRODUCT_NAME :
+            config.appInfo());
     }
 
     @VisibleForTesting
@@ -47,7 +52,10 @@ public class VCertTknClient implements TokenConnector {
     }
 
     /**
-     * {@inheritDoc}
+     * Method not implemented yet.
+     * Guaranteed to throw an exception.
+     *
+     * @throws UnsupportedOperationException always
      */
     @Override
     public void setBaseUrl(String url) throws VCertException {
@@ -206,13 +214,12 @@ public class VCertTknClient implements TokenConnector {
     @Override
     public String renewCertificate(RenewalRequest request, String accessToken) throws VCertException {
         try {
-            connector.renewCertificate(request, accessToken);
+            return connector.renewCertificate(request, accessToken);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
             throw new VCertException("Unexpected exception", e);
         }
-        return null;
     }
 
     /**
@@ -221,13 +228,12 @@ public class VCertTknClient implements TokenConnector {
     @Override
     public ImportResponse importCertificate(ImportRequest request, String accessToken) throws VCertException {
         try {
-            connector.importCertificate(request, accessToken);
+            return connector.importCertificate(request, accessToken);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
             throw new VCertException("Unexpected exception", e);
         }
-        return null;
     }
 
     /**
@@ -236,12 +242,11 @@ public class VCertTknClient implements TokenConnector {
     @Override
     public Policy readPolicyConfiguration(String zone, String accessToken) throws VCertException {
         try {
-            connector.readPolicyConfiguration(zone, accessToken);
+            return connector.readPolicyConfiguration(zone, accessToken);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
             throw new VCertException("Unexpected exception", e);
         }
-        return null;
     }
 }

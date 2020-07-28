@@ -2,7 +2,6 @@ package com.venafi.vcert.sdk.connectors.tpp;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.annotations.SerializedName;
-import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -12,6 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.venafi.vcert.sdk.connectors.ServerPolicy;
+
 
 public abstract class AbstractTppConnector {
     protected static final Pattern POLICY_REGEX = Pattern.compile("^\\\\VED\\\\Policy");
@@ -24,10 +25,9 @@ public abstract class AbstractTppConnector {
 
     @Getter
     protected String zone;
-    @Getter
     protected String vendorAndProductName;
-    protected static final String tppAttributeManagementType = "Management Type";
-    protected static final String tppAttributeManualCSR = "Manual Csr";
+    protected static final String TPP_ATTRIBUTE_MANAGEMENT_TYPE = "Management Type";
+    protected static final String TPP_ATTRIBUTE_MANUAL_CSR = "Manual Csr";
 
     // TODO can be enum
     @SuppressWarnings("serial")
@@ -78,7 +78,7 @@ public abstract class AbstractTppConnector {
         private String password;
 
         @SerializedName("client_id")
-        private String client_id;
+        private String clientId;
 
         @SerializedName("scope")
         private String scope;
@@ -87,7 +87,7 @@ public abstract class AbstractTppConnector {
         private String state;
 
         @SerializedName("redirect_uri")
-        private String redirect_uri;
+        private String redirectUri;
 
     }
 
@@ -95,9 +95,9 @@ public abstract class AbstractTppConnector {
     @AllArgsConstructor
     static class RefreshTokenRequest{
         @SerializedName("refresh_token")
-        private String refresh_token;
+        private String refreshToken;
         @SerializedName("client_id")
-        private String client_id;
+        private String clientId;
     }
 
     @Data

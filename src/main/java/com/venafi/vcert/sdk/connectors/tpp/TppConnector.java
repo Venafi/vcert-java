@@ -118,7 +118,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
     if (config == null) {
       config = readZoneConfiguration(zone);
     }
-    String tppMgmtType = config.customAttributeValues().get(tppAttributeManagementType);
+    String tppMgmtType = config.customAttributeValues().get(TPP_ATTRIBUTE_MANAGEMENT_TYPE);
     if ("Monitoring".equals(tppMgmtType) || "Unassigned".equals(tppMgmtType)) {
       throw new VCertException(
           "Unable to request certificate from TPP, current TPP configuration would not allow the request to be processed");
@@ -128,7 +128,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
 
     switch (request.csrOrigin()) {
       case LocalGeneratedCSR: {
-        if ("0".equals(config.customAttributeValues().get(tppAttributeManualCSR))) {
+        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR))) {
           throw new VCertException(
               "Unable to request certificate by local generated CSR when zone configuration is 'Manual Csr' = 0");
         }
@@ -137,7 +137,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
         break;
       }
       case UserProvidedCSR: {
-        if ("0".equals(config.customAttributeValues().get(tppAttributeManualCSR))) {
+        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR))) {
           throw new VCertException(
               "Unable to request certificate with user provided CSR when zone configuration is 'Manual Csr' = 0");
         }

@@ -32,10 +32,6 @@ public class FeignUtils {
 
   static Supplier<GsonBuilder> gsonBuilderFactory = GsonBuilder::new;
 
-  //ALWAYS SET THIS FLAG TO FALSE BEFORE COMMIT.
-  //This flag allows to bypass SSL verification in local dev environments.
-  private static final boolean DEBUG = false;
-
   public static <T> T client(Class<T> clazz, Config config) {
     GsonBuilder builder = gsonBuilderFor(clazz);
     Client client = config.client();
@@ -77,7 +73,7 @@ public class FeignUtils {
 
   private static SSLSocketFactory getSSLSocketFactory() {
     try {
-      if(DEBUG){
+      if(isDebugMode()){
         SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build();
         return sslContext.getSocketFactory();
       }  else{
@@ -86,6 +82,17 @@ public class FeignUtils {
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
+  }
+
+  public static boolean isDebugMode(){
+    boolean debug = false;
+
+    String value = System.getenv("DEBUG");
+    if(value != null && !value.isEmpty() & !value.equals("")){
+      debug = true;
+    }
+
+    return debug;
   }
 
   /**
