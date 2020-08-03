@@ -1,0 +1,81 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/vedsdk/certificates/checkpolicy",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer 12345678-1234-1234-1234-123456789012"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "equalToJson": "{\"PolicyDN\":\"\\\\VED\\\\Policy\\\\tag\"}"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "Error": null,
+      "Policy": {
+        "CertificateAuthority": {
+          "Locked": false,
+          "Value": null
+        },
+        "CsrGeneration": {
+          "Locked": false,
+          "Value": "ServiceGenerated"
+        },
+        "KeyGeneration": {
+          "Locked": false,
+          "Value": "Central"
+        },
+        "KeyPair": {
+          "KeyAlgorithm": {
+            "Locked": false,
+            "Value": "RSA"
+          },
+          "KeySize": {
+            "Locked": false,
+            "Value": 2048
+          }
+        },
+        "ManagementType": {
+          "Locked": false,
+          "Value": "Unassigned"
+        },
+        "PrivateKeyReuseAllowed": false,
+        "SubjAltNameDnsAllowed": true,
+        "SubjAltNameEmailAllowed": true,
+        "SubjAltNameIpAllowed": true,
+        "SubjAltNameUpnAllowed": true,
+        "SubjAltNameUriAllowed": true,
+        "Subject": {
+          "City": {
+            "Locked": false,
+            "Value": null
+          },
+          "Country": {
+            "Locked": false,
+            "Value": null
+          },
+          "Organization": {
+            "Locked": false,
+            "Value": null
+          },
+          "OrganizationalUnit": {
+            "Locked": false,
+            "Values": []
+          },
+          "State": {
+            "Locked": false,
+            "Value": null
+          }
+        },
+        "UniqueSubjectEnforced": false,
+        "WhitelistedDomains": [],
+        "WildcardsAllowed": true
+      }
+    }
+  }
+}

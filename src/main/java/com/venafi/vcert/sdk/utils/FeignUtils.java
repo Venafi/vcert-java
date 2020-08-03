@@ -22,6 +22,11 @@ import feign.gson.GsonEncoder;
 import feign.slf4j.Slf4jLogger;
 import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.connectors.tpp.Tpp;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.ssl.SSLContexts;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 
 public class FeignUtils {
 
@@ -33,7 +38,7 @@ public class FeignUtils {
 
     if (client == null) {
       if (config.proxy() == null) {
-        client = new Client.Default(null, null);
+        client = new Client.Default(getSSLSocketFactory(), null);
       } else {
         if (config.proxyUser() != null && config.proxyPassword() != null) {
           client = new Client.Proxied(null, null, config.proxy(), config.proxyUser(),
@@ -64,6 +69,30 @@ public class FeignUtils {
 
   private static GsonEncoder encoder(GsonBuilder builder) {
     return new GsonEncoder(builder.create());
+  }
+
+  private static SSLSocketFactory getSSLSocketFactory() {
+    try {
+      if(isDebugMode()){
+        SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build();
+        return sslContext.getSocketFactory();
+      }  else{
+          return null;
+      }
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
+  public static boolean isDebugMode(){
+    boolean debug = false;
+
+    String value = System.getenv("DEBUG");
+    if(value != null && !value.isEmpty() & !value.equals("")){
+      debug = true;
+    }
+
+    return debug;
   }
 
   /**

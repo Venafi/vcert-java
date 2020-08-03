@@ -20,13 +20,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.gson.annotations.SerializedName;
 import feign.Response;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
@@ -48,39 +43,14 @@ import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
 
 
-public class TppConnector implements Connector {
-
-  private static final Pattern policy = Pattern.compile("^\\\\VED\\\\Policy");
-  private final Tpp tpp;
-
+public class TppConnector extends AbstractTppConnector implements Connector {
   @VisibleForTesting
   OffsetDateTime bestBeforeEnd;
   @Getter
   private String apiKey;
 
-  @Getter
-  private String zone;
-  @Getter
-  private String vendorAndProductName;
-  private static final String tppAttributeManagementType = "Management Type";
-  private static final String tppAttributeManualCSR = "Manual Csr";
-
-  // TODO can be enum
-  @SuppressWarnings("serial")
-  private static Map<String, Integer> revocationReasons = new HashMap<String, Integer>() {
-    {
-      put("", 0); // NoReason
-      put("none", 0); //
-      put("key-compromise", 1); // UserKeyCompromised
-      put("ca-compromise", 2); // CAKeyCompromised
-      put("affiliation-changed", 3); // UserChangedAffiliation
-      put("superseded", 4); // CertificateSuperseded
-      put("cessation-of-operation", 5); // OriginalUseNoLongerValid
-    }
-  };
-
   public TppConnector(Tpp tpp) {
-    this.tpp = tpp;
+    super(tpp);
   }
 
   @Override
@@ -122,7 +92,7 @@ public class TppConnector implements Connector {
   }
 
   public void authenticate(Authentication auth) throws VCertException {
-    VCertException.throwIfNull(auth, "failed to authenticate: missing credentials");
+	VCertException.throwIfNull(auth, MISSING_CREDENTIALS_MESSAGE);
     AuthorizeResponse response = tpp.authorize(new AuthorizeRequest(auth.user(), auth.password()));
     apiKey = response.apiKey();
     bestBeforeEnd = response.validUntil();
@@ -148,7 +118,7 @@ public class TppConnector implements Connector {
     if (config == null) {
       config = readZoneConfiguration(zone);
     }
-    String tppMgmtType = config.customAttributeValues().get(tppAttributeManagementType);
+    String tppMgmtType = config.customAttributeValues().get(TPP_ATTRIBUTE_MANAGEMENT_TYPE);
     if ("Monitoring".equals(tppMgmtType) || "Unassigned".equals(tppMgmtType)) {
       throw new VCertException(
           "Unable to request certificate from TPP, current TPP configuration would not allow the request to be processed");
@@ -158,7 +128,7 @@ public class TppConnector implements Connector {
 
     switch (request.csrOrigin()) {
       case LocalGeneratedCSR: {
-        if ("0".equals(config.customAttributeValues().get(tppAttributeManualCSR))) {
+        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR))) {
           throw new VCertException(
               "Unable to request certificate by local generated CSR when zone configuration is 'Manual Csr' = 0");
         }
@@ -167,7 +137,7 @@ public class TppConnector implements Connector {
         break;
       }
       case UserProvidedCSR: {
-        if ("0".equals(config.customAttributeValues().get(tppAttributeManualCSR))) {
+        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR))) {
           throw new VCertException(
               "Unable to request certificate with user provided CSR when zone configuration is 'Manual Csr' = 0");
         }
@@ -410,7 +380,8 @@ public class TppConnector implements Connector {
     renewalRequest.certificateDN(certificateDN);
 
     if (Objects.nonNull(request.request()) && request.request().csr().length > 0) {
-      renewalRequest.PKCS10 = org.bouncycastle.util.Strings.fromByteArray(request.request().csr());
+      String pkcs10 = org.bouncycastle.util.Strings.fromByteArray(request.request().csr());
+      renewalRequest.PKCS10(pkcs10);
     }
 
     final Tpp.CertificateRenewalResponse response = tpp.renewCertificate(renewalRequest, apiKey());
@@ -420,7 +391,6 @@ public class TppConnector implements Connector {
 
     return certificateDN;
   }
-
 
   @Override
   public ImportResponse importCertificate(ImportRequest request) throws VCertException {
@@ -439,103 +409,4 @@ public class TppConnector implements Connector {
   public Policy readPolicyConfiguration(String zone) throws VCertException {
     throw new UnsupportedOperationException("Method not yet implemented");
   }
-
-  @VisibleForTesting
-  String getPolicyDN(final String zone) {
-    String result = zone;
-    Matcher candidate = policy.matcher(zone);
-    if (!candidate.matches()) {
-      if (!policy.matcher(zone).matches()) {
-        result = "\\" + result;
-      }
-      result = "\\VED\\Policy" + result;
-    }
-    return result;
-  }
-
-  @Data
-  @AllArgsConstructor
-  static class AuthorizeRequest {
-    private String username;
-    private String password;
-  }
-
-  @Data
-  @AllArgsConstructor
-  static class ReadZoneConfigurationRequest {
-    String policyDN;
-  }
-
-  @Data
-  public static class ReadZoneConfigurationResponse {
-    Object error;
-    ServerPolicy policy;
-  }
-
-  @Data
-  static class CertificateRequestsPayload {
-    @SerializedName("PolicyDN")
-    private String policyDN;
-    @SerializedName("CADN")
-    private String cadn;
-    private String objectName;
-    private String subject;
-    private String organizationalUnit;
-    private String organization;
-    private String city;
-    private String state;
-    private String country;
-    @SerializedName("SubjectAltNames")
-    private Collection<SANItem> subjectAltNames;
-    private String contact;
-    @SerializedName("CASpecificAttributes")
-    private Collection<NameValuePair<String, String>> caSpecificAttributes;
-    @SerializedName("PKCS10")
-    private String pkcs10;
-    private String keyAlgorithm;
-    private int keyBitSize;
-    private String ellipticCurve;
-    private boolean disableAutomaticRenewal;
-    private String origin;
-  }
-
-  @Data
-  private static class SANItem {
-    private int type;
-    private String name;
-  }
-
-  @Data
-  @AllArgsConstructor
-  private static class NameValuePair<K, V> {
-    private K name;
-    private V value;
-  }
-
-  @Data
-  class CertificateRetrieveRequest {
-    private String certificateDN;
-    private String format;
-    private String password;
-    private boolean includePrivateKey;
-    private boolean includeChain;
-    private String friendlyName;
-    private boolean rootFirstOrder;
-  }
-
-  @Data
-  class CertificateRevokeRequest {
-    private String certificateDN;
-    private String thumbprint;
-    private Integer reason;
-    private String comments;
-    private boolean disable;
-  }
-
-  @Data
-  class CertificateRenewalRequest {
-    private String certificateDN;
-    private String PKCS10;
-  }
-
 }

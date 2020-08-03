@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/vedauth/authorize/oauth"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody":{
+      "access_token": "12345678-1234-1234-1234-123456789012",
+      "refresh_token": "abcdefgh-abcd-abcd-abcd-abcdefghijkl",
+      "expires": 1594504904,
+      "token_type": "Bearer",
+      "scope": "certificate:manage,revoke",
+      "identity": "local:{500abcf0-8e70-4103-a97b-5a690d4d00d0}",
+      "refresh_until": 1595023304
+    }
+  }
+}
