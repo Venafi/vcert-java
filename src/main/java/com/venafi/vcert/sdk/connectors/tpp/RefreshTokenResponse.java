@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 
 @Data
-public class ResfreshTokenResponse {
+public class RefreshTokenResponse {
 
 	@SerializedName("access_token")
 	private String accessToken;

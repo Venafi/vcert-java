@@ -53,7 +53,7 @@ public class TppTokenConnectorIT {
 
     @Test
     void readZoneConfiguration() throws VCertException {
-        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration("tag", info.accessToken());
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration("tag");
 
         assertThat(zoneConfiguration).isNotNull();
         assertThat(zoneConfiguration.organization()).isNull();

@@ -28,9 +28,11 @@ public class VCertTknClient implements TokenConnector {
     public VCertTknClient(Config config) throws VCertException {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         switch (config.connectorType()) {
-            case TPP_TOKEN:
+            case TPP_TOKEN:{
                 connector = new TppTokenConnector(Tpp.connect(config));
+                ((TppTokenConnector)connector).credentials(config.credentials());
                 break;
+            }
             default:
                 throw new VCertException("ConnectorType is not defined");
         }
@@ -102,22 +104,22 @@ public class VCertTknClient implements TokenConnector {
     }
 
     @Override
-    public TokenInfo refreshAccessToken(String refreshToken, String applicationId) throws VCertException{
-        return  connector.refreshAccessToken(refreshToken, applicationId);
+    public TokenInfo refreshAccessToken(String applicationId) throws VCertException{
+        return  connector.refreshAccessToken(applicationId);
     }
 
     @Override
-    public int revokeAccessToken(String accessToken) throws VCertException {
-        return connector.revokeAccessToken(accessToken);
+    public int revokeAccessToken() throws VCertException {
+        return connector.revokeAccessToken();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void ping(String accessToken) throws VCertException {
+    public void ping() throws VCertException {
         try {
-            connector.ping(accessToken);
+            connector.ping();
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
@@ -129,9 +131,9 @@ public class VCertTknClient implements TokenConnector {
      * {@inheritDoc}
      */
     @Override
-    public ZoneConfiguration readZoneConfiguration(String zone, String accessToken) throws VCertException {
+    public ZoneConfiguration readZoneConfiguration(String zone) throws VCertException {
         try {
-            return connector.readZoneConfiguration(zone, accessToken);
+            return connector.readZoneConfiguration(zone);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
@@ -143,10 +145,10 @@ public class VCertTknClient implements TokenConnector {
      * {@inheritDoc}
      */
     @Override
-    public CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request, String accessToken)
+    public CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request)
             throws VCertException {
         try {
-            return connector.generateRequest(config, request, accessToken);
+            return connector.generateRequest(config, request);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
@@ -155,9 +157,9 @@ public class VCertTknClient implements TokenConnector {
     }
 
     @Override
-    public String requestCertificate(CertificateRequest request, String zone, String accessToken) throws VCertException {
+    public String requestCertificate(CertificateRequest request, String zone) throws VCertException {
         try {
-            return connector.requestCertificate(request, zone, accessToken);
+            return connector.requestCertificate(request, zone);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
@@ -169,10 +171,10 @@ public class VCertTknClient implements TokenConnector {
      * {@inheritDoc}
      */
     @Override
-    public String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration, String accessToken)
+    public String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration)
             throws VCertException {
         try {
-            return connector.requestCertificate(request, zoneConfiguration, accessToken);
+            return connector.requestCertificate(request, zoneConfiguration);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
@@ -184,9 +186,9 @@ public class VCertTknClient implements TokenConnector {
      * {@inheritDoc}
      */
     @Override
-    public PEMCollection retrieveCertificate(CertificateRequest request, String accessToken) throws VCertException {
+    public PEMCollection retrieveCertificate(CertificateRequest request) throws VCertException {
         try {
-            return connector.retrieveCertificate(request, accessToken);
+            return connector.retrieveCertificate(request);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
@@ -198,9 +200,9 @@ public class VCertTknClient implements TokenConnector {
      * {@inheritDoc}
      */
     @Override
-    public void revokeCertificate(RevocationRequest request, String accessToken) throws VCertException {
+    public void revokeCertificate(RevocationRequest request) throws VCertException {
         try {
-            connector.revokeCertificate(request, accessToken);
+            connector.revokeCertificate(request);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
@@ -212,9 +214,9 @@ public class VCertTknClient implements TokenConnector {
      * {@inheritDoc}
      */
     @Override
-    public String renewCertificate(RenewalRequest request, String accessToken) throws VCertException {
+    public String renewCertificate(RenewalRequest request) throws VCertException {
         try {
-            return connector.renewCertificate(request, accessToken);
+            return connector.renewCertificate(request);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
@@ -226,9 +228,9 @@ public class VCertTknClient implements TokenConnector {
      * {@inheritDoc}
      */
     @Override
-    public ImportResponse importCertificate(ImportRequest request, String accessToken) throws VCertException {
+    public ImportResponse importCertificate(ImportRequest request) throws VCertException {
         try {
-            return connector.importCertificate(request, accessToken);
+            return connector.importCertificate(request);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {
@@ -240,9 +242,9 @@ public class VCertTknClient implements TokenConnector {
      * {@inheritDoc}
      */
     @Override
-    public Policy readPolicyConfiguration(String zone, String accessToken) throws VCertException {
+    public Policy readPolicyConfiguration(String zone) throws VCertException {
         try {
-            return connector.readPolicyConfiguration(zone, accessToken);
+            return connector.readPolicyConfiguration(zone);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         } catch (Exception e) {

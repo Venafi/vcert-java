@@ -66,8 +66,7 @@ public interface Tpp {
   AuthorizeTokenResponse authorizeToken(AbstractTppConnector.AuthorizeTokenRequest authorizeRequest);
 
   @RequestLine("POST /vedauth/authorize/token")
-  @Headers("Content-Type: application/json")
-  ResfreshTokenResponse refreshToken(AbstractTppConnector.RefreshTokenRequest request);
+  @Headers("Content-Type: application/json") RefreshTokenResponse refreshToken(AbstractTppConnector.RefreshTokenRequest request);
 
   @RequestLine("GET /vedauth/revoke/token")
   @Headers("Authorization: {token}")
