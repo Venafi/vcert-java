@@ -1,5 +1,6 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.*;
 import com.venafi.vcert.sdk.connectors.*;
@@ -26,7 +27,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class TppTokenConnector extends AbstractTppConnector implements TokenConnector {
 
     public TppTokenConnector(Tpp tpp){ super(tpp); }
+
     @Setter
+    @VisibleForTesting
     private Authentication credentials;
 
     @Override
@@ -77,8 +80,9 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
 
     @Override
     public TokenInfo getAccessToken(Authentication auth) throws VCertException {
-
-        VCertException.throwIfNull( auth, MISSING_CREDENTIALS_MESSAGE );
+        if(isEmptyCredentials(auth)) {
+            throw new VCertException(MISSING_CREDENTIALS_MESSAGE);
+        }
 
         AuthorizeTokenRequest info = new AuthorizeTokenRequest( auth.user(), auth.password(), auth.clientId(), auth.scope(), auth.state(), auth.redirectUri() );
         AuthorizeTokenResponse response = tpp.authorizeToken( info );
@@ -89,6 +93,11 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         this.credentials.refreshToken(accessTokenInfo.refreshToken());
 
         return accessTokenInfo;
+    }
+
+    @Override
+    public TokenInfo getAccessToken() throws VCertException {
+        return getAccessToken(credentials);
     }
 
     @Override
@@ -115,6 +124,10 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
 
     @Override
     public int revokeAccessToken() throws VCertException {
+
+        if(isEmptyToken()){
+            throw new VCertException(MISSING_ACCESS_TOKEN_MESSAGE);
+        }
 
         String requestHeader = getAuthHeaderValue();//"Bearer "+accessToken;
 
@@ -437,5 +450,29 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
     @Override
     public Policy readPolicyConfiguration(String zone) throws VCertException {
         throw new UnsupportedOperationException("Method not yet implemented");
+    }
+
+    private boolean isEmptyCredentials(Authentication credentials){
+        if(credentials == null){
+            return true;
+        }
+
+        if(credentials.user() == null || credentials.user().isEmpty()){
+            return true;
+        }
+
+        if(credentials.password() == null || credentials.password().isEmpty()){
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isEmptyToken(){
+        if(credentials == null || isBlank(credentials.accessToken())){
+            return true;
+        }
+
+        return false;
     }
 }

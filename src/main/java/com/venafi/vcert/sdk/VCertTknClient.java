@@ -104,6 +104,17 @@ public class VCertTknClient implements TokenConnector {
     }
 
     @Override
+    public TokenInfo getAccessToken() throws VCertException{
+        try {
+            return connector.getAccessToken();
+        } catch (FeignException e) {
+            throw VCertException.fromFeignException(e);
+        } catch (Exception e) {
+            throw new VCertException("Unexpected exception", e);
+        }
+    }
+
+    @Override
     public TokenInfo refreshAccessToken(String applicationId) throws VCertException{
         return  connector.refreshAccessToken(applicationId);
     }

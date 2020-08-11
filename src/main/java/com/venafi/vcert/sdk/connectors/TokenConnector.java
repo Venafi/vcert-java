@@ -1,5 +1,6 @@
 package com.venafi.vcert.sdk.connectors;
 
+import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.*;
 import com.venafi.vcert.sdk.connectors.tpp.TokenInfo;
@@ -51,6 +52,14 @@ public interface TokenConnector {
      * @throws VCertException throws this exception when authentication info is null.
      */
     TokenInfo getAccessToken (Authentication auth ) throws VCertException;
+
+    /**
+     * returns a new access token. This method uses the {@link Authentication} object passed earlier
+     * with the {@link Config} object.
+     * @return the new token.
+     * @throws VCertException throws this exception when authentication info is null.
+     */
+    TokenInfo getAccessToken () throws VCertException;
 
     /**
      * this is for refreshing a token.

@@ -34,7 +34,8 @@ public class TppTokenConnectorIT {
                 .user("user")
                 .password("pass")
                 .build();
-        info = classUnderTest.getAccessToken(auth);
+        classUnderTest.credentials(auth);
+        info = classUnderTest.getAccessToken();
     }
 
     @Test

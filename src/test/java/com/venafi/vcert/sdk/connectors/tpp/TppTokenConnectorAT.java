@@ -11,6 +11,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -39,19 +40,54 @@ class TppTokenConnectorAT {
     @BeforeEach
     void authenticate() throws VCertException {
         Security.addProvider(new BouncyCastleProvider());
-        Authentication authentication = Authentication.builder()
-                .user(System.getenv("TPPUSER"))
-                .password(System.getenv("TPPPASSWORD"))
-                .scope("certificate:manage,revoke,discover")
-                .build();
+        //Executes only once to ensure the same token is used across the tests
+        if(TppTokenConnectorAT.info == null){
+            Authentication authentication = Authentication.builder()
+                    .user(System.getenv("TPPUSER"))
+                    .password(System.getenv("TPPPASSWORD"))
+                    .scope("certificate:manage,revoke,discover")
+                    .build();
 
-        TokenInfo info = classUnderTest.getAccessToken(authentication);
+            TokenInfo info = classUnderTest.getAccessToken(authentication);
+
+            assertThat(info).isNotNull();
+            assertThat(info.accessToken()).isNotNull();
+            assertThat(info.refreshToken()).isNotNull();
+
+            TppTokenConnectorAT.info = info;
+        }
+    }
+
+    @Test
+    @DisplayName("Authenticate with credentials from Config object")
+    void authenticateNoParameter() throws VCertException{
+        Authentication authentication = Authentication.builder()
+            .user(System.getenv("TPPUSER"))
+            .password(System.getenv("TPPPASSWORD"))
+            .scope("certificate:manage,revoke,discover")
+            .build();
+
+        classUnderTest.credentials(authentication);
+
+        TokenInfo info = classUnderTest.getAccessToken();
 
         assertThat(info).isNotNull();
         assertThat(info.accessToken()).isNotNull();
         assertThat(info.refreshToken()).isNotNull();
+    }
 
-        TppTokenConnectorAT.info = info;
+    @Test
+    @DisplayName("Authenticate with invalid credentials")
+    void authenticateInvalid(){
+        Authentication authentication = Authentication.builder()
+            .user("sample")
+            .password("password")
+            .scope("certificate:manage,revoke,discover")
+            .build();
+
+        classUnderTest.credentials(authentication);
+
+        assertThrows(VCertException.class, () ->classUnderTest.getAccessToken());
     }
 
     @Test
@@ -286,12 +322,19 @@ class TppTokenConnectorAT {
 
         assertThat(refreshInfo).isNotNull();
         assertThat(refreshInfo.accessToken()).isNotEqualTo(info.accessToken());
+        assertThat(refreshInfo.refreshToken()).isNotEqualTo(info.refreshToken());
     }
 
-//    @Test
-//    void refreshTokenInvalid() throws VCertException{
-//        assertThrows(VCertException.class, () -> classUnderTest.refreshAccessToken("1234-1234-12345-123", "vcert-sdk"));
-//    }
+    @Test
+    void refreshTokenInvalid() throws VCertException{
+        Authentication invalidCredentials = Authentication.builder()
+            .accessToken("abcde==")
+            .refreshToken("1234-1234-12345-123")
+            .build();
+        classUnderTest.credentials(invalidCredentials);
+
+        assertThrows(VCertException.class, () -> classUnderTest.refreshAccessToken("vcert-sdk"));
+    }
 
     @Test
     void revokeToken() throws VCertException{
@@ -299,8 +342,14 @@ class TppTokenConnectorAT {
         assertThat(status).isEqualTo(200);
     }
 
-//    @Test
-//    void revokeTokenInvalid() throws VCertException{
-//        assertThrows(VCertException.class, () ->classUnderTest.revokeAccessToken());
-//    }
+    @Test
+    void revokeTokenInvalid() throws VCertException{
+        Authentication invalidCredentials = Authentication.builder()
+            .accessToken("abcde==")
+            .refreshToken("1234-1234-12345-123")
+            .build();
+        classUnderTest.credentials(invalidCredentials);
+
+        assertThrows(VCertException.class, () ->classUnderTest.revokeAccessToken());
+    }
 }
