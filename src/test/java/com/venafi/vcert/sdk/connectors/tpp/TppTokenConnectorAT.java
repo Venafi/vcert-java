@@ -6,6 +6,8 @@ import com.venafi.vcert.sdk.certificate.*;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import feign.FeignException;
+import feign.FeignException.Unauthorized;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
@@ -61,19 +63,11 @@ class TppTokenConnectorAT {
     @Test
     @DisplayName("Authenticate with credentials from Config object")
     void authenticateNoParameter() throws VCertException{
-        Authentication authentication = Authentication.builder()
-            .user(System.getenv("TPPUSER"))
-            .password(System.getenv("TPPPASSWORD"))
-            .scope("certificate:manage,revoke,discover")
-            .build();
+        TokenInfo localInfo = classUnderTest.getAccessToken();
 
-        classUnderTest.credentials(authentication);
-
-        TokenInfo info = classUnderTest.getAccessToken();
-
-        assertThat(info).isNotNull();
-        assertThat(info.accessToken()).isNotNull();
-        assertThat(info.refreshToken()).isNotNull();
+        assertThat(localInfo).isNotNull();
+        assertThat(localInfo.accessToken()).isNotNull();
+        assertThat(localInfo.refreshToken()).isNotNull();
     }
 
     @Test
@@ -87,7 +81,11 @@ class TppTokenConnectorAT {
 
         classUnderTest.credentials(authentication);
 
-        assertThrows(VCertException.class, () ->classUnderTest.getAccessToken());
+        assertThrows(Unauthorized.class, () ->classUnderTest.getAccessToken());
+
+        // After setting invalid credentials to TPP, setting variable <info> to null
+        // will allow for new token to be authorized
+        TppTokenConnectorAT.info = null;
     }
 
     @Test
@@ -334,12 +332,20 @@ class TppTokenConnectorAT {
         classUnderTest.credentials(invalidCredentials);
 
         assertThrows(VCertException.class, () -> classUnderTest.refreshAccessToken("vcert-sdk"));
+
+        // After setting invalid credentials to TPP, setting variable <info> to null
+        // will allow for new token to be authorized
+        TppTokenConnectorAT.info = null;
     }
 
     @Test
     void revokeToken() throws VCertException{
         int status = classUnderTest.revokeAccessToken();
         assertThat(status).isEqualTo(200);
+
+        // After revoking the current token, setting variable <info> to null
+        // will allow for new token to be authorized
+        TppTokenConnectorAT.info = null;
     }
 
     @Test
@@ -351,5 +357,9 @@ class TppTokenConnectorAT {
         classUnderTest.credentials(invalidCredentials);
 
         assertThrows(VCertException.class, () ->classUnderTest.revokeAccessToken());
+
+        // After setting invalid credentials to TPP, setting variable <info> to null
+        // will allow for new token to be authorized
+        TppTokenConnectorAT.info = null;
     }
 }
