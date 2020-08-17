@@ -64,6 +64,9 @@ public class TppTokenConnectorTest {
 
         Authentication authentication = Authentication.builder().user("user").password("pass").build();
         info = classUnderTest.getAccessToken(authentication);
+        assertThat(info).isNotNull();
+        assertThat(info.authorized()).isTrue();
+        assertThat(info.errorMessage()).isNull();
     }
 
     @Test
@@ -212,6 +215,8 @@ public class TppTokenConnectorTest {
 
         TokenInfo newInfo = classUnderTest.refreshAccessToken("vcert-sdk");
         assertNotNull(newInfo);
+        assertThat(newInfo.authorized()).isTrue();
+        assertThat(newInfo.errorMessage()).isNull();
         assertNotNull(newInfo.accessToken());
         assertNotNull(newInfo.refreshToken());
 
@@ -221,16 +226,19 @@ public class TppTokenConnectorTest {
 
     @Test
     @DisplayName("Refresh invalid access token")
-    void refreshAccessTokenInvalid(){
+    void refreshAccessTokenInvalid() throws VCertException{
         final Request request = Request.create(Request.HttpMethod.POST, "", new HashMap<String, Collection<String>>(), null);
 
         when(tpp.refreshToken(any(AbstractTppConnector.RefreshTokenRequest.class))).thenThrow(new FeignException.BadRequest("400 Grant has been revoked, has expired, or the refresh token is invalid", request, null));
 
-        final Throwable throwable =
-                assertThrows(VCertException.class, () -> classUnderTest.refreshAccessToken("vcert-sdk"));
-        logger.info("VCertException = %s", throwable.getMessage());
+        TokenInfo info = classUnderTest.refreshAccessToken("vcert-sdk");
+        assertThat(info).isNotNull();
+        assertThat(info.authorized()).isFalse();
+        assertThat(info.errorMessage()).isNotNull();
 
-        assertThat(throwable.getMessage()).contains("Grant has been revoked, has expired, or the refresh token is invalid");
+        logger.info("VCertException = %s", info.errorMessage());
+
+        assertThat(info.errorMessage()).contains("Grant has been revoked, has expired, or the refresh token is invalid");
     }
 
     @Test

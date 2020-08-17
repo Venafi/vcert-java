@@ -8,6 +8,7 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
 import feign.FeignException;
+import feign.FeignException.Unauthorized;
 import feign.Response;
 import lombok.Setter;
 
@@ -84,14 +85,22 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
             throw new VCertException(MISSING_CREDENTIALS_MESSAGE);
         }
 
-        AuthorizeTokenRequest info = new AuthorizeTokenRequest( auth.user(), auth.password(), auth.clientId(), auth.scope(), auth.state(), auth.redirectUri() );
-        AuthorizeTokenResponse response = tpp.authorizeToken( info );
-        TokenInfo accessTokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(), response.tokenType(), response.scope(), response.identity(), response.refreshUntil());
+        TokenInfo accessTokenInfo;
+        try {
+            AuthorizeTokenRequest authRequest =
+                new AuthorizeTokenRequest(auth.user(), auth.password(), auth.clientId(), auth.scope(), auth.state(),
+                    auth.redirectUri());
+            AuthorizeTokenResponse response = tpp.authorizeToken(authRequest);
+            accessTokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(),
+                response.tokenType(), response.scope(), response.identity(), response.refreshUntil(), true, null);
 
-        this.credentials = auth;
-        this.credentials.accessToken(accessTokenInfo.accessToken());
-        this.credentials.refreshToken(accessTokenInfo.refreshToken());
-
+            this.credentials = auth;
+            this.credentials.accessToken(accessTokenInfo.accessToken());
+            this.credentials.refreshToken(accessTokenInfo.refreshToken());
+        } catch(Unauthorized e){
+            accessTokenInfo = new TokenInfo(null, null, -1, null, null,
+                null, -1, false, e.getMessage());
+        }
         return accessTokenInfo;
     }
 
@@ -105,21 +114,23 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         if(isBlank(credentials.refreshToken())){
             throw new VCertException(MISSING_REFRESH_TOKEN_MESSAGE);
         }
+        TokenInfo tokenInfo;
         try {
             RefreshTokenRequest request = new RefreshTokenRequest(credentials.refreshToken(), clientId);
             RefreshTokenResponse response = tpp.refreshToken( request );
 
-            TokenInfo tokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(),
-                    response.tokenType(), response.scope(), "",
-                    response.refreshUntil());
+             tokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(),
+                    response.tokenType(), response.scope(), "", response.refreshUntil(), true, null);
 
             this.credentials.accessToken(tokenInfo.accessToken());
             this.credentials.refreshToken(tokenInfo.refreshToken());
 
             return tokenInfo;
         }catch (FeignException.BadRequest e){
-            throw new VCertException(e.getMessage());
+            tokenInfo = new TokenInfo(null, null, -1, null, null,
+                null, -1, false, e.getMessage());
         }
+        return tokenInfo;
     }
 
     @Override
