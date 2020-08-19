@@ -1,9 +1,13 @@
 package com.venafi.vcert.sdk;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import java.security.Security;
+
 import com.google.common.annotations.VisibleForTesting;
+
 import feign.FeignException;
+
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.ImportResponse;
@@ -30,7 +34,7 @@ public class VCertTknClient implements TokenConnector {
         switch (config.connectorType()) {
             case TPP_TOKEN:{
                 connector = new TppTokenConnector(Tpp.connect(config));
-                ((TppTokenConnector)connector).credentials(config.credentials());
+                ((TppTokenConnector) connector).credentials(config.credentials());
                 break;
             }
             default:
