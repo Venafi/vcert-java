@@ -1,5 +1,6 @@
 package com.venafi.vcert.sdk.connectors;
 
+import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.*;
 import com.venafi.vcert.sdk.connectors.tpp.TokenInfo;
@@ -53,18 +54,25 @@ public interface TokenConnector {
     TokenInfo getAccessToken (Authentication auth ) throws VCertException;
 
     /**
+     * returns a new access token. This method uses the {@link Authentication} object passed earlier
+     * with the {@link Config} object.
+     * @return the new token.
+     * @throws VCertException throws this exception when authentication info is null.
+     */
+    TokenInfo getAccessToken () throws VCertException;
+
+    /**
      * this is for refreshing a token.
-     * @param refreshToken the refresh token.
      * @param applicationId the application id.
      * @return a complete info about the new access token, refresh token, expires.
      */
-    TokenInfo refreshAccessToken( String refreshToken, String applicationId ) throws VCertException;
+    TokenInfo refreshAccessToken(String applicationId ) throws VCertException;
 
     /**
      *
      * @return 1 if the access token was revoked and 0 if not.
      */
-    int revokeAccessToken( String accessToken ) throws VCertException;
+    int revokeAccessToken() throws VCertException;
 
     /**
      * VedAuth method.
@@ -73,7 +81,7 @@ public interface TokenConnector {
      *
      * @throws VCertException
      */
-    void ping(String accessToken) throws VCertException;
+    void ping() throws VCertException;
 
     /**
      * VedAuth method.
@@ -81,11 +89,10 @@ public interface TokenConnector {
      *
      * @param zone ID (e.g. 2ebd4ec1-57f7-4994-8651-e396b286a3a8) or zone path (e.g.
      *        "ProjectName\ZoneName")
-     * @param accessToken The authentication token.
      * @return
      * @throws VCertException
      */
-    ZoneConfiguration readZoneConfiguration(String zone, String accessToken) throws VCertException;
+    ZoneConfiguration readZoneConfiguration(String zone) throws VCertException;
 
     /**
      * VedAuth method.
@@ -94,11 +101,10 @@ public interface TokenConnector {
      * the user data
      *
      * @param config
-     * @param accessToken The authentication token
      * @return the zone configuration
      * @throws VCertException
      */
-    CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request, String accessToken)
+    CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request)
             throws VCertException;
 
     /**
@@ -108,11 +114,10 @@ public interface TokenConnector {
      *
      * @param request
      * @param zoneConfiguration
-     * @param accessToken the authentication token.
      * @return request id to track the certificate status.
      * @throws VCertException
      */
-    String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration, String accessToken)
+    String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration)
             throws VCertException, UnsupportedOperationException;
 
     /**
@@ -122,11 +127,10 @@ public interface TokenConnector {
      *
      * @param request
      * @param zone
-     * @param accessToken the authentication token.
      * @return request id to track the certificate status.
      * @throws VCertException
      */
-    String requestCertificate(CertificateRequest request, String zone, String accessToken)
+    String requestCertificate(CertificateRequest request, String zone)
             throws VCertException, UnsupportedOperationException;
 
     /**
@@ -135,11 +139,10 @@ public interface TokenConnector {
      * Retrives the certificate for the specific ID
      *
      * @param request
-     * @param accessToken the authentication token.
      * @return A collection of PEM files including certificate, chain and potentially a private key.
      * @throws VCertException
      */
-    PEMCollection retrieveCertificate(CertificateRequest request, String accessToken) throws VCertException;
+    PEMCollection retrieveCertificate(CertificateRequest request) throws VCertException;
 
     /**
      * VedAuth method.
@@ -147,10 +150,9 @@ public interface TokenConnector {
      * Attempts to revoke a certificate
      *
      * @param request
-     * @param accessToken the authentication token.
      * @throws VCertException
      */
-    void revokeCertificate(RevocationRequest request, String accessToken) throws VCertException;
+    void revokeCertificate(RevocationRequest request) throws VCertException;
 
     /**
      * VedAuth method.
@@ -158,11 +160,10 @@ public interface TokenConnector {
      * Attempts to renew a certificate
      *
      * @param request
-     * @param accessToken the authentication token.
      * @return
      * @throws VCertException
      */
-    String renewCertificate(RenewalRequest request, String accessToken) throws VCertException;
+    String renewCertificate(RenewalRequest request) throws VCertException;
 
     /**
      * VedAuth method.
@@ -170,11 +171,10 @@ public interface TokenConnector {
      * Import an external certificate into Venafi.
      *
      * @param request
-     * @param accessToken the authentication token.
      * @return
      * @throws VCertException
      */
-    ImportResponse importCertificate(ImportRequest request, String accessToken) throws VCertException;
+    ImportResponse importCertificate(ImportRequest request) throws VCertException;
 
     /**
      * VedAuth method.
@@ -185,5 +185,5 @@ public interface TokenConnector {
      * @return
      * @throws VCertException
      */
-    Policy readPolicyConfiguration(String zone, String accessToken) throws VCertException;
+    Policy readPolicyConfiguration(String zone) throws VCertException;
 }

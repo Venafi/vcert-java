@@ -6,11 +6,13 @@ import com.venafi.vcert.sdk.certificate.*;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import feign.FeignException;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -39,25 +41,64 @@ class TppTokenConnectorAT {
     @BeforeEach
     void authenticate() throws VCertException {
         Security.addProvider(new BouncyCastleProvider());
+        //Executes only once to ensure the same token is used across the tests
+        if(TppTokenConnectorAT.info == null){
+            Authentication authentication = Authentication.builder()
+                    .user(System.getenv("TPPUSER"))
+                    .password(System.getenv("TPPPASSWORD"))
+                    .scope("certificate:manage,revoke,discover")
+                    .build();
+
+            TokenInfo info = classUnderTest.getAccessToken(authentication);
+
+            assertThat(info).isNotNull();
+            assertThat(info.authorized()).isTrue();
+            assertThat(info.errorMessage()).isNull();
+            assertThat(info.accessToken()).isNotNull();
+            assertThat(info.refreshToken()).isNotNull();
+
+            TppTokenConnectorAT.info = info;
+        }
+    }
+
+    @Test
+    @DisplayName("Authenticate with credentials from Config object")
+    void authenticateNoParameter() throws VCertException{
+        TokenInfo localInfo = classUnderTest.getAccessToken();
+
+        assertThat(localInfo).isNotNull();
+        assertThat(localInfo.authorized()).isTrue();
+        assertThat(localInfo.errorMessage()).isNull();
+        assertThat(localInfo.accessToken()).isNotNull();
+        assertThat(localInfo.refreshToken()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Authenticate with invalid credentials")
+    void authenticateInvalid() throws VCertException{
         Authentication authentication = Authentication.builder()
-                .user(System.getenv("TPPUSER"))
-                .password(System.getenv("TPPPASSWORD"))
-                .scope("certificate:manage,revoke,discover")
-                .build();
+            .user("sample")
+            .password("password")
+            .scope("certificate:manage,revoke,discover")
+            .build();
 
-        TokenInfo info = classUnderTest.getAccessToken(authentication);
+        classUnderTest.credentials(authentication);
 
+        TokenInfo info = classUnderTest.getAccessToken();
         assertThat(info).isNotNull();
-        assertThat(info.accessToken()).isNotNull();
-        assertThat(info.refreshToken()).isNotNull();
+        assertThat(info.authorized()).isFalse();
+        assertThat(info.errorMessage()).isNotNull();
 
-        TppTokenConnectorAT.info = info;
+
+        // After setting invalid credentials to TPP, setting variable <info> to null
+        // will allow for new token to be authorized
+        TppTokenConnectorAT.info = null;
     }
 
     @Test
     void readZoneConfiguration() throws VCertException {
         try {
-            classUnderTest.readZoneConfiguration(System.getenv("TPPZONE"), info.accessToken());
+            classUnderTest.readZoneConfiguration(System.getenv("TPPZONE"));
         } catch (FeignException fe) {
             throw VCertException.fromFeignException(fe);
         }
@@ -65,14 +106,14 @@ class TppTokenConnectorAT {
 
     @Test
     void ping() throws VCertException {
-        assertThatCode(() -> classUnderTest.ping(info.accessToken())).doesNotThrowAnyException();
+        assertThatCode(() -> classUnderTest.ping()).doesNotThrowAnyException();
     }
 
     @Test
     void generateRequest() throws VCertException, IOException {
         String zone = System.getenv("TPPZONE");
         String commonName = TestUtils.randomCN();
-        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zone, info.accessToken());
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zone);
         CertificateRequest certificateRequest = new CertificateRequest()
                 .subject(new CertificateRequest.PKIXName().commonName(commonName)
                         .organization(Collections.singletonList("Venafi, Inc."))
@@ -82,7 +123,7 @@ class TppTokenConnectorAT {
                 .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
                 .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
 
-        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest, info.accessToken());
+        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
 
         assertThat(certificateRequest.csr()).isNotEmpty();
 
@@ -98,7 +139,7 @@ class TppTokenConnectorAT {
     @Test
     void requestCertificate() throws VCertException, SocketException, UnknownHostException {
         String zoneName = System.getenv("TPPZONE");
-        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName, info.accessToken());
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
         CertificateRequest certificateRequest = new CertificateRequest()
                 .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
                         .organization(Collections.singletonList("Venafi"))
@@ -109,15 +150,15 @@ class TppTokenConnectorAT {
                 .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
                 .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
 
-        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest, info.accessToken());
+        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
         CertificateRequest csrRequestOnly = new CertificateRequest().csr(certificateRequest.csr());
-        assertThat(classUnderTest.requestCertificate(csrRequestOnly, zoneConfiguration, info.accessToken())).isNotNull();
+        assertThat(classUnderTest.requestCertificate(csrRequestOnly, zoneConfiguration)).isNotNull();
     }
 
     @Test
     void retrieveCertificate() throws VCertException, SocketException, UnknownHostException {
         String zoneName = System.getenv("TPPZONE");
-        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName, info.accessToken());
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
         CertificateRequest certificateRequest = new CertificateRequest()
                 .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
                         .organization(Collections.singletonList("Venafi"))
@@ -128,11 +169,11 @@ class TppTokenConnectorAT {
                 .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
                 .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
 
-        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest, info.accessToken());
-        String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration, info.accessToken());
+        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
+        String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
         assertThat(certificateId).isNotNull();
 
-        PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest, info.accessToken());
+        PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest);
 
         assertThat(pemCollection.certificate()).isNotNull();
         assertThat(pemCollection.privateKey()).isNotNull();
@@ -141,7 +182,7 @@ class TppTokenConnectorAT {
     @Test
     void revokeCertificate() throws VCertException, SocketException, UnknownHostException {
         String zoneName = System.getenv("TPPZONE");
-        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName, info.accessToken());
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
         CertificateRequest certificateRequest = new CertificateRequest()
                 .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
                         .organization(Collections.singletonList("Venafi"))
@@ -152,18 +193,18 @@ class TppTokenConnectorAT {
                 .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
                 .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
 
-        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest, info.accessToken());
-        String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration, info.accessToken());
+        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
+        String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
         assertThat(certificateId).isNotNull();
 
         // just wait for the certificate issuance
-        classUnderTest.retrieveCertificate(certificateRequest, info.accessToken());
+        classUnderTest.retrieveCertificate(certificateRequest);
 
         RevocationRequest revocationRequest = new RevocationRequest();
         revocationRequest.reason("key-compromise");
         revocationRequest.certificateDN(certificateRequest.pickupId());
 
-        classUnderTest.revokeCertificate(revocationRequest, info.accessToken());
+        classUnderTest.revokeCertificate(revocationRequest);
     }
 
     @Test
@@ -171,7 +212,7 @@ class TppTokenConnectorAT {
             CertificateException, NoSuchAlgorithmException {
         String zoneName = System.getenv("TPPZONE");
         String commonName = TestUtils.randomCN();
-        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName, info.accessToken());
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
         CertificateRequest certificateRequest = new CertificateRequest()
                 .subject(new CertificateRequest.PKIXName().commonName(commonName)
                         .organization(Collections.singletonList("Venafi"))
@@ -182,11 +223,11 @@ class TppTokenConnectorAT {
                 .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
                 .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
 
-        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest, info.accessToken());
-        String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration, info.accessToken());
+        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
+        String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
         assertThat(certificateId).isNotNull();
 
-        PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest, info.accessToken());
+        PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest);
         X509Certificate cert = (X509Certificate) pemCollection.certificate();
 
         String thumbprint = DigestUtils.sha1Hex(cert.getEncoded()).toUpperCase();
@@ -200,10 +241,10 @@ class TppTokenConnectorAT {
                         .province(Collections.singletonList("Berkshire")))
                 .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
                 .ipAddresses(getTestIps()).keyType(KeyType.RSA).keyLength(2048);
-        classUnderTest.generateRequest(zoneConfiguration, certificateRequestToRenew, info.accessToken());
+        classUnderTest.generateRequest(zoneConfiguration, certificateRequestToRenew);
 
         String renewRequestId = classUnderTest.renewCertificate(
-                new RenewalRequest().request(certificateRequestToRenew).thumbprint(thumbprint), info.accessToken());
+                new RenewalRequest().request(certificateRequestToRenew).thumbprint(thumbprint));
 
         assertThat(renewRequestId).isNotNull();
     }
@@ -266,7 +307,7 @@ class TppTokenConnectorAT {
         importRequest.policyDN(classUnderTest.getPolicyDN(zone));
 
 
-        ImportResponse response = classUnderTest.importCertificate(importRequest, info.accessToken());
+        ImportResponse response = classUnderTest.importCertificate(importRequest);
         assertThat(response).isNotNull();
         assertThat(response.certificateDN()).isNotNull();
         assertThat(response.certificateVaultId()).isNotNull();
@@ -277,30 +318,63 @@ class TppTokenConnectorAT {
     @Test
     void readPolicyConfiguration() {
         assertThrows(UnsupportedOperationException.class,
-                () -> classUnderTest.readPolicyConfiguration("zone", info.accessToken()));
+                () -> classUnderTest.readPolicyConfiguration("zone"));
     }
 
     @Test
     void refreshToken() throws VCertException{
-        TokenInfo refreshInfo = classUnderTest.refreshAccessToken(info.refreshToken(), "vcert-sdk");
+        TokenInfo refreshInfo = classUnderTest.refreshAccessToken("vcert-sdk");
 
         assertThat(refreshInfo).isNotNull();
+        assertThat(refreshInfo.authorized()).isTrue();
+        assertThat(refreshInfo.errorMessage()).isNull();
+        assertThat(refreshInfo.accessToken()).isNotNull();
         assertThat(refreshInfo.accessToken()).isNotEqualTo(info.accessToken());
+        assertThat(refreshInfo.refreshToken()).isNotNull();
+        assertThat(refreshInfo.refreshToken()).isNotEqualTo(info.refreshToken());
     }
 
     @Test
     void refreshTokenInvalid() throws VCertException{
-        assertThrows(VCertException.class, () -> classUnderTest.refreshAccessToken("1234-1234-12345-123", "vcert-sdk"));
+        Authentication invalidCredentials = Authentication.builder()
+            .accessToken("abcde==")
+            .refreshToken("1234-1234-12345-123")
+            .build();
+        classUnderTest.credentials(invalidCredentials);
+
+        TokenInfo info = classUnderTest.refreshAccessToken("vcert-sdk");
+
+        assertThat(info).isNotNull();
+        assertThat(info.authorized()).isFalse();
+        assertThat(info.errorMessage()).isNotNull();
+
+        // After setting invalid credentials to TPP, setting variable <info> to null
+        // will allow for new token to be authorized
+        TppTokenConnectorAT.info = null;
     }
 
     @Test
     void revokeToken() throws VCertException{
-        int status = classUnderTest.revokeAccessToken(info.accessToken());
+        int status = classUnderTest.revokeAccessToken();
         assertThat(status).isEqualTo(200);
+
+        // After revoking the current token, setting variable <info> to null
+        // will allow for new token to be authorized
+        TppTokenConnectorAT.info = null;
     }
 
     @Test
     void revokeTokenInvalid() throws VCertException{
-        assertThrows(VCertException.class, () ->classUnderTest.revokeAccessToken("1234-1234"));
+        Authentication invalidCredentials = Authentication.builder()
+            .accessToken("abcde==")
+            .refreshToken("1234-1234-12345-123")
+            .build();
+        classUnderTest.credentials(invalidCredentials);
+
+        assertThrows(VCertException.class, () ->classUnderTest.revokeAccessToken());
+
+        // After setting invalid credentials to TPP, setting variable <info> to null
+        // will allow for new token to be authorized
+        TppTokenConnectorAT.info = null;
     }
 }

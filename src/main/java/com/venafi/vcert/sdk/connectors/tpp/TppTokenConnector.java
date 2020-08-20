@@ -1,5 +1,6 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.*;
 import com.venafi.vcert.sdk.connectors.*;
@@ -7,7 +8,9 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
 import feign.FeignException;
+import feign.FeignException.Unauthorized;
 import feign.Response;
+import lombok.Setter;
 
 import java.net.InetAddress;
 import java.text.MessageFormat;
@@ -25,6 +28,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class TppTokenConnector extends AbstractTppConnector implements TokenConnector {
 
     public TppTokenConnector(Tpp tpp){ super(tpp); }
+
+    @Setter
+    @VisibleForTesting
+    private Authentication credentials;
 
     @Override
     public ConnectorType getType() {
@@ -51,61 +58,89 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         return vendorAndProductName;
     }
 
-    private String getAuthHeaderValue(String token) throws VCertException {
-        if(isBlank(token)){
+    private String getAuthHeaderValue() throws VCertException {
+        if(isBlank(credentials.accessToken())){
             throw new VCertException("Token cannot be empty");
         }
 
-        return String.format(HEADER_VALUE_AUTHORIZATION, token);
+        return String.format(HEADER_VALUE_AUTHORIZATION, credentials.accessToken());
     }
 
     @Override
-    public void ping(String accessToken) throws VCertException {
-        Response response = doPing(accessToken);
+    public void ping() throws VCertException {
+        Response response = doPing();
         if (response.status() != 200) {
             throw new VCertException(
                     format("ping failed with status %d and reason %s", response.status(), response.reason()));
         }
     }
 
-    private Response doPing(String accessToken) throws VCertException{
-        return tpp.pingToken(getAuthHeaderValue(accessToken));
+    private Response doPing() throws VCertException{
+        return tpp.pingToken(getAuthHeaderValue());
     }
 
     @Override
     public TokenInfo getAccessToken(Authentication auth) throws VCertException {
+        if(isEmptyCredentials(auth)) {
+            throw new VCertException(MISSING_CREDENTIALS_MESSAGE);
+        }
 
-        VCertException.throwIfNull( auth, MISSING_CREDENTIALS_MESSAGE );
+        TokenInfo accessTokenInfo;
+        try {
+            AuthorizeTokenRequest authRequest =
+                new AuthorizeTokenRequest(auth.user(), auth.password(), auth.clientId(), auth.scope(), auth.state(),
+                    auth.redirectUri());
+            AuthorizeTokenResponse response = tpp.authorizeToken(authRequest);
+            accessTokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(),
+                response.tokenType(), response.scope(), response.identity(), response.refreshUntil(), true, null);
 
-        AuthorizeTokenRequest info = new AuthorizeTokenRequest( auth.user(), auth.password(), auth.clientId(), auth.scope(), auth.state(), auth.redirectUri() );
-
-        AuthorizeTokenResponse response = tpp.authorizeToken( info );
-
-        TokenInfo accessTokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(), response.tokenType(), response.scope(), response.identity(), response.refreshUntil());
-
+            this.credentials = auth;
+            this.credentials.accessToken(accessTokenInfo.accessToken());
+            this.credentials.refreshToken(accessTokenInfo.refreshToken());
+        } catch(Unauthorized e){
+            accessTokenInfo = new TokenInfo(null, null, -1, null, null,
+                null, -1, false, e.getMessage());
+        }
         return accessTokenInfo;
     }
 
     @Override
-    public TokenInfo refreshAccessToken(String refreshToken, String clientId ) throws VCertException{
-        try {
-            RefreshTokenRequest request = new RefreshTokenRequest(refreshToken, clientId);
-            ResfreshTokenResponse response = tpp.refreshToken( request );
-
-            TokenInfo tokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(),
-                    response.tokenType(), response.scope(), "",
-                    response.refreshUntil());
-
-            return tokenInfo;
-        }catch (FeignException.BadRequest e){
-            throw new VCertException(e.getMessage());
-        }
+    public TokenInfo getAccessToken() throws VCertException {
+        return getAccessToken(credentials);
     }
 
     @Override
-    public int revokeAccessToken( String accessToken ) throws VCertException {
+    public TokenInfo refreshAccessToken(String clientId ) throws VCertException{
+        if(isBlank(credentials.refreshToken())){
+            throw new VCertException(MISSING_REFRESH_TOKEN_MESSAGE);
+        }
+        TokenInfo tokenInfo;
+        try {
+            RefreshTokenRequest request = new RefreshTokenRequest(credentials.refreshToken(), clientId);
+            RefreshTokenResponse response = tpp.refreshToken( request );
 
-        String requestHeader = getAuthHeaderValue(accessToken);//"Bearer "+accessToken;
+             tokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(),
+                    response.tokenType(), response.scope(), "", response.refreshUntil(), true, null);
+
+            this.credentials.accessToken(tokenInfo.accessToken());
+            this.credentials.refreshToken(tokenInfo.refreshToken());
+
+            return tokenInfo;
+        }catch (FeignException.BadRequest e){
+            tokenInfo = new TokenInfo(null, null, -1, null, null,
+                null, -1, false, e.getMessage());
+        }
+        return tokenInfo;
+    }
+
+    @Override
+    public int revokeAccessToken() throws VCertException {
+
+        if(isEmptyToken()){
+            throw new VCertException(MISSING_ACCESS_TOKEN_MESSAGE);
+        }
+
+        String requestHeader = getAuthHeaderValue();//"Bearer "+accessToken;
 
         Response response = tpp.revokeToken( requestHeader );
         if(response.status() == 200){
@@ -113,14 +148,13 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         }else{
             throw new VCertException(response.toString());
         }
-
     }
 
     @Override
-    public ZoneConfiguration readZoneConfiguration(String zone, String accessToken) throws VCertException {
+    public ZoneConfiguration readZoneConfiguration(String zone) throws VCertException {
         VCertException.throwIfNull(zone, "empty zone");
         ReadZoneConfigurationRequest request = new ReadZoneConfigurationRequest(getPolicyDN(zone));
-        ReadZoneConfigurationResponse response = tpp.readZoneConfigurationToken(request, getAuthHeaderValue(accessToken));
+        ReadZoneConfigurationResponse response = tpp.readZoneConfigurationToken(request, getAuthHeaderValue());
         ServerPolicy serverPolicy = response.policy();
         Policy policy = serverPolicy.toPolicy();
         ZoneConfiguration zoneConfig = serverPolicy.toZoneConfig();
@@ -130,10 +164,10 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
     }
 
     @Override
-    public CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request, String accessToken) throws VCertException {
+    public CertificateRequest generateRequest(ZoneConfiguration config, CertificateRequest request) throws VCertException {
         // todo: should one really have to pass a request into a "generate request" method?
         if (config == null) {
-            config = readZoneConfiguration(zone, accessToken);
+            config = readZoneConfiguration(zone);
         }
         String tppMgmtType = config.customAttributeValues().get(TPP_ATTRIBUTE_MANAGEMENT_TYPE);
         if ("Monitoring".equals(tppMgmtType) || "Unassigned".equals(tppMgmtType)) {
@@ -174,18 +208,18 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
     }
 
     @Override
-    public String requestCertificate(CertificateRequest request, String zone, String accessToken) throws VCertException {
-        return requestCertificate(request, new ZoneConfiguration().zoneId(zone), accessToken);
+    public String requestCertificate(CertificateRequest request, String zone) throws VCertException {
+        return requestCertificate(request, new ZoneConfiguration().zoneId(zone));
     }
 
     @Override
-    public String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration, String accessToken)
+    public String requestCertificate(CertificateRequest request, ZoneConfiguration zoneConfiguration)
             throws VCertException {
         if (isBlank(zoneConfiguration.zoneId())) {
             zoneConfiguration.zoneId(this.zone);
         }
         CertificateRequestsPayload payload = prepareRequest(request, zoneConfiguration.zoneId());
-        Tpp.CertificateRequestResponse response = tpp.requestCertificateToken(payload, getAuthHeaderValue(accessToken));
+        Tpp.CertificateRequestResponse response = tpp.requestCertificateToken(payload, getAuthHeaderValue());
         String requestId = response.certificateDN();
         request.pickupId(requestId);
         return requestId;
@@ -270,14 +304,14 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
     }
 
     @Override
-    public PEMCollection retrieveCertificate(CertificateRequest request, String accessToken) throws VCertException {
+    public PEMCollection retrieveCertificate(CertificateRequest request) throws VCertException {
         boolean includeChain = request.chainOption() != ChainOption.ChainOptionIgnore;
         boolean rootFirstOrder =
                 includeChain && request.chainOption() == ChainOption.ChainOptionRootFirst;
 
         if (isNotBlank(request.pickupId()) && isNotBlank(request.thumbprint())) {
             Tpp.CertificateSearchResponse searchResult =
-                    searchCertificatesByFingerprint(request.thumbprint(), accessToken);
+                    searchCertificatesByFingerprint(request.thumbprint());
             if (searchResult.certificates().size() == 0) {
                 throw new VCertException(
                         format("No certificate found using fingerprint %s", request.thumbprint()));
@@ -302,7 +336,7 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         // TODO move this retry logic to feign client
         Instant startTime = Instant.now();
         while (true) {
-            Tpp.CertificateRetrieveResponse retrieveResponse = retrieveCertificateOnce(certReq, accessToken);
+            Tpp.CertificateRetrieveResponse retrieveResponse = retrieveCertificateOnce(certReq);
             if (isNotBlank(retrieveResponse.certificateData())) {
                 PEMCollection pemCollection = PEMCollection.fromResponse(
                         org.bouncycastle.util.Strings
@@ -332,24 +366,24 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
     }
 
     private Tpp.CertificateRetrieveResponse retrieveCertificateOnce(
-            CertificateRetrieveRequest certificateRetrieveRequest, String accessToken) throws VCertException {
-        return tpp.certificateRetrieveToken(certificateRetrieveRequest, getAuthHeaderValue(accessToken));
+            CertificateRetrieveRequest certificateRetrieveRequest) throws VCertException {
+        return tpp.certificateRetrieveToken(certificateRetrieveRequest, getAuthHeaderValue());
     }
 
 
-    private Tpp.CertificateSearchResponse searchCertificatesByFingerprint(String fingerprint, String accessToken) throws VCertException {
+    private Tpp.CertificateSearchResponse searchCertificatesByFingerprint(String fingerprint) throws VCertException {
         final Map<String, String> searchRequest = new HashMap<String, String>();
         searchRequest.put("Thumbprint", fingerprint);
 
-        return searchCertificates(searchRequest, accessToken);
+        return searchCertificates(searchRequest);
     }
 
-    private Tpp.CertificateSearchResponse searchCertificates(Map<String, String> searchRequest, String accessToken) throws VCertException {
-        return tpp.searchCertificatesToken(searchRequest, getAuthHeaderValue(accessToken));
+    private Tpp.CertificateSearchResponse searchCertificates(Map<String, String> searchRequest) throws VCertException {
+        return tpp.searchCertificatesToken(searchRequest, getAuthHeaderValue());
     }
 
     @Override
-    public void revokeCertificate(RevocationRequest request, String accessToken) throws VCertException {
+    public void revokeCertificate(RevocationRequest request) throws VCertException {
         Integer reason = revocationReasons.get(request.reason());
         if (reason == null) {
             throw new VCertException(format("could not parse revocation reason `%s`", request.reason()));
@@ -359,23 +393,23 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
                 .certificateDN(request.certificateDN()).thumbprint(request.thumbprint()).reason(reason)
                 .comments(request.comments()).disable(request.disable());
 
-        Tpp.CertificateRevokeResponse revokeResponse = revokeCertificate(revokeRequest,accessToken);
+        Tpp.CertificateRevokeResponse revokeResponse = revokeCertificate(revokeRequest);
         if (!revokeResponse.success()) {
             throw new VCertException(format("Revocation error: %s", revokeResponse.error()));
         }
     }
 
-    private Tpp.CertificateRevokeResponse revokeCertificate(CertificateRevokeRequest request, String accessToken) throws VCertException {
-        return tpp.revokeCertificateToken(request, getAuthHeaderValue(accessToken));
+    private Tpp.CertificateRevokeResponse revokeCertificate(CertificateRevokeRequest request) throws VCertException {
+        return tpp.revokeCertificateToken(request, getAuthHeaderValue());
     }
 
     @Override
-    public String renewCertificate(RenewalRequest request, String accessToken) throws VCertException {
+    public String renewCertificate(RenewalRequest request) throws VCertException {
         String certificateDN;
 
         if (isNotBlank(request.thumbprint()) && isBlank(request.certificateDN())) {
             Tpp.CertificateSearchResponse searchResult =
-                    searchCertificatesByFingerprint(request.thumbprint(), accessToken);
+                    searchCertificatesByFingerprint(request.thumbprint());
             if (searchResult.certificates().isEmpty()) {
                 throw new VCertException(
                         String.format("No certificate found using fingerprint %s", request.thumbprint()));
@@ -402,7 +436,7 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
             renewalRequest.PKCS10(pkcs10);
         }
 
-        final Tpp.CertificateRenewalResponse response = tpp.renewCertificateToken(renewalRequest, getAuthHeaderValue(accessToken));
+        final Tpp.CertificateRenewalResponse response = tpp.renewCertificateToken(renewalRequest, getAuthHeaderValue());
         if (!response.success()) {
             throw new VCertException(String.format("Certificate renewal error: %s", response.error()));
         }
@@ -412,20 +446,44 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
 
 
     @Override
-    public ImportResponse importCertificate(ImportRequest request, String accessToken) throws VCertException {
+    public ImportResponse importCertificate(ImportRequest request) throws VCertException {
         if (isBlank(request.policyDN())) {
             request.policyDN(getPolicyDN(zone));
         }
 
-        return doImportCertificate(request, accessToken);
+        return doImportCertificate(request);
     }
 
-    private ImportResponse doImportCertificate(ImportRequest request, String accessToken) throws VCertException {
-        return tpp.importCertificateToken(request, getAuthHeaderValue(accessToken));
+    private ImportResponse doImportCertificate(ImportRequest request) throws VCertException {
+        return tpp.importCertificateToken(request, getAuthHeaderValue());
     }
 
     @Override
-    public Policy readPolicyConfiguration(String zone, String accessToken) throws VCertException {
+    public Policy readPolicyConfiguration(String zone) throws VCertException {
         throw new UnsupportedOperationException("Method not yet implemented");
+    }
+
+    private boolean isEmptyCredentials(Authentication credentials){
+        if(credentials == null){
+            return true;
+        }
+
+        if(credentials.user() == null || credentials.user().isEmpty()){
+            return true;
+        }
+
+        if(credentials.password() == null || credentials.password().isEmpty()){
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isEmptyToken(){
+        if(credentials == null || isBlank(credentials.accessToken())){
+            return true;
+        }
+
+        return false;
     }
 }

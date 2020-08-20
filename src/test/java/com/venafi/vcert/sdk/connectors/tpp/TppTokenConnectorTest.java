@@ -64,6 +64,9 @@ public class TppTokenConnectorTest {
 
         Authentication authentication = Authentication.builder().user("user").password("pass").build();
         info = classUnderTest.getAccessToken(authentication);
+        assertThat(info).isNotNull();
+        assertThat(info.authorized()).isTrue();
+        assertThat(info.errorMessage()).isNull();
     }
 
     @Test
@@ -100,7 +103,7 @@ public class TppTokenConnectorTest {
                 .thenReturn(new Tpp.CertificateRequestResponse().certificateDN("reqId"));
         String zoneTag = "myZone";
         ZoneConfiguration zoneConfig =
-                classUnderTest.readZoneConfiguration(classUnderTest.getPolicyDN(zoneTag), info.accessToken());
+                classUnderTest.readZoneConfiguration(classUnderTest.getPolicyDN(zoneTag));
         String cn = String.format("t%d-%s.venafi.xample.com", Instant.now().getEpochSecond(),
                 RandomStringUtils.randomAlphabetic(4).toLowerCase());
         CertificateRequest request = new CertificateRequest()
@@ -110,12 +113,12 @@ public class TppTokenConnectorTest {
                         .locality(Collections.singletonList("Las Vegas"))
                         .province(Collections.singletonList("Nevada")).country(Collections.singletonList("US")))
                 .friendlyName(cn).keyLength(512);
-        classUnderTest.generateRequest(zoneConfig, request, info.accessToken());
+        classUnderTest.generateRequest(zoneConfig, request);
         logger.info("getPolicyDN(ZoneTag) = %s", classUnderTest.getPolicyDN(zoneTag));
 
         ZoneConfiguration zoneConfiguration = new ZoneConfiguration();
         zoneConfiguration.zoneId(classUnderTest.getPolicyDN(zoneTag));
-        String requestId = classUnderTest.requestCertificate(request, zoneConfiguration, info.accessToken());
+        String requestId = classUnderTest.requestCertificate(request, zoneConfiguration);
         assertEquals("reqId", requestId);
     }
 
@@ -125,7 +128,7 @@ public class TppTokenConnectorTest {
     void renewCertificateWithEmptyRequest() throws VCertException {
         final RenewalRequest renewalRequest = mock(RenewalRequest.class);
         final Throwable throwable =
-                assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest, info.accessToken()));
+                assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
 
         assertThat(throwable.getMessage()).contains("CertificateDN or Thumbprint required");
     }
@@ -141,7 +144,7 @@ public class TppTokenConnectorTest {
         when(tpp.searchCertificatesToken(any(), eq(HEADER_AUTHORIZATION))).thenReturn(certificateSearchResponse);
 
         final Throwable throwable =
-                assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest, info.accessToken()));
+                assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
         assertThat(throwable.getMessage()).contains("No certificate found using fingerprint");
     }
 
@@ -158,7 +161,7 @@ public class TppTokenConnectorTest {
                 .thenReturn(Arrays.asList(new Tpp.Certificate(), new Tpp.Certificate()));
 
         final Throwable throwable =
-                assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest, info.accessToken()));
+                assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
         assertThat(throwable.getMessage()).contains("More than one certificate was found");
     }
 
@@ -180,7 +183,7 @@ public class TppTokenConnectorTest {
                 .thenReturn(certificateRenewalResponse);
         when(certificateRenewalResponse.success()).thenReturn(true);
 
-        String result = classUnderTest.renewCertificate(renewalRequest, info.accessToken());
+        String result = classUnderTest.renewCertificate(renewalRequest);
         assertThat(result).isEqualTo("test_certificate_requestid");
     }
 
@@ -196,22 +199,24 @@ public class TppTokenConnectorTest {
                 .thenReturn(certificateRenewalResponse);
         when(certificateRenewalResponse.success()).thenReturn(true);
 
-        String result = classUnderTest.renewCertificate(renewalRequest, info.accessToken());
+        String result = classUnderTest.renewCertificate(renewalRequest);
         assertThat(result).isEqualTo("certificateDN");
     }
 
     @Test
     @DisplayName("Refresh access token")
     void refreshAccessToken() throws VCertException{
-        final ResfreshTokenResponse tokenResponse = mock(ResfreshTokenResponse.class);
+        final RefreshTokenResponse tokenResponse = mock(RefreshTokenResponse.class);
 
         when(tokenResponse.accessToken()).thenReturn("123456");
         when(tokenResponse.refreshToken()).thenReturn("abcdef");
 
         when(tpp.refreshToken(any(AbstractTppConnector.RefreshTokenRequest.class))).thenReturn(tokenResponse);
 
-        TokenInfo newInfo = classUnderTest.refreshAccessToken(info.refreshToken(), "vcert-sdk");
+        TokenInfo newInfo = classUnderTest.refreshAccessToken("vcert-sdk");
         assertNotNull(newInfo);
+        assertThat(newInfo.authorized()).isTrue();
+        assertThat(newInfo.errorMessage()).isNull();
         assertNotNull(newInfo.accessToken());
         assertNotNull(newInfo.refreshToken());
 
@@ -221,16 +226,19 @@ public class TppTokenConnectorTest {
 
     @Test
     @DisplayName("Refresh invalid access token")
-    void refreshAccessTokenInvalid(){
+    void refreshAccessTokenInvalid() throws VCertException{
         final Request request = Request.create(Request.HttpMethod.POST, "", new HashMap<String, Collection<String>>(), null);
 
         when(tpp.refreshToken(any(AbstractTppConnector.RefreshTokenRequest.class))).thenThrow(new FeignException.BadRequest("400 Grant has been revoked, has expired, or the refresh token is invalid", request, null));
 
-        final Throwable throwable =
-                assertThrows(VCertException.class, () -> classUnderTest.refreshAccessToken(info.accessToken(), "vcert-sdk"));
-        logger.info("VCertException = %s", throwable.getMessage());
+        TokenInfo info = classUnderTest.refreshAccessToken("vcert-sdk");
+        assertThat(info).isNotNull();
+        assertThat(info.authorized()).isFalse();
+        assertThat(info.errorMessage()).isNotNull();
 
-        assertThat(throwable.getMessage()).contains("Grant has been revoked, has expired, or the refresh token is invalid");
+        logger.info("VCertException = %s", info.errorMessage());
+
+        assertThat(info.errorMessage()).contains("Grant has been revoked, has expired, or the refresh token is invalid");
     }
 
     @Test
@@ -242,7 +250,7 @@ public class TppTokenConnectorTest {
 
         when(tpp.revokeToken(eq(HEADER_AUTHORIZATION))).thenReturn(response);
 
-        int responseValue = classUnderTest.revokeAccessToken(info.accessToken());
+        int responseValue = classUnderTest.revokeAccessToken();
 
         assertThat(responseValue).isEqualTo(200);
     }
@@ -256,7 +264,7 @@ public class TppTokenConnectorTest {
 
         when(tpp.revokeToken(eq(HEADER_AUTHORIZATION))).thenReturn(response);
 
-        Throwable throwable = assertThrows(VCertException.class, () ->classUnderTest.revokeAccessToken(info.accessToken()));
+        Throwable throwable = assertThrows(VCertException.class, () ->classUnderTest.revokeAccessToken());
         assertThat(throwable.getMessage()).contains("202");
     }
 }

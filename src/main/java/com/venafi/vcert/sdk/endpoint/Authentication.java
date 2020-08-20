@@ -9,6 +9,8 @@ public class Authentication {
 
 	private String user;
 	private String password; // todo: char[] ?
+	private String accessToken;
+	private String refreshToken;
 	private String apiKey;
 	@Builder.Default
 	private String clientId = "vcert-sdk";
@@ -28,7 +30,8 @@ public class Authentication {
 		this.apiKey = apiKey;
 	}
 
-	public Authentication(String user, String password, String apiKey, String clientId, String scope, String state,
+	public Authentication(String user, String password, String accessToken, String refreshToken, String apiKey,
+			String clientId, String scope, String state,
 			String redirectUri) {
 		super();
 		this.user = user;
@@ -38,6 +41,8 @@ public class Authentication {
 		this.scope = scope;
 		this.state = state;
 		this.redirectUri = redirectUri;
+		this.accessToken = accessToken;
+		this.refreshToken = refreshToken;
 	}
 
 	@Override

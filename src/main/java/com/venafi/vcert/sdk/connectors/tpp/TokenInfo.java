@@ -14,5 +14,6 @@ public class TokenInfo {
 	private String  scope;
 	private String  identity;
 	private long refreshUntil;
-	
+	private boolean authorized;
+	private String errorMessage;
 }

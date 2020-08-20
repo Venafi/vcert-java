@@ -18,8 +18,10 @@ public abstract class AbstractTppConnector {
     protected static final Pattern POLICY_REGEX = Pattern.compile("^\\\\VED\\\\Policy");
     protected static final String HEADER_VALUE_AUTHORIZATION = "Bearer %s";
 
-    protected static final String MISSING_CREDENTIALS_MESSAGE = "failed to authenticate: missing credentials";
-
+    protected static final String FAILED_TO_AUTHENTICATE_MESSAGE = "failed to authenticate: ";
+    protected static final String MISSING_CREDENTIALS_MESSAGE = FAILED_TO_AUTHENTICATE_MESSAGE + "missing credentials";
+    protected static final String MISSING_REFRESH_TOKEN_MESSAGE = FAILED_TO_AUTHENTICATE_MESSAGE + "missing refresh token";
+    protected static final String MISSING_ACCESS_TOKEN_MESSAGE = FAILED_TO_AUTHENTICATE_MESSAGE + "missing access token";
 
     protected final Tpp tpp;
 
