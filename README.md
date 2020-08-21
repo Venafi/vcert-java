@@ -8,54 +8,64 @@ In addition, use the **[Pull requests](../../pulls)** tab to contribute actual b
 We welcome and appreciate all contributions._
 
 # VCert Java
+
 VCert is a Java library, SDK, designed to simplify key generation and enrollment of machine identities
 (also known as SSL/TLS certificates and keys) that comply with enterprise security policy by using the
-[Venafi Platform](https://www.venafi.com/platform/trust-protection-platform) or [Venafi Cloud](https://pki.venafi.com/venafi-cloud/).
+[Venafi Platform](https://www.venafi.com/platform/trust-protection-platform) or
+[Venafi Cloud](https://pki.venafi.com/venafi-cloud/).
 
 #### Compatibility
-VCert releases are tested using the latest version of Trust Protection Platform.  The [latest VCert release](../../releases/latest) should be compatible with Trust Protection Platform 17.3 or higher based on the subset of API methods it consumes.
 
+VCert releases are tested using the latest version of Trust Protection Platform and Venafi Cloud.
+The [latest VCert release](../../releases/latest) should be compatible with Trust Protection
+Platform 17.3 or higher based on the subset of API methods it consumes.  Token Authentication
+requires 19.2 or higher; for earlier versions, username/password authentication (deprecated) applies.
 
 ## Installation
 
 The current version of this library can be installed using Maven:
 
-```
+```sh
 mvn install
 ```
 
-
 ## Usage
 
-A basic example of creating a certificate using VCert Java:
+Instantiate a client for Trust Protection Platform using token authentication with an existing
+access token:
 
-```
-final Config config = Config.builder()
-        .connectorType(ConnectorType.TPP)
-        .baseUrl("https://tpp.venafi.example/vedsdk")
-        .build();
-        
-/* or for Venafi Cloud
-final Config config = Config.builder()
-        .connectorType(ConnectorType.CLOUD)
-        .build();
-*/
-
-final VCertClient client = new VCertClient(config);
-
+```sh
 final Authentication auth = Authentication.builder()
-        .user("local:apiuser")
-        .password("password")
+        .accessToken("9PQwQeiTLhcB8/W3/z2Lbw==")
         .build();
 
-/* or for Venafi Cloud
+final Config config = Config.builder()
+        .connectorType(ConnectorType.TPP_TOKEN)
+        .baseUrl("https://tpp.venafi.example")
+        .credentials(auth)
+        .build();
+
+final VCertTknClient client = new VCertTknClient(config);
+```
+
+Or instantiate a client for Venafi Cloud:
+
+```sh
 final Authentication auth = Authentication.builder()
         .apiKey("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
         .build();
-*/
 
+final Config config = Config.builder()
+        .connectorType(ConnectorType.CLOUD)
+        .build();
+
+final VCertClient client = new VCertClient(config);
 client.authenticate(auth);
+```
 
+Then use your client to request certificates:
+
+```sh
 //////////////////////////////////////
 ///// Local Generated CSR - RSA //////
 //////////////////////////////////////
@@ -73,9 +83,9 @@ CertificateRequest certificateRequest = new CertificateRequest().subject(
         .ipAddresses(Arrays.asList(InetAddress.getByName("10.20.30.40"),InetAddress.getByName("172.16.172.16")))
         .emailAddresses(Arrays.asList("larry@venafi.example", "moe@venafi.example", "curly@venafi.example"))
         .keyType(KeyType.RSA);
-        
+
 ZoneConfiguration zoneConfiguration = client.readZoneConfiguration("Certificates\\VCert");
-certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);   
+certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);
 
 // Submit the certificate request
 client.requestCertificate(certificateRequest, zoneConfiguration);
@@ -90,7 +100,7 @@ System.out.println(pemCollection.pemCertificateChain());
 /////////////////////////////
 ///// User Provided CSR /////
 /////////////////////////////
-        
+
 String csr = "-----BEGIN CERTIFICATE REQUEST-----\n" +
         "MIIC8DCCAdgCAQAwgY4xCzAJBgNVBAYTAlVTMQ0wCwYDVQQIEwRVdGFoMRcwFQYD\n" +
         "VQQHEw5TYWx0IExha2UgQ2l0eTEYMBYGA1UEChMPRXhhbXBsZSBDb21wYW55MRkw\n" +
@@ -124,13 +134,56 @@ pemCollection = client.retrieveCertificate(certificateRequest);
 
 System.out.println(pemCollection.pemCertificate());
 System.out.println(pemCollection.pemCertificateChain());
+```
 
+You can also instantiate a client for Trust Protection Platform using token authentication
+_without_ an existing token by providing a username/password.  Such a token is generally for
+short-term or temporary use and as such should be revoked upon completion of your tasks:
+
+```sh
+final Authentication auth = Authentication.builder()
+        .user("local:apiuser")
+        .password("password")
+        .build();
+
+final Config config = Config.builder()
+        .connectorType(ConnectorType.TPP_TOKEN)
+        .baseUrl("https://tpp.venafi.example")
+        .build();
+
+final VCertTknClient client = new VCertTknClient(config);
+client.getAccessToken(auth);
+
+///// REQUEST, RENEW, AND/OR REVOKE CERTIFICATES...
+
+client.revokeAccessToken();
+```
+
+:thumbsdown: To instantiate a client for Trust Protection Platform using deprecated username/password
+authentication:
+
+```sh
+final Authentication auth = Authentication.builder()
+        .user("local:apiuser")
+        .password("password")
+        .build();
+
+final Config config = Config.builder()
+        .connectorType(ConnectorType.TPP)
+        .baseUrl("https://tpp.venafi.example/vedsdk")
+        .build();
+
+final VCertClient client = new VCertClient(config);
+client.authenticate(auth);
 ```
 
 ## Prerequisites for using with Trust Protection Platform
 
-1. A user account that has been granted WebSDK Access
-2. A folder (zone) where the user has been granted the following permissions: View, Read, Write, Create, Revoke (for the revoke action), and Private Key Read (for the pickup action when CSR is service generated)
+1. A user account that has an authentication token with "certificate:manage,revoke" scope (i.e.
+access to the "Venafi VCert SDK" API Application as of 20.1) or has been granted WebSDK Access
+2. A folder (zone) where the user has been granted the following permissions: View, Read, Write,
+Create, Revoke (for the revoke action), and Private Key Read (for the pickup action when CSR is
+service generated)
 3. Policy applied to the folder which specifies:
     1. CA Template that Trust Protection Platform will use to enroll certificate requests submitted by VCert
     2. Subject DN values for Organizational Unit (OU), Organization (O), City (L), State (ST) and Country (C)
@@ -141,7 +194,30 @@ System.out.println(pemCollection.pemCertificateChain());
     7. (Recommended) Key Bit Strength set to 2048 or higher
     8. (Recommended) Domain Whitelisting policy appropriately assigned
 
-The requirement for the CA Template to be assigned by policy follows a long standing Venafi best practice which also met our design objective to keep the certificate request process simple for VCert users. If you require the ability to specify the CA Template with the request you can use the TPP REST APIs but please be advised this goes against Venafi recommendations.
+The requirement for the CA Template to be assigned by policy follows a long standing Venafi best
+practice which also met our design objective to keep the certificate request process simple for
+VCert users. If you require the ability to specify the CA Template with the request you can use the
+TPP REST APIs but please be advised this goes against Venafi recommendations.
+
+## Prerequisites for using with Venafi Cloud
+
+1. The Venafi Cloud REST API is accessible at https://api.venafi.cloud from the system where VCert
+will be executed.
+2. You have successfully registered for a Venafi Cloud account, have been granted at least the
+"DevOps" role, and know your API key.
+3. A CA Account and Issuing Template exist and have been configured with:
+    1. Recommended Settings values for:
+        1. Organizational Unit (OU)
+        2. Organization (O)
+        3. City/Locality (L)
+        4. State/Province (ST)
+        5. Country (C)
+    2. Issuing Rules that:
+        1. (Recommended) Limits Common Name and Subject Alternative Name to domains that are allowed by your organization
+        2. (Recommended) Restricts the Key Length to 2048 or higher
+        3. (Recommended) Does not allow Private Key Reuse
+4. A DevOps Project exists to which you have been granted access.
+5. A Zone has exists within the Project that uses the Issuing Template, and you know the Zone ID.
 
 ## Acceptance Tests
 
@@ -149,19 +225,20 @@ To run the acceptance tests the following environment variables must be set:
 
 | NAME | NOTES |
 |------|-------|
-| TPPURL | Only for TPP connector tests |
+| TPPURL | Only for TPP connector tests (e.g. https://tpp.venafi.example/vedsdk) |
+| TPP_TOKEN_URL | Only for TPP connector tests involving token auth (e.g. https://tpp.venafi.example) |
 | TPPUSER | Only for TPP connector tests |
 | TPPPASSWORD | Only for TPP connector tests |
 | TPPZONE | Policy folder for TPP |
-| CLOUDURL | Only for Venafi Cloud connector tests |
-| APIKEY | Taken from account after logged into Venafi Cloud |
+| CLOUDURL | Only for Venafi Cloud connector tests running against not production environments (uncommon) |
+| APIKEY | Obtained by logging into Venafi Cloud after registering |
 | CLOUDZONE | Zone ID or ProjectName\ZoneName for Venafi Cloud |
 
 Acceptance test  are executed with:
-```
+
+```sh
 mvn "-Dtest=*AT" test
 ```
-
 
 ## Contributing to VCert
 
@@ -172,7 +249,6 @@ mvn "-Dtest=*AT" test
 5. Commit your changes (`git commit -am 'Added some cool functionality'`)
 6. Push to the branch (`git push origin your-branch-name`)
 7. Create a new Pull Request (https://github.com/youracct/vcert-java/pull/new/your-branch-name)
-
 
 ## License
 
