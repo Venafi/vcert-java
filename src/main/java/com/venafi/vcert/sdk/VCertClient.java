@@ -103,8 +103,6 @@ public class VCertClient implements Connector {
       connector.ping();
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
-    } catch (Exception e) {
-      throw new VCertException("Unexpected exception", e);
     }
   }
 
@@ -117,8 +115,6 @@ public class VCertClient implements Connector {
       connector.authenticate(auth);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
-    } catch (Exception e) {
-      throw new VCertException("Unexpected exception", e);
     }
   }
 
@@ -131,8 +127,6 @@ public class VCertClient implements Connector {
       return connector.readZoneConfiguration(zone);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
-    } catch (Exception e) {
-      throw new VCertException("Unexpected exception", e);
     }
   }
 
@@ -146,8 +140,6 @@ public class VCertClient implements Connector {
       return connector.generateRequest(config, request);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
-    } catch (Exception e) {
-      throw new VCertException("Unexpected exception", e);
     }
   }
 
@@ -157,8 +149,6 @@ public class VCertClient implements Connector {
       return connector.requestCertificate(request, zone);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
-    } catch (Exception e) {
-      throw new VCertException("Unexpected exception", e);
     }
   }
 
@@ -172,8 +162,6 @@ public class VCertClient implements Connector {
       return connector.requestCertificate(request, zoneConfiguration);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
-    } catch (Exception e) {
-      throw new VCertException("Unexpected exception", e);
     }
   }
 
@@ -186,8 +174,6 @@ public class VCertClient implements Connector {
       return connector.retrieveCertificate(request);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
-    } catch (Exception e) {
-      throw new VCertException("Unexpected exception", e);
     }
   }
 
@@ -200,8 +186,6 @@ public class VCertClient implements Connector {
       connector.revokeCertificate(request);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
-    } catch (Exception e) {
-      throw new VCertException("Unexpected exception", e);
     }
   }
 
@@ -214,8 +198,6 @@ public class VCertClient implements Connector {
       return connector.renewCertificate(request);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
-    } catch (Exception e) {
-      throw new VCertException("Unexpected exception", e);
     }
   }
 
@@ -228,8 +210,6 @@ public class VCertClient implements Connector {
       return connector.importCertificate(request);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
-    } catch (Exception e) {
-      throw new VCertException("Unexpected exception", e);
     }
   }
 
@@ -242,8 +222,6 @@ public class VCertClient implements Connector {
       return connector.readPolicyConfiguration(zone);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
-    } catch (Exception e) {
-      throw new VCertException("Unexpected exception", e);
     }
   }
 }
