@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
@@ -68,14 +70,14 @@ public class PEMCollection {
   // BOUNCY_CASTLE_ENCRYPTION_ALGORITHM.
   public static final int SECRET_KEY_LENGTH_BITS = 128;
 
-  private Certificate certificate;
+  private X509Certificate certificate;
   private PrivateKey privateKey;
   private String privateKeyPassword;
-  private List<Certificate> chain = new ArrayList<>();
+  private List<X509Certificate> chain = new ArrayList<>();
 
   public static PEMCollection fromResponse(String body, ChainOption chainOption,
       PrivateKey privateKey, String privateKeyPassword) throws VCertException {
-    List<Certificate> chain = new ArrayList<>();
+    List<X509Certificate> chain = new ArrayList<>();
 
     PEMParser pemParser = new PEMParser(new StringReader(body));
     JcaX509CertificateConverter certificateConverter = new JcaX509CertificateConverter();
@@ -86,7 +88,7 @@ public class PEMCollection {
         if (object instanceof X509CertificateHolder) {
           Certificate certificate =
               certificateConverter.getCertificate((X509CertificateHolder) object);
-          chain.add(certificate);
+          chain.add((X509Certificate) certificate);
         } else if (object instanceof PEMKeyPair) {
           privateKey = keyConverter.getPrivateKey(((PEMKeyPair) object).getPrivateKeyInfo());
         }
@@ -286,6 +288,32 @@ public class PEMCollection {
     } catch (IOException | NoSuchAlgorithmException | OperatorCreationException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public byte[] toJks(String password) throws KeyStoreException, CertificateException {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    KeyStore store;
+
+    try {
+      store = KeyStore.getInstance(KeyStore.getDefaultType());
+      store.load(null, password.toCharArray());
+    } catch (KeyStoreException | NoSuchAlgorithmException | IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    List<X509Certificate> chain = new ArrayList<>();
+    chain.add(this.certificate);
+    chain.addAll(this.chain);
+    store.setKeyEntry("private-key", privateKey, password.toCharArray(),
+      chain.toArray(new X509Certificate[] {}));
+
+    try {
+      store.store(output, password.toCharArray());
+    } catch (NoSuchAlgorithmException | IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    return output.toByteArray();
   }
 
   public static SecretKeySpec passwordToCipherSecretKey(char[] password, byte[] iv)

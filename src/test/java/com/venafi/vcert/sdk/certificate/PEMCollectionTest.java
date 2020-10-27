@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.CertificateException;
@@ -17,6 +18,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.crypto.Cipher;
@@ -179,5 +182,28 @@ class PEMCollectionTest {
     ContentInfo[] infos = pfx.getContentInfos();
     assertThat(infos.length).isEqualTo(1);
     assertThat(infos[0].getContentType()).isEqualTo(PKCSObjectIdentifiers.encryptedData);
+  }
+
+  @Test
+  void toJks() throws VCertException, IOException, GeneralSecurityException {
+    String body = readResourceAsString("certificates/certWithChainAndKey.pem");
+    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionRootLast, null, null);
+
+    byte[] jksData = pemCollection.toJks(KEY_PASSWORD);
+
+    KeyStore store = KeyStore.getInstance(KeyStore.getDefaultType());
+    store.load(new ByteArrayInputStream(jksData), KEY_PASSWORD.toCharArray());
+    ArrayList<String> aliases = Collections.list(store.aliases());
+    assertThat(aliases.size()).isEqualTo(1);
+    assertThat(aliases.get(0)).isEqualTo("private-key");
+
+    KeyStore.PrivateKeyEntry entry = (KeyStore.PrivateKeyEntry) store.getEntry("private-key",
+      new KeyStore.PasswordProtection(KEY_PASSWORD.toCharArray()));
+    assertThat(entry.getPrivateKey().getEncoded()).isEqualTo(
+      pemCollection.privateKey().getEncoded());
+    assertThat(entry.getCertificate().getEncoded()).isEqualTo(
+      pemCollection.certificate().getEncoded());
+    assertThat(entry.getCertificateChain().length).isEqualTo(
+      pemCollection.chain().size() + 1);
   }
 }
