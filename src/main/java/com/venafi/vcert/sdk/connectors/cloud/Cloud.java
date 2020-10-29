@@ -20,6 +20,7 @@ import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Project;
 import com.venafi.vcert.sdk.connectors.cloud.domain.ProjectZone;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Projects;
+import com.venafi.vcert.sdk.connectors.cloud.domain.TagProjectZone;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.utils.FeignUtils;
 
@@ -43,6 +44,10 @@ public interface Cloud {
   @Headers("tppl-api-key: {apiKey}")
   @RequestLine("GET /devopsprojects/{projectId}?zoneDetails=true")
   Project projectById(@Param("projectId") String projectId, @Param("apiKey") String apiKey);
+
+  @Headers("tppl-api-key: {apiKey}")
+  @RequestLine("GET /zones/tag/{tag}")
+  TagProjectZone zoneByTag(@Param("tag") String tag, @Param("apiKey") String apiKey);
 
   @Headers("tppl-api-key: {apiKey}")
   @RequestLine("GET /certificateissuingtemplates/{certificateIssuingTemplateId}")
