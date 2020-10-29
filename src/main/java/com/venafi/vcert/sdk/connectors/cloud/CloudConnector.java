@@ -36,9 +36,11 @@ import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Project;
 import com.venafi.vcert.sdk.connectors.cloud.domain.ProjectZone;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Projects;
+import com.venafi.vcert.sdk.connectors.cloud.domain.TagProjectZone;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
@@ -105,32 +107,34 @@ public class CloudConnector implements Connector {
 
   @Override
   public ZoneConfiguration readZoneConfiguration(String zone) throws VCertException {
-    ProjectZone projectZone = null;
     String[] zoneIdentifiers = parseZoneIdentifiers(zone);
-
-    Projects projects = cloud.projects(auth.apiKey());
-    if (projects.projects().isEmpty()) {
-      throw new VCertException("No projects present.");
-    }
+    CertificateIssuingTemplate cit = null;
+    String zoneId = null;
 
     if (zoneIdentifiers[0] != null) {
-      // Find zone by ID
-      String zoneId = zoneIdentifiers[0];
-
-      for (Project project : projects.projects()) {
-        for (ProjectZone projZone : project.zones()) {
-          if (zoneId.equals(projZone.id())) {
-            projectZone = projZone;
-            break;
-          }
-        }
+      // Find zone by tag
+      String zoneTag = zoneIdentifiers[0];
+      TagProjectZone tpz = cloud.zoneByTag(zone,  auth.apiKey());
+      if (tpz == null) {
+        throw new VCertException(format("No zone with Id '%s'.", zoneTag));
       }
 
-      if (projectZone == null) {
-        throw new VCertException(format("No zone with ID '%s'.", zoneId));
+      zoneId = tpz.id();
+      cit = cloud.certificateIssuingTemplateById(tpz.certificateIssuingTemplateId(), auth.apiKey());
+
+      if (cit == null){
+        throw new VCertException(format("Certificate issue template not found. Id provided =  [%s] ",
+            tpz.certificateIssuingTemplateId()));
       }
+
     } else {
       // Find zone by project name and zone name
+      ProjectZone projectZone = null;
+      Projects projects = cloud.projects(auth.apiKey());
+      if (projects.projects().isEmpty()) {
+        throw new VCertException("No projects present.");
+      }
+
       String projectName = zoneIdentifiers[1];
       String zoneName = zoneIdentifiers[2];
 
@@ -149,15 +153,18 @@ public class CloudConnector implements Connector {
         throw new VCertException(
             format("No zone with name '%s' in '%s' project.", zoneName, projectName));
       }
+
+      zoneId = projectZone.id();
+      cit = projectZone.cit();
+
+      if (cit == null) {
+        throw new VCertException(format("No certificate issuing template ID for '%s' zone.", zone));
+      }
     }
 
-    if (projectZone.cit() == null) {
-      throw new VCertException(format("No certificate issuing template ID for '%s' zone.", zone));
-    }
-
-    ZoneConfiguration zoneConfig = projectZone.cit().toZoneConfig();
-    zoneConfig.policy(projectZone.cit().toPolicy());
-    zoneConfig.zoneId(projectZone.id());
+    ZoneConfiguration zoneConfig = cit.toZoneConfig();
+    zoneConfig.policy(cit.toPolicy());
+    zoneConfig.zoneId(zoneId);
 
     return zoneConfig;
   }

@@ -85,7 +85,7 @@ class CloudConnectorAT {
   }
 
   @Test
-  void requestCertificate() throws VCertException, SocketException, UnknownHostException {
+  void requestCertificate() throws VCertException, UnknownHostException {
     String zoneName = System.getenv("CLOUDZONE");
     ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
     CertificateRequest certificateRequest = new CertificateRequest()
@@ -102,7 +102,7 @@ class CloudConnectorAT {
   }
 
   @Test
-  void retrieveCertificate() throws VCertException, SocketException, UnknownHostException {
+  void retrieveCertificate() throws VCertException, UnknownHostException {
     String zoneName = System.getenv("CLOUDZONE");
     ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
     CertificateRequest certificateRequest = new CertificateRequest()
@@ -134,8 +134,8 @@ class CloudConnectorAT {
   }
 
   @Test
-  void renewCertificate() throws VCertException, UnknownHostException, SocketException,
-      CertificateException, NoSuchAlgorithmException {
+  void renewCertificate() throws VCertException, UnknownHostException,
+      CertificateException {
     String zoneName = System.getenv("CLOUDZONE");
     String commonName = TestUtils.randomCN();
     ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
