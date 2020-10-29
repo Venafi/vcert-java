@@ -55,15 +55,6 @@ class CloudConnectorAT {
   }
 
   @Test
-  void readZoneConfigurationById() throws VCertException {
-    try{
-      classUnderTest.readZoneConfiguration(System.getenv("CLOUDZONEID"));
-    }catch (FeignException fe){
-      throw VCertException.fromFeignException(fe);
-    }
-  }
-
-  @Test
   void generateRequest() throws VCertException, IOException {
     String zoneName = System.getenv("CLOUDZONE");
     String commonName = TestUtils.randomCN();
