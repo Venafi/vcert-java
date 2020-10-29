@@ -9,8 +9,17 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyPair;
 import java.security.Security;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,10 +29,17 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import feign.Request;
+import feign.Response;
+
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.CertificateStatus;
+import com.venafi.vcert.sdk.certificate.ChainOption;
+import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.certificate.ManagedCertificate;
+import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
@@ -38,6 +54,7 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 
 @ExtendWith(MockitoExtension.class)
 class CloudConnectorTest {
+  private static final String KEY_SECRET = "my secret";
 
   @Mock
   private Cloud cloud;
@@ -47,6 +64,17 @@ class CloudConnectorTest {
   private ArgumentCaptor<Cloud.SearchRequest> searchRequestArgumentCaptor;
 
   UserDetails userDetails;
+
+
+  private String readResourceAsString(String name) throws IOException {
+    ClassLoader classLoader = getClass().getClassLoader();
+    String path = classLoader.getResource(name).getPath();
+    // windows platform: if it starts with /C: then remove the leading slash
+    if (path.charAt(0) == '/' && path.charAt(2) == ':') {
+      path = path.substring(1);
+    }
+    return new String(Files.readAllBytes(Paths.get(path).toAbsolutePath()));
+  }
 
 
   @BeforeEach
@@ -110,6 +138,45 @@ class CloudConnectorTest {
     String actual = classUnderTest.requestCertificate(request, zoneConfig);
 
     assertThat(actual).isEqualTo("jackpot");
+  }
+
+  @Test
+  void retrieveCertificate() throws VCertException, IOException {
+    Security.addProvider(new BouncyCastleProvider());
+
+    String apiKey = "12345678-1234-1234-1234-123456789012";
+    final Authentication auth = new Authentication(null, null, apiKey);
+    classUnderTest.authenticate(auth);
+
+    String body = readResourceAsString("certificates/certWithKey.pem");
+    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null, null);
+
+    CertificateRequest request = new CertificateRequest().subject(
+        new CertificateRequest.PKIXName()
+        .commonName("random name").organization(singletonList("Venafi, Inc."))
+        .organizationalUnit(singletonList("Automated Tests")));
+    request
+        .pickupId("jackpot")
+        .keyType(KeyType.RSA)
+        .keyPair(new KeyPair(pemCollection.certificate().getPublicKey(),
+            pemCollection.privateKey()))
+        .keyPassword(KEY_SECRET);
+
+    when(cloud.certificateStatus(eq("jackpot"), eq(apiKey)))
+        .thenReturn(new CertificateStatus().status("ISSUED"));
+    when(cloud.certificateViaCSR(eq("jackpot"), eq(apiKey), eq("ROOT_FIRST")))
+        .thenReturn(Response.builder()
+            .request(Request.create(Request.HttpMethod.GET, "http://localhost",
+                new HashMap<String, Collection<String>>(), null, null))
+            .status(200)
+            .body(body, Charset.forName("UTF-8"))
+            .build());
+
+    PEMCollection pemCollection2 = classUnderTest.retrieveCertificate(request);
+    assertThat(pemCollection2).isNotNull();
+    assertThat(pemCollection2.certificate()).isNotNull();
+    assertThat(pemCollection2.privateKey()).isNotNull();
+    assertThat(pemCollection2.privateKeyPassword()).isEqualTo(KEY_SECRET);
   }
 
   @Test

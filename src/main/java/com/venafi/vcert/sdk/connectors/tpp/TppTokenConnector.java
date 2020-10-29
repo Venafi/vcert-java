@@ -341,7 +341,7 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
                 PEMCollection pemCollection = PEMCollection.fromResponse(
                         org.bouncycastle.util.Strings
                                 .fromByteArray(Base64.getDecoder().decode(retrieveResponse.certificateData())),
-                        request.chainOption(), request.privateKey());
+                        request.chainOption(), request.privateKey(), request.keyPassword());
                 request.checkCertificate(pemCollection.certificate());
                 return pemCollection;
             }
