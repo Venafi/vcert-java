@@ -102,8 +102,6 @@ public class VCertTknClient implements TokenConnector {
             return connector.getAccessToken(auth);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 
@@ -113,13 +111,11 @@ public class VCertTknClient implements TokenConnector {
             return connector.getAccessToken();
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 
     @Override
-    public TokenInfo refreshAccessToken(String applicationId) throws VCertException{
+    public TokenInfo refreshAccessToken(String applicationId) throws VCertException {
         return  connector.refreshAccessToken(applicationId);
     }
 
@@ -137,8 +133,6 @@ public class VCertTknClient implements TokenConnector {
             connector.ping();
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 
@@ -151,8 +145,6 @@ public class VCertTknClient implements TokenConnector {
             return connector.readZoneConfiguration(zone);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 
@@ -166,8 +158,6 @@ public class VCertTknClient implements TokenConnector {
             return connector.generateRequest(config, request);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 
@@ -177,8 +167,6 @@ public class VCertTknClient implements TokenConnector {
             return connector.requestCertificate(request, zone);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 
@@ -192,8 +180,6 @@ public class VCertTknClient implements TokenConnector {
             return connector.requestCertificate(request, zoneConfiguration);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 
@@ -206,8 +192,6 @@ public class VCertTknClient implements TokenConnector {
             return connector.retrieveCertificate(request);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 
@@ -220,8 +204,6 @@ public class VCertTknClient implements TokenConnector {
             connector.revokeCertificate(request);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 
@@ -234,8 +216,6 @@ public class VCertTknClient implements TokenConnector {
             return connector.renewCertificate(request);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 
@@ -248,8 +228,6 @@ public class VCertTknClient implements TokenConnector {
             return connector.importCertificate(request);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 
@@ -262,8 +240,6 @@ public class VCertTknClient implements TokenConnector {
             return connector.readPolicyConfiguration(zone);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
-        } catch (Exception e) {
-            throw new VCertException("Unexpected exception", e);
         }
     }
 }
