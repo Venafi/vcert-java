@@ -11,9 +11,6 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.openssl.PEMEncryptor;
@@ -119,36 +116,18 @@ public class PEMCollection {
     }
 
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    if (privateKeyPassword != null) {
-      try (PemWriter pemWriter = new PemWriter(new OutputStreamWriter(outputStream))) {
-        PEMEncryptor encryptor = new JcePEMEncryptorBuilder(BOUNCY_CASTLE_ENCRYPTION_ALGORITHM)
+    try (PemWriter pemWriter = new PemWriter(new OutputStreamWriter(outputStream))) {
+      PEMEncryptor encryptor = null;
+
+      if (privateKeyPassword != null) {
+        encryptor = new JcePEMEncryptorBuilder(BOUNCY_CASTLE_ENCRYPTION_ALGORITHM)
           .build(privateKeyPassword.toCharArray());
-        JcaMiscPEMGenerator gen = new JcaMiscPEMGenerator(this.privateKey, encryptor);
-        pemWriter.writeObject(gen.generate());
-      } catch (IOException e) {
-        throw new RuntimeException(e);
       }
-    } else {
-      switch (KeyType.from(this.privateKey.getAlgorithm())) {
-        case RSA:
-          try (PemWriter pemWriter = new PemWriter(new OutputStreamWriter(outputStream))) {
-            PrivateKeyInfo pkInfo = PrivateKeyInfo.getInstance(this.privateKey.getEncoded());
-            ASN1Encodable privateKeyPKCS1ASN1Encodable = pkInfo.parsePrivateKey();
-            ASN1Primitive privateKeyPKCS1ASN1 = privateKeyPKCS1ASN1Encodable.toASN1Primitive();
-            pemWriter
-                .writeObject(new PemObject("RSA PRIVATE KEY", privateKeyPKCS1ASN1.getEncoded()));
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-          break;
-        case ECDSA:
-          try (PemWriter pemWriter = new PemWriter(new OutputStreamWriter(outputStream))) {
-            pemWriter.writeObject(new PemObject("EC PRIVATE KEY", this.privateKey.getEncoded()));
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-          break;
-      }
+
+      JcaMiscPEMGenerator gen = new JcaMiscPEMGenerator(this.privateKey, encryptor);
+      pemWriter.writeObject(gen.generate());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
     return new String(outputStream.toByteArray());
   }
