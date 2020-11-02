@@ -23,12 +23,19 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.pkcs.ContentInfo;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.bc.BcDefaultDigestProvider;
+import org.bouncycastle.pkcs.PKCS12PfxPdu;
+import org.bouncycastle.pkcs.PKCSException;
+import org.bouncycastle.pkcs.bc.BcPKCS12MacCalculatorBuilderProvider;
 import org.junit.jupiter.api.Test;
 import com.venafi.vcert.sdk.VCertException;
 
 class PEMCollectionTest {
   private static final String KEY_PASSWORD = "my secret";
+  private static final String PKCS12_PASSWORD = "abcd";
 
   static {
     Security.addProvider(new BouncyCastleProvider());
@@ -152,5 +159,25 @@ class PEMCollectionTest {
       KeyFactory keyFactory = KeyFactory.getInstance("RSA");
       keyFactory.generatePrivate(keySpec);
     }).doesNotThrowAnyException();
+  }
+
+  @Test
+  void toPkcs12() throws VCertException, IOException, GeneralSecurityException, PKCSException {
+    String body = readResourceAsString("certificates/certWithKey.pem");
+    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null, null);
+
+    byte[] pkcs12Data = pemCollection.toPkcs12(PKCS12_PASSWORD);
+
+    PKCS12PfxPdu pfx = new PKCS12PfxPdu(pkcs12Data);
+    assertThat(
+      pfx.isMacValid(
+        new BcPKCS12MacCalculatorBuilderProvider(BcDefaultDigestProvider.INSTANCE),
+        PKCS12_PASSWORD.toCharArray()
+      )
+    ).isTrue();
+
+    ContentInfo[] infos = pfx.getContentInfos();
+    assertThat(infos.length).isEqualTo(1);
+    assertThat(infos[0].getContentType()).isEqualTo(PKCSObjectIdentifiers.encryptedData);
   }
 }

@@ -11,6 +11,7 @@ import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,16 +23,30 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.openssl.PEMEncryptor;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcePEMEncryptorBuilder;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.pkcs.PKCS12PfxPdu;
+import org.bouncycastle.pkcs.PKCS12PfxPduBuilder;
+import org.bouncycastle.pkcs.PKCS12SafeBag;
+import org.bouncycastle.pkcs.PKCSException;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS12SafeBagBuilder;
+import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
+import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import lombok.Data;
@@ -228,6 +243,49 @@ public class PEMCollection {
       }
     }
     return result;
+  }
+
+  public byte[] toPkcs12(String password) throws PKCSException {
+    try {
+      SubjectKeyIdentifier pubKeyId = new JcaX509ExtensionUtils()
+        .createSubjectKeyIdentifier(certificate.getPublicKey());
+
+      OutputEncryptor encOut = new JcePKCSPBEOutputEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CBC)
+        .setProvider("BC")
+        .build(password.toCharArray());
+      ArrayList<PKCS12SafeBag> safeBags = new ArrayList<>();
+
+      safeBags.ensureCapacity(chain.size() + 2);
+      safeBags.add(new JcaPKCS12SafeBagBuilder((X509Certificate) certificate)
+        .addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId)
+        .build());
+      for (Certificate intermediateCert: chain) {
+        safeBags.add(
+          new JcaPKCS12SafeBagBuilder((X509Certificate) intermediateCert)
+            .build());
+      }
+      safeBags.add(new JcaPKCS12SafeBagBuilder(privateKey, encOut)
+        .addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId)
+        .build());
+
+
+      PKCS12PfxPduBuilder builder = new PKCS12PfxPduBuilder();
+      builder.addEncryptedData(
+        new JcePKCSPBEOutputEncryptorBuilder(PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC2_CBC)
+          .setProvider("BC")
+          .build(password.toCharArray()),
+        safeBags.toArray(new PKCS12SafeBag[]{}));
+
+      PKCS12PfxPdu pfx = builder.build(
+        new JcePKCS12MacCalculatorBuilder(NISTObjectIdentifiers.id_sha256),
+        password.toCharArray());
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      out.write(pfx.getEncoded(ASN1Encoding.DL));
+      out.close();
+      return out.toByteArray();
+    } catch (IOException | NoSuchAlgorithmException | OperatorCreationException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public static SecretKeySpec passwordToCipherSecretKey(char[] password, byte[] iv)
