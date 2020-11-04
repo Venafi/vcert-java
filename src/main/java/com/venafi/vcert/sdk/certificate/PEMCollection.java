@@ -11,14 +11,14 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.openssl.PEMEncryptor;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcePEMEncryptorBuilder;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import lombok.Data;
@@ -27,12 +27,20 @@ import com.venafi.vcert.sdk.VCertException;
 
 @Data
 public class PEMCollection {
+  // We don't use AES-256-CBC. Default JDK installations are limited
+  // to 128-bit keys, but when AES-256-CBC is specified as algorithm
+  // then BouncyCastle will automatically use a 256-bit key size,
+  // resulting in an "illegal key size" exception.
+  // https://deveshsharmablogs.wordpress.com/2012/10/09/fixing-java-security-invalidkeyexception-illegal-key-size-exception/
+  public static final String BOUNCY_CASTLE_ENCRYPTION_ALGORITHM = "AES-128-CBC";
+
   private Certificate certificate;
   private PrivateKey privateKey;
+  private String privateKeyPassword;
   private List<Certificate> chain = new ArrayList<>();
 
   public static PEMCollection fromResponse(String body, ChainOption chainOption,
-      PrivateKey privateKey) throws VCertException {
+      PrivateKey privateKey, String privateKeyPassword) throws VCertException {
     List<Certificate> chain = new ArrayList<>();
 
     PEMParser pemParser = new PEMParser(new StringReader(body));
@@ -59,7 +67,8 @@ public class PEMCollection {
     if (chain.size() > 0) {
       switch (chainOption) {
         case ChainOptionRootFirst:
-          pemCollection = newPemCollection(chain.get(chain.size() - 1), null, null);
+          pemCollection = new PEMCollection();
+          pemCollection.certificate(chain.get(chain.size() - 1));
           if (chain.size() > 1 && chainOption != ChainOption.ChainOptionIgnore) {
             for (int i = 0; i < chain.size() - 1; i++) {
               pemCollection.chain().add(chain.get(i));
@@ -67,7 +76,8 @@ public class PEMCollection {
           }
           break;
         default:
-          pemCollection = newPemCollection(chain.get(0), null, null);
+          pemCollection = new PEMCollection();
+          pemCollection.certificate(chain.get(0));
           if (chain.size() > 1 && chainOption != ChainOption.ChainOptionIgnore) {
             for (int i = 1; i < chain.size(); i++) {
               pemCollection.chain().add(chain.get(i));
@@ -79,23 +89,8 @@ public class PEMCollection {
       pemCollection = new PEMCollection();
     }
     pemCollection.privateKey(privateKey);
+    pemCollection.privateKeyPassword(privateKeyPassword);
 
-    return pemCollection;
-  }
-
-  public static PEMCollection fromResponse(String body, ChainOption chainOption)
-      throws VCertException {
-    return fromResponse(body, chainOption, null);
-  }
-
-  // TODO deal with password? is it required?
-  public static PEMCollection newPemCollection(Certificate certificate, PrivateKey privateKey,
-      byte[] privateKeyPassword) {
-    PEMCollection pemCollection = new PEMCollection();
-    pemCollection.certificate(certificate);
-    if (privateKey != null) {
-      pemCollection.privateKey(privateKey);
-    }
     return pemCollection;
   }
 
@@ -116,33 +111,25 @@ public class PEMCollection {
   }
 
   public String pemPrivateKey() {
-    String pem = null;
-    if (!Objects.isNull(this.privateKey)) {
-      ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-      switch (KeyType.from(this.privateKey.getAlgorithm())) {
-        case RSA:
-          try (PemWriter pemWriter = new PemWriter(new OutputStreamWriter(outputStream))) {
-            PrivateKeyInfo pkInfo = PrivateKeyInfo.getInstance(this.privateKey.getEncoded());
-            ASN1Encodable privateKeyPKCS1ASN1Encodable = pkInfo.parsePrivateKey();
-            ASN1Primitive privateKeyPKCS1ASN1 = privateKeyPKCS1ASN1Encodable.toASN1Primitive();
-            pemWriter
-                .writeObject(new PemObject("RSA PRIVATE KEY", privateKeyPKCS1ASN1.getEncoded()));
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-          pem = new String(outputStream.toByteArray());
-          break;
-        case ECDSA:
-          try (PemWriter pemWriter = new PemWriter(new OutputStreamWriter(outputStream))) {
-            pemWriter.writeObject(new PemObject("EC PRIVATE KEY", this.privateKey.getEncoded()));
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-          pem = new String(outputStream.toByteArray());
-          break;
-      }
+    if (Objects.isNull(this.privateKey)) {
+      return null;
     }
-    return pem;
+
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    try (PemWriter pemWriter = new PemWriter(new OutputStreamWriter(outputStream))) {
+      PEMEncryptor encryptor = null;
+
+      if (privateKeyPassword != null) {
+        encryptor = new JcePEMEncryptorBuilder(BOUNCY_CASTLE_ENCRYPTION_ALGORITHM)
+          .build(privateKeyPassword.toCharArray());
+      }
+
+      JcaMiscPEMGenerator gen = new JcaMiscPEMGenerator(this.privateKey, encryptor);
+      pemWriter.writeObject(gen.generate());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return new String(outputStream.toByteArray());
   }
 
   public String pemCertificateChain() {
