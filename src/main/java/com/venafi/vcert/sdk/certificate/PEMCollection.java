@@ -34,9 +34,11 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMEncryptor;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.bc.BcPEMDecryptorProvider;
 import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcePEMEncryptorBuilder;
@@ -91,6 +93,10 @@ public class PEMCollection {
           chain.add((X509Certificate) certificate);
         } else if (object instanceof PEMKeyPair) {
           privateKey = keyConverter.getPrivateKey(((PEMKeyPair) object).getPrivateKeyInfo());
+        } else if (object instanceof PEMEncryptedKeyPair) {
+          PEMKeyPair keyPair = ((PEMEncryptedKeyPair) object).decryptKeyPair(
+            new BcPEMDecryptorProvider(privateKeyPassword.toCharArray()));
+          privateKey = keyConverter.getPrivateKey(keyPair.getPrivateKeyInfo());
         }
 
         object = pemParser.readObject();

@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import com.venafi.vcert.sdk.VCertException;
 
 class PEMCollectionTest {
-  private static final String KEY_PASSWORD = "my secret";
+  private static final String KEY_PASSWORD = "newPassw0rd!";
   private static final String PKCS12_PASSWORD = "abcd";
 
   static {
@@ -69,6 +69,14 @@ class PEMCollectionTest {
     PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null, null);
     assertThat(pemCollection.certificate()).isNotNull();
     assertThat(pemCollection.chain()).hasSize(0);
+    assertThat(pemCollection.privateKey()).isNotNull();
+  }
+
+  @Test
+  void fromResponseEncryptedKey() throws VCertException, IOException {
+    String body = readResourceAsString("certificates/certWithEncryptedKey.pem");
+    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore,
+      null, KEY_PASSWORD);
     assertThat(pemCollection.privateKey()).isNotNull();
   }
 
