@@ -124,12 +124,14 @@ public class ZoneConfiguration {
     static Entity of(List<String> target, String source) {
       Entity entity = new Entity();
       entity.target = target;
-      entity.source = source;
+      entity.source = (source != null)? source : "";
       return entity;
     }
 
     List<String> resolve() {
-      return Is.blank(target) && isNotBlank(source) ? Collections.singletonList(source) : target;
+      //Adding  empty string validation. When Certificate Issuing Template uses .* as regex, it means any string is
+      // valid, even empty or null strings
+      return Is.blank(target)? Collections.singletonList(source) : target;
     }
   }
 
