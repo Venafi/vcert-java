@@ -234,6 +234,7 @@ To run the acceptance tests the following environment variables must be set:
 | CLOUDURL | Only for Venafi Cloud tests running against non-production environments (uncommon) |
 | APIKEY | Obtained by logging into Venafi Cloud after registering |
 | CLOUDZONE | Zone ID or ProjectName\ZoneName for Venafi Cloud |
+| CLOUDZONE2 | Zone ID or ProjectName\ZoneName for Venafi Cloud for testing empty OU, O, L, ST, and C |
 
 Acceptance test  are executed with:
 
