@@ -8,6 +8,7 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
 import feign.FeignException;
+import feign.FeignException.BadRequest;
 import feign.FeignException.Unauthorized;
 import feign.Response;
 import lombok.Setter;
@@ -97,7 +98,7 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
             this.credentials = auth;
             this.credentials.accessToken(accessTokenInfo.accessToken());
             this.credentials.refreshToken(accessTokenInfo.refreshToken());
-        } catch(Unauthorized e){
+        } catch(Unauthorized | BadRequest e){
             accessTokenInfo = new TokenInfo(null, null, -1, null, null,
                 null, -1, false, e.getMessage());
         }
