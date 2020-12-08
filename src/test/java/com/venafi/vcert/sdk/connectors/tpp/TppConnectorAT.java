@@ -296,7 +296,7 @@ class TppConnectorAT {
 	  assertTrue(token != "");
 
 	  String url = System.getenv(TestUtils.TPP_TOKEN_URL);
-	  String zone = System.getenv(TestUtils.TPP_ZONE2);
+	  String zone = System.getenv(TestUtils.TPP_ZONE);
 
 
 	  final Authentication auth = Authentication.builder()

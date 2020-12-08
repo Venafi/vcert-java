@@ -44,7 +44,7 @@ public class TestUtils {
 	public static final String TPP_USER = "TPPUSER";
 	public static final String TPP_PASSWORD = "TPPPASSWORD";
 	public static final String TPP_TOKEN_URL = "TPP_TOKEN_URL";
-	public static final String TPP_ZONE2 = "TPP_ZONE2";
+	public static final String TPP_ZONE = "TPPZONE";
 	public static final String CLOUD_ZONE = "CLOUDZONE";
 	public static final String API_KEY = "APIKEY";
 	
