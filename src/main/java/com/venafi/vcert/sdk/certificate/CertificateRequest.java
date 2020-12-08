@@ -69,6 +69,8 @@ public class CertificateRequest {
   private boolean fetchPrivateKey;
   private String thumbprint;
   private Duration timeout;
+  private int validityHours;
+  private String issuerHint;
 
   public CertificateRequest() {
     this.dnsNames = emptyList();
