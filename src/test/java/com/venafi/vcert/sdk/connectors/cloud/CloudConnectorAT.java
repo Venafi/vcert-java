@@ -1,27 +1,36 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.Strings;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import feign.FeignException;
+
+import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.TestUtils;
+import com.venafi.vcert.sdk.VCertClient;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
@@ -31,6 +40,10 @@ import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
+import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import com.venafi.vcert.sdk.utils.VCertUtils;
+
+import feign.FeignException;
 
 class CloudConnectorAT {
 
@@ -199,5 +212,62 @@ class CloudConnectorAT {
   void readPolicyConfiguration() {
     assertThrows(UnsupportedOperationException.class,
         () -> classUnderTest.readPolicyConfiguration("zone"));
+  }
+  
+  @Test
+  @DisplayName("Create a cerfiticate and validate specified validity hours - Cloud")
+  public void createCertificateValidateValidityHours() throws VCertException {
+
+	  String zone = System.getenv(TestUtils.CLOUD_ZONE);
+	  String apiKey = System.getenv(TestUtils.API_KEY);
+
+	  String commonName = TestUtils.randomCN();
+
+	  final Authentication auth = Authentication.builder()
+			  .apiKey(apiKey)
+			  .build();
+
+	  final Config config = Config.builder()
+			  .connectorType(ConnectorType.CLOUD)
+			  .build();
+
+	  final VCertClient client = new VCertClient(config);
+	  client.authenticate(auth);
+
+	  CertificateRequest certificateRequest = new CertificateRequest().subject(
+			  new CertificateRequest.PKIXName()
+			  .commonName(commonName)
+			  .organization(Collections.singletonList("Venafi"))
+			  .organizationalUnit(Arrays.asList("DevOps"))
+			  .country(Collections.singletonList("US"))
+			  .locality(Collections.singletonList("Salt Lake City"))
+			  .province(Collections.singletonList("Utah")))
+			  .keyType(KeyType.RSA)
+			  .validityHours(TestUtils.VALID_HOURS);
+
+	  ZoneConfiguration zoneConfiguration = client.readZoneConfiguration(zone);
+	  certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);
+
+	  // Submit the certificate request
+	  client.requestCertificate(certificateRequest, zoneConfiguration);
+
+	  // Retrieve PEM collection from Venafi
+	  PEMCollection pemCollection = client.retrieveCertificate(certificateRequest);
+
+	  Date notAfter = pemCollection.certificate().getNotAfter();
+	  LocalDate notAfterDate = notAfter.toInstant().atOffset(ZoneOffset.UTC).toLocalDate();
+
+
+	  Instant now = Instant.now();
+	  LocalDateTime utcDateTime = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
+
+	  int validityDays = VCertUtils.getValidDays(TestUtils.VALID_HOURS);
+	  utcDateTime = utcDateTime.plusDays(validityDays);
+
+	  LocalDate nowDateInUTC = utcDateTime.toLocalDate();
+
+	  //Dates should be equals if not then it will fail
+	  assertTrue(notAfterDate.compareTo(nowDateInUTC) == 0);
+
   }
 }

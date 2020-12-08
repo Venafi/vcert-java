@@ -216,9 +216,21 @@ public class CloudConnector implements Connector {
     if (user == null || user.company() == null) {
       throw new VCertException("Must be authenticated to request a certificate");
     }
+    
+    CertificateRequestsPayload payload = new CertificateRequestsPayload()
+    .zoneId(zoneConfiguration.zoneId()).csr(new String(request.csr()));
+    
+    //support for validity hours begins
+    if( request.validityHours() > 0 ) {	
+    	
+    	String validityHours =  "PT" + request.validityHours() + "H";
+    	payload.validityPeriod(validityHours);
+    	
+    }
+    //support for validity hours ends 
+    
     CertificateRequestsResponse response =
-        cloud.certificateRequest(auth.apiKey(), new CertificateRequestsPayload()
-            .zoneId(zoneConfiguration.zoneId()).csr(new String(request.csr())));
+        cloud.certificateRequest( auth.apiKey(), payload );
 
     String requestId = response.certificateRequests().get(0).id();
     request.pickupId(requestId);
@@ -480,6 +492,7 @@ public class CloudConnector implements Connector {
     private String zoneId;
     private String existingManagedCertificateId;
     private boolean reuseCSR;
+    private String validityPeriod;
   }
 
   @Data

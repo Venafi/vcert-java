@@ -4,6 +4,7 @@ import static com.venafi.vcert.sdk.TestUtils.getTestIps;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.IOException;
 import java.io.StringReader;
@@ -14,17 +15,27 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import feign.FeignException;
+
+import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.VCertTknClient;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.ImportResponse;
@@ -34,6 +45,8 @@ import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
+import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import com.venafi.vcert.sdk.utils.VCertUtils;
 
 class TppConnectorAT {
 
@@ -269,7 +282,71 @@ class TppConnectorAT {
 
   @Test
   void readPolicyConfiguration() {
-    assertThrows(UnsupportedOperationException.class,
-        () -> classUnderTest.readPolicyConfiguration("zone"));
+	  assertThrows(UnsupportedOperationException.class,
+			  () -> classUnderTest.readPolicyConfiguration("zone"));
+  }
+
+  @Test
+  @DisplayName("Create a cerfiticate and validate specified validity hours - TPP")
+  void createCertificateValidateValidityHours() throws UnknownHostException, VCertException {
+
+	  String token = TestUtils.getAccessToken();
+	  String commonName = TestUtils.randomCN();
+
+	  assertTrue(token != "");
+
+	  String url = System.getenv(TestUtils.TPP_TOKEN_URL);
+	  String zone = System.getenv(TestUtils.TPP_ZONE2);
+
+
+	  final Authentication auth = Authentication.builder()
+			  .accessToken(token)
+			  .build();
+
+	  final Config config = Config.builder()
+			  .connectorType(ConnectorType.TPP_TOKEN)
+			  .baseUrl(url)
+			  .credentials(auth)
+			  .build();
+
+	  final VCertTknClient client =  new VCertTknClient(config);
+
+	  CertificateRequest cr = new CertificateRequest()
+			  .subject(new CertificateRequest.PKIXName().commonName(commonName)
+					  .organization(Collections.singletonList("Venafi, Inc."))
+					  .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
+					  .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
+					  .province(Collections.singletonList("Utah")))
+			  .dnsNames(Arrays.asList("alfa.venafi.example", "bravo.venafi.example", "charlie.venafi.example"))
+			  .ipAddresses(Arrays.asList(InetAddress.getByName("10.20.30.40"),InetAddress.getByName("172.16.172.16")))
+			  .keyType(KeyType.RSA)
+			  .validityHours(TestUtils.VALID_HOURS)
+			  .issuerHint("MICROSOFT");
+
+	  ZoneConfiguration zoneConfiguration = client.readZoneConfiguration(zone);
+	  cr = client.generateRequest(zoneConfiguration, cr);
+
+	  // Submit the certificate request
+	  client.requestCertificate(cr, zoneConfiguration);
+
+	  // Retrieve PEM collection from Venafi
+	  PEMCollection pemCollection = client.retrieveCertificate(cr);
+
+
+	  Date notAfter = pemCollection.certificate().getNotAfter();
+	  LocalDate notAfterDate = notAfter.toInstant().atOffset(ZoneOffset.UTC).toLocalDate();
+
+
+	  Instant now = Instant.now();
+	  LocalDateTime utcDateTime = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
+
+	  int validityDays = VCertUtils.getValidDays(TestUtils.VALID_HOURS);
+	  utcDateTime = utcDateTime.plusDays(validityDays);
+
+	  LocalDate nowDateInUTC = utcDateTime.toLocalDate();
+
+	  //Dates should be equals if not then it will fail
+	  assertTrue(notAfterDate.compareTo(nowDateInUTC) == 0);
+
   }
 }

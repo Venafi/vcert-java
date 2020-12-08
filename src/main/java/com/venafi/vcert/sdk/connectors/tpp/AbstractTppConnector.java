@@ -149,7 +149,7 @@ public abstract class AbstractTppConnector {
 
     @Data
     @AllArgsConstructor
-    protected static class NameValuePair<K, V> {
+    public static class NameValuePair<K, V> {
         private K name;
         private V value;
     }

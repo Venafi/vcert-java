@@ -6,6 +6,7 @@ import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import java.net.InetAddress;
 import java.text.MessageFormat;
 import java.time.Instant;
@@ -20,9 +21,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+
 import com.google.common.annotations.VisibleForTesting;
-import feign.Response;
-import lombok.Getter;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ChainOption;
@@ -41,6 +41,10 @@ import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.Is;
+import com.venafi.vcert.sdk.utils.VCertUtils;
+
+import feign.Response;
+import lombok.Getter;
 
 
 public class TppConnector extends AbstractTppConnector implements Connector {
@@ -232,6 +236,12 @@ public class TppConnector extends AbstractTppConnector implements Connector {
         break;
       }
     }
+    
+    
+    //support for validity hours begins
+    VCertUtils.addExpirationDateAttribute(request, payload);
+   //support for validity hours ends
+    
     return payload;
   }
 

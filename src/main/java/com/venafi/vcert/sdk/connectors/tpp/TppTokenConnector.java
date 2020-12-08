@@ -1,30 +1,52 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.venafi.vcert.sdk.VCertException;
-import com.venafi.vcert.sdk.certificate.*;
-import com.venafi.vcert.sdk.connectors.*;
-import com.venafi.vcert.sdk.endpoint.Authentication;
-import com.venafi.vcert.sdk.endpoint.ConnectorType;
-import com.venafi.vcert.sdk.utils.Is;
-import feign.FeignException;
-import feign.FeignException.BadRequest;
-import feign.FeignException.Unauthorized;
-import feign.Response;
-import lombok.Setter;
-
-import java.net.InetAddress;
-import java.text.MessageFormat;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
 import static java.lang.String.format;
 import static java.time.Duration.ZERO;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+import java.net.InetAddress;
+import java.text.MessageFormat;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.certificate.CertificateRequest;
+import com.venafi.vcert.sdk.certificate.ChainOption;
+import com.venafi.vcert.sdk.certificate.CsrOriginOption;
+import com.venafi.vcert.sdk.certificate.ImportRequest;
+import com.venafi.vcert.sdk.certificate.ImportResponse;
+import com.venafi.vcert.sdk.certificate.KeyType;
+import com.venafi.vcert.sdk.certificate.PEMCollection;
+import com.venafi.vcert.sdk.certificate.PublicKeyAlgorithm;
+import com.venafi.vcert.sdk.certificate.RenewalRequest;
+import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.connectors.Policy;
+import com.venafi.vcert.sdk.connectors.ServerPolicy;
+import com.venafi.vcert.sdk.connectors.TokenConnector;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.endpoint.Authentication;
+import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import com.venafi.vcert.sdk.utils.Is;
+import com.venafi.vcert.sdk.utils.VCertUtils;
+
+import feign.FeignException;
+import feign.FeignException.BadRequest;
+import feign.FeignException.Unauthorized;
+import feign.Response;
+import lombok.Setter;
 
 public class TppTokenConnector extends AbstractTppConnector implements TokenConnector {
 
@@ -285,6 +307,11 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
                 break;
             }
         }
+        
+        //support for validity hours begins
+        VCertUtils.addExpirationDateAttribute(request, payload);
+       //support for validity hours ends
+        
         return payload;
     }
 
