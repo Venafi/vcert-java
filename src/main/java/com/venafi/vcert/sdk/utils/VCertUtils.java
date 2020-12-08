@@ -18,13 +18,7 @@ public class VCertUtils {
 			Instant now = Instant.now();
 			LocalDateTime utcTime = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
 
-			int validityDays = request.validityHours() / 24;
-
-			if ( request.validityHours() % 24 > 0 ) {
-
-				validityDays = validityDays + 1;
-
-			}
+			int validityDays = getValidityDays(request.validityHours());
 
 			utcTime = utcTime.plusDays( validityDays );
 			String expirationDate = DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ).format( utcTime );
@@ -66,17 +60,19 @@ public class VCertUtils {
 
 	}
 
-	public static int getValidDays( int validHours ) {
+	public static int getValidityDays( int validHours ) {
 
-		int validDays = validHours / 24;
+		int validityDays = validHours / 24;
 
+		//If dividing the hours to convert them to days have fractional numbers then round it
+		//to the next day.
 		if ( validHours % 24 > 0 ) {
 
-			validDays = validDays + 1;
+			validityDays = validityDays + 1;
 
 		}
 
-		return validDays;
+		return validityDays;
 	}
 
 }

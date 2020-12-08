@@ -340,7 +340,7 @@ class TppConnectorAT {
 	  Instant now = Instant.now();
 	  LocalDateTime utcDateTime = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
 
-	  int validityDays = VCertUtils.getValidDays(TestUtils.VALID_HOURS);
+	  int validityDays = VCertUtils.getValidityDays(TestUtils.VALID_HOURS);
 	  utcDateTime = utcDateTime.plusDays(validityDays);
 
 	  LocalDate nowDateInUTC = utcDateTime.toLocalDate();
