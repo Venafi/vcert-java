@@ -60,13 +60,13 @@ public class VCertUtils {
 
 	}
 
-	public static int getValidityDays( int validHours ) {
+	public static int getValidityDays( int validityHours ) {
 
-		int validityDays = validHours / 24;
+		int validityDays = validityHours / 24;
 
 		//If dividing the hours to convert them to days have fractional numbers then round it
 		//to the next day.
-		if ( validHours % 24 > 0 ) {
+		if ( validityHours % 24 > 0 ) {
 
 			validityDays = validityDays + 1;
 
