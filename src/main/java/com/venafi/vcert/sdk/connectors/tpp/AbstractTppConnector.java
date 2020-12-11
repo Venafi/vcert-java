@@ -1,17 +1,19 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.gson.annotations.SerializedName;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.annotations.SerializedName;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.Getter;
 
 
 public abstract class AbstractTppConnector {
@@ -139,6 +141,9 @@ public abstract class AbstractTppConnector {
         private String ellipticCurve;
         private boolean disableAutomaticRenewal;
         private String origin;
+        
+        @SerializedName("CustomFields")
+        private ArrayList<CustomFieldRequest> customFields;
     }
 
     @Data

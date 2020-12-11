@@ -71,6 +71,7 @@ public class CertificateRequest {
   private Duration timeout;
   private int validityHours;
   private String issuerHint;
+  private Collection<CustomField> customFields;
 
   public CertificateRequest() {
     this.dnsNames = emptyList();

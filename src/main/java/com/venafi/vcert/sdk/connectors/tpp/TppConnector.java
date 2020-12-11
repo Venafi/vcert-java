@@ -242,6 +242,10 @@ public class TppConnector extends AbstractTppConnector implements Connector {
     VCertUtils.addExpirationDateAttribute(request, payload);
    //support for validity hours ends
     
+    //support for custom fields begins
+    VCertUtils.addCustomFieldsToRequest(request, payload);
+    //support for custom fields ends
+    
     return payload;
   }
 
