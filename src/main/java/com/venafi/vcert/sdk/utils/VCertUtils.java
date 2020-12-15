@@ -4,10 +4,13 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.connectors.tpp.AbstractTppConnector.CertificateRequestsPayload;
 import com.venafi.vcert.sdk.connectors.tpp.AbstractTppConnector.NameValuePair;
+import com.venafi.vcert.sdk.connectors.tpp.CustomFieldRequest;
 
 public class VCertUtils {
 
@@ -73,6 +76,44 @@ public class VCertUtils {
 		}
 
 		return validityDays;
+	}
+	
+	public static void addCustomFieldsToRequest( CertificateRequest request, CertificateRequestsPayload payload ) {
+		if( request.customFields() != null && request.customFields().size() > 0 ) {
+
+			if( payload.customFields() == null ) {
+				
+				payload.customFields( new ArrayList<>() );
+				
+			}
+
+			request.customFields().forEach( cf ->{
+
+				String currentFieldName = cf.name();
+
+				CustomFieldRequest customFieldRequest = payload.customFields().stream()
+						.filter( e -> e.name().equals( currentFieldName ) )
+						.findFirst().orElse( null );
+
+				if( customFieldRequest == null ) {
+
+					CustomFieldRequest newCustomFieldRequest =  new CustomFieldRequest();
+					newCustomFieldRequest.name(currentFieldName);
+					
+					List<String> values = new ArrayList<String>();
+					values.add( cf.value() );
+					newCustomFieldRequest.values( values );
+
+					payload.customFields().add( newCustomFieldRequest );
+
+
+				}else {
+
+					customFieldRequest.values().add( cf.value() );
+
+				}
+			});
+		}
 	}
 
 }

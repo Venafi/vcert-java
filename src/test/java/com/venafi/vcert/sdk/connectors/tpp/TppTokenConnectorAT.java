@@ -1,19 +1,11 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
-import com.venafi.vcert.sdk.TestUtils;
-import com.venafi.vcert.sdk.VCertException;
-import com.venafi.vcert.sdk.certificate.*;
-import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
-import com.venafi.vcert.sdk.endpoint.Authentication;
-import feign.FeignException;
-
-import org.apache.commons.codec.digest.DigestUtils;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static com.venafi.vcert.sdk.TestUtils.getTestIps;
+import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -24,14 +16,36 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
-import static com.venafi.vcert.sdk.TestUtils.getTestIps;
-import static java.lang.String.format;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.venafi.vcert.sdk.Config;
+import com.venafi.vcert.sdk.TestUtils;
+import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.VCertTknClient;
+import com.venafi.vcert.sdk.certificate.CertificateRequest;
+import com.venafi.vcert.sdk.certificate.CustomField;
+import com.venafi.vcert.sdk.certificate.ImportRequest;
+import com.venafi.vcert.sdk.certificate.ImportResponse;
+import com.venafi.vcert.sdk.certificate.KeyType;
+import com.venafi.vcert.sdk.certificate.PEMCollection;
+import com.venafi.vcert.sdk.certificate.RenewalRequest;
+import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.endpoint.Authentication;
+import com.venafi.vcert.sdk.endpoint.ConnectorType;
+
+import feign.FeignException;
 
 class TppTokenConnectorAT {
 
@@ -376,5 +390,65 @@ class TppTokenConnectorAT {
         // After setting invalid credentials to TPP, setting variable <info> to null
         // will allow for new token to be authorized
         TppTokenConnectorAT.info = null;
+    }
+    
+    @Test
+    @DisplayName("Create a cerfiticate that contais custom fileds and validate if certifiate were created correctly")
+    void createCertificateValidateValidityHours() throws UnknownHostException, VCertException {
+
+  	  String token = TestUtils.getAccessToken();
+  	  String commonName = TestUtils.randomCN();
+
+  	  assertTrue(token != "");
+
+  	  String url = System.getenv(TestUtils.TPP_TOKEN_URL);
+  	  String zone = System.getenv(TestUtils.TPP_ZONE);
+
+
+  	  final Authentication auth = Authentication.builder()
+  			  .accessToken(token)
+  			  .build();
+
+  	  final Config config = Config.builder()
+  			  .connectorType(ConnectorType.TPP_TOKEN)
+  			  .baseUrl(url)
+  			  .credentials(auth)
+  			  .build();
+
+  	  final VCertTknClient client =  new VCertTknClient(config);
+  	  
+  	  //Custom fields
+  	  List<CustomField> customFields = new ArrayList<CustomField>();
+  	  customFields.add(new CustomField("custom", "java-test"));
+  	  customFields.add(new CustomField("cfList", "item2"));
+  	  customFields.add(new CustomField("cfListMulti", "tier1"));
+  	  customFields.add(new CustomField("cfListMulti", "tier2"));
+
+
+  	  CertificateRequest cr = new CertificateRequest()
+  			  .subject(new CertificateRequest.PKIXName().commonName(commonName)
+  					  .organization(Collections.singletonList("Venafi, Inc."))
+  					  .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
+  					  .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
+  					  .province(Collections.singletonList("Utah")))
+  			  .dnsNames(Arrays.asList("alfa.venafi.example", "bravo.venafi.example", "charlie.venafi.example"))
+  			  .ipAddresses(Arrays.asList(InetAddress.getByName("10.20.30.40"),InetAddress.getByName("172.16.172.16")))
+  			  .keyType(KeyType.RSA)
+  			  .customFields(customFields);
+
+  	  ZoneConfiguration zoneConfiguration = client.readZoneConfiguration(zone);
+  	  cr = client.generateRequest(zoneConfiguration, cr);
+
+  	  // Submit the certificate request
+  	  client.requestCertificate(cr, zoneConfiguration);
+
+  	  // Retrieve PEM collection from Venafi
+  	  PEMCollection pemCollection = client.retrieveCertificate(cr);
+
+
+  	  //At this moment certificate, must be created, it will fail if some custom fields aren't supported or specified on tpp
+  	  //so is enough to validate if certificate is created.
+  	  assertTrue(pemCollection.certificate() != null);
+
     }
 }
