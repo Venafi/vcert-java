@@ -20,6 +20,7 @@
         <wiremock-extension.version>0.4.0</wiremock-extension.version>
         <assertj.version>3.12.2</assertj.version>
         <ini4j.version>0.5.4</ini4j.version>
+        <commonslang3.version>3.11</commonslang3.version>
     </properties>
 
     <dependencies>
@@ -121,6 +122,11 @@
             <artifactId>ini4j</artifactId>
             <version>${ini4j.version}</version>
         </dependency>
+	<dependency>
+		<groupId>org.apache.commons</groupId>
+		<artifactId>commons-lang3</artifactId>
+		<version>${commonslang3.version}</version>
+	</dependency>
     </dependencies>
 
     <build>
@@ -147,6 +153,27 @@
                     </includes>
                 </configuration>
             </plugin>
+	<plugin>
+		<groupId>org.apache.maven.plugins</groupId>
+		<artifactId>maven-assembly-plugin</artifactId>
+		<version>3.3.0</version>
+		<configuration>
+			<descriptorRefs>
+				<descriptorRef>jar-with-dependencies</descriptorRef>
+			</descriptorRefs>
+			 <finalName>${project.artifactId}-${project.version}-with-dependencies</finalName>
+        <appendAssemblyId>false</appendAssemblyId>
+		</configuration>
+		<executions>
+			<execution>
+				<id>assemble-all</id>
+				<phase>package</phase>
+				<goals>
+					<goal>single</goal>
+				</goals>
+			</execution>
+		</executions>
+	</plugin>
         </plugins>
     </build>
 
