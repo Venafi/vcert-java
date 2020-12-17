@@ -147,7 +147,7 @@ CertificateRequest certificateRequest = new CertificateRequest().subject(
         .dnsNames(Arrays.asList("alfa.venafi.example", "bravo.venafi.example", "charlie.venafi.example"))
         .keyType(KeyType.RSA)
         .validityHours(720)
-        .issuerHint("MICROSOFT"); // applies only to TPP an only when the CA is "DIGICERT", "ENTRUST", or "MICROSOFT"
+        .issuerHint("MICROSOFT"); // needed for TPP when the CA is "DIGICERT", "ENTRUST", or "MICROSOFT"
 ```
 
 
