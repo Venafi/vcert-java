@@ -35,7 +35,7 @@ mvn install
 Instantiate a client for Trust Protection Platform using token authentication with an existing
 access token:
 
-```sh
+```java
 final Authentication auth = Authentication.builder()
         .accessToken("9PQwQeiTLhcB8/W3/z2Lbw==")
         .build();
@@ -51,7 +51,7 @@ final VCertTknClient client = new VCertTknClient(config);
 
 Or instantiate a client for Venafi Cloud:
 
-```sh
+```java
 final Authentication auth = Authentication.builder()
         .apiKey("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
         .build();
@@ -66,7 +66,7 @@ client.authenticate(auth);
 
 Then use your client to request certificates:
 
-```sh
+```java
 //////////////////////////////////////
 ///// Local Generated CSR - RSA //////
 //////////////////////////////////////
@@ -137,11 +137,43 @@ System.out.println(pemCollection.pemCertificate());
 System.out.println(pemCollection.pemCertificateChain());
 ```
 
+To specify the desired validity when requesting a certificate from Trust Protection Platform
+or Venafi Cloud, use `validityHours()`:
+
+```java
+CertificateRequest certificateRequest = new CertificateRequest().subject(
+        new CertificateRequest.PKIXName()
+                .commonName("vcert-java.venafi.example"))
+        .dnsNames(Arrays.asList("alfa.venafi.example", "bravo.venafi.example", "charlie.venafi.example"))
+        .keyType(KeyType.RSA)
+        .validityHours(720)
+        .issuerHint("MICROSOFT"); // applies only to TPP an only when the CA is "DIGICERT", "ENTRUST", or "MICROSOFT"
+```
+
+
+To assign Custom Field values when requesting a certificate from Trust Protection Platform,
+construct a list of CustomField objects (name/value) and then add them to the request using
+`customFields()`:
+
+```java
+List<CustomField> fields = new ArrayList<CustomField>();
+fields.add(new CustomField("Cost Center", "ABC123"));
+fields.add(new CustomField("Environment", "Production"));
+fields.add(new CustomField("Environment", "Staging"));
+
+CertificateRequest certificateRequest = new CertificateRequest().subject(
+        new CertificateRequest.PKIXName()
+                .commonName("vcert-java.venafi.example"))
+        .dnsNames(Arrays.asList("alfa.venafi.example", "bravo.venafi.example", "charlie.venafi.example"))
+        .keyType(KeyType.RSA)
+        .customFields(fields);
+```
+
 You can also instantiate a client for Trust Protection Platform using token authentication
 _without_ an existing token by providing a username/password.  Such a token is generally for
 short-term or temporary use and as such should be revoked upon completion of your tasks:
 
-```sh
+```java
 final Authentication auth = Authentication.builder()
         .user("local:apiuser")
         .password("password")
@@ -163,7 +195,7 @@ client.revokeAccessToken();
 :thumbsdown: To instantiate a client for Trust Protection Platform using deprecated username/password
 authentication:
 
-```sh
+```java
 final Authentication auth = Authentication.builder()
         .user("local:apiuser")
         .password("password")
