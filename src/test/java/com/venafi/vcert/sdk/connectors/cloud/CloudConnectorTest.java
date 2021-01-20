@@ -264,7 +264,10 @@ class CloudConnectorTest {
 
     final String thumbprint = "52030990E3DC44199DA11C2D73E41EF8EAD8A4E1";
     final RenewalRequest renewalRequest = new RenewalRequest();
-
+    
+    CertificateRequest request = mock(CertificateRequest.class);
+    renewalRequest.request(request);
+    
     final Cloud.CertificateSearchResponse searchResponse =
         mock(Cloud.CertificateSearchResponse.class);
 
@@ -300,6 +303,9 @@ class CloudConnectorTest {
         .thenReturn(requestsResponse);
     when(requestsResponse.certificateRequests()).thenReturn(singletonList(requestsResponseData));
     when(requestsResponseData.id()).thenReturn("certificate_result");
+    String fakeCSR = "fake csr";
+    byte[] bytes = fakeCSR.getBytes();
+    when(renewalRequest.request().csr()).thenReturn(bytes);
 
     classUnderTest.authenticate(auth);
     assertThat(classUnderTest.renewCertificate(renewalRequest)).isEqualTo("certificate_result");

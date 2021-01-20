@@ -425,6 +425,8 @@ public class CloudConnector implements Connector {
         .reuseCSR(!(Objects.nonNull(request.request()) && request.request().csr().length > 0));
     if (!certificateRequest.reuseCSR) {
       certificateRequest.csr(Strings.fromByteArray(request.request().csr()));
+    }else {
+    	throw new VCertException( "A CSR should be specified." );
     }
 
     CertificateRequestsResponse response =
