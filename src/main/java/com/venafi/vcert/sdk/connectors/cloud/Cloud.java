@@ -3,9 +3,19 @@ package com.venafi.vcert.sdk.connectors.cloud;
 
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.venafi.vcert.sdk.Config;
+import com.venafi.vcert.sdk.certificate.CertificateStatus;
+import com.venafi.vcert.sdk.connectors.cloud.domain.Application;
+import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateDetails;
+import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
+import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
+import com.venafi.vcert.sdk.utils.FeignUtils;
+
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
@@ -13,74 +23,51 @@ import feign.Response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.venafi.vcert.sdk.Config;
-import com.venafi.vcert.sdk.certificate.CertificateStatus;
-import com.venafi.vcert.sdk.certificate.ManagedCertificate;
-import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
-import com.venafi.vcert.sdk.connectors.cloud.domain.Project;
-import com.venafi.vcert.sdk.connectors.cloud.domain.ProjectZone;
-import com.venafi.vcert.sdk.connectors.cloud.domain.Projects;
-import com.venafi.vcert.sdk.connectors.cloud.domain.TagProjectZone;
-import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
-import com.venafi.vcert.sdk.utils.FeignUtils;
 
 public interface Cloud {
   @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /useraccounts")
+  @RequestLine("GET v1/useraccounts")
   UserDetails authorize(@Param("apiKey") String apiKey);
-
+  
   @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /projectzones/{zoneId}")
-  ProjectZone zoneById(@Param("zoneId") String zoneId, @Param("apiKey") String apiKey);
-
+  @RequestLine("GET /outagedetection/v1/applications/{appName}/certificateissuingtemplates/{citAlias}")
+  CertificateIssuingTemplate certificateIssuingTemplateByAppNameAndCitAlias(
+	  @Param("appName") String appName,
+      @Param("citAlias") String citAlias,
+      @Param("apiKey") String apiKey);
+  
   @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /projectzones/{zone}")
-  ProjectZone zones(@Param("zone") String zone, @Param("apiKey") String apiKey);
-
-  @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /devopsprojects?zoneDetails=true")
-  Projects projects(@Param("apiKey") String apiKey);
-
-  @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /devopsprojects/{projectId}?zoneDetails=true")
-  Project projectById(@Param("projectId") String projectId, @Param("apiKey") String apiKey);
-
-  @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /zones/tag/{tag}")
-  TagProjectZone zoneByTag(@Param("tag") String tag, @Param("apiKey") String apiKey);
-
-  @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /certificateissuingtemplates/{certificateIssuingTemplateId}")
-  CertificateIssuingTemplate certificateIssuingTemplateById(
-      @Param("certificateIssuingTemplateId") String certificateIssuingTemplateId,
+  @RequestLine("GET /outagedetection/v1/applications/name/{appName}")
+  Application applicationByName(
+	  @Param("appName") String appName,
       @Param("apiKey") String apiKey);
 
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json", "Accept: application/json"})
-  @RequestLine("POST /certificatesearch")
+  @RequestLine("POST /outagedetection/v1/certificatesearch")
   CertificateSearchResponse searchCertificates(@Param("apiKey") String apiKey,
       SearchRequest searchRequest);
 
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
-  @RequestLine("POST /certificaterequests")
+  @RequestLine("POST  /outagedetection/v1/certificaterequests")
   CloudConnector.CertificateRequestsResponse certificateRequest(@Param("apiKey") String apiKey,
       CloudConnector.CertificateRequestsPayload csr);
 
   @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /certificaterequests/{id}")
+  @RequestLine("GET  /outagedetection/v1/certificaterequests/{id}")
   CertificateStatus certificateStatus(@Param("id") String id, @Param("apiKey") String apiKey);
 
   @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /certificaterequests/{id}/certificate?chainOrder={chainOrder}&format=PEM")
+  @RequestLine("GET /outagedetection/v1/certificates/{id}/contents?chainOrder={chainOrder}&format=PEM")
   Response certificateViaCSR(@Param("id") String id, @Param("apiKey") String apiKey,
       @Param("chainOrder") String chainOrder);
 
-  @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /certificates/{id}/encoded")
-  String certificateAsPem(@Param("id") String id, @Param("apiKey") String apiKey);
+  @Headers({"tppl-api-key: {apiKey}", "Content-Type: text/plain"})
+  @RequestLine("GET /outagedetection/v1/certificates/{id}/contents")
+  Response certificateAsPem(@Param("id") String id, @Param("apiKey") String apiKey);
 
   @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /managedcertificates/{id}")
-  ManagedCertificate managedCertificate(@Param("id") String id, @Param("apiKey") String apiKey);
+  @RequestLine("GET /outagedetection/v1/certificates/{id}")
+  CertificateDetails certificateDetails(@Param("id") String id, @Param("apiKey") String apiKey);
 
   @RequestLine("GET ping")
   @Headers("x-venafi-api-key: {apiKey}")
@@ -114,12 +101,7 @@ public interface Cloud {
       url = url + "/";
     }
 
-    Pattern pattern = Pattern.compile("/v\\d/$");
-    Matcher matcher = pattern.matcher(url);
-    if (!matcher.find()) {
-      // Use API version 1 if not specified
-      url = url + "v1/";
-    }
+    
     return url;
   }
 

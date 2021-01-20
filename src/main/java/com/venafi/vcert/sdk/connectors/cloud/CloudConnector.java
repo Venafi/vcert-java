@@ -16,12 +16,12 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Strings;
+
 import com.google.common.io.CharStreams;
 import com.google.gson.annotations.SerializedName;
-import feign.Response;
-import lombok.Data;
-import lombok.Getter;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.CertificateStatus;
@@ -29,22 +29,24 @@ import com.venafi.vcert.sdk.certificate.ChainOption;
 import com.venafi.vcert.sdk.certificate.CsrOriginOption;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.ImportResponse;
-import com.venafi.vcert.sdk.certificate.ManagedCertificate;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.cloud.domain.Application;
+import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateDetails;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
-import com.venafi.vcert.sdk.connectors.cloud.domain.Project;
-import com.venafi.vcert.sdk.connectors.cloud.domain.ProjectZone;
-import com.venafi.vcert.sdk.connectors.cloud.domain.Projects;
-import com.venafi.vcert.sdk.connectors.cloud.domain.TagProjectZone;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import com.venafi.vcert.sdk.utils.VCertUtils;
 
+import feign.Response;
+import lombok.Data;
+import lombok.Getter;
+	
 public class CloudConnector implements Connector {
 
   private Cloud cloud;
@@ -107,66 +109,33 @@ public class CloudConnector implements Connector {
 
   @Override
   public ZoneConfiguration readZoneConfiguration(String zone) throws VCertException {
-    String[] zoneIdentifiers = parseZoneIdentifiers(zone);
-    CertificateIssuingTemplate cit = null;
-    String zoneId = null;
+	  
+	  String valies[] = StringUtils.split(zone, "\\");
+	  String appName = valies[0];
+	  String citAlias = valies[1];
+	  
+	  CertificateIssuingTemplate cit = null;
+	    String zoneId = null;
+	    if((appName != null && appName != "") && (citAlias != null && citAlias != "")) {
+	    	
+	    	 cit = cloud.certificateIssuingTemplateByAppNameAndCitAlias(appName, citAlias, auth.apiKey());
+	    	 
+	    	
+	    }else {
+	    	  throw new VCertException("The parameters: appName, citAlia or both are empty");
+	    }
+	    
+	    //get application id.
+	    Application app = cloud.applicationByName(appName, auth.apiKey());
+	    String appId = app.id();
 
-    if (zoneIdentifiers[0] != null) {
-      // Find zone by tag
-      String zoneTag = zoneIdentifiers[0];
-      TagProjectZone tpz = cloud.zoneByTag(zone,  auth.apiKey());
-      if (tpz == null) {
-        throw new VCertException(format("No zone with Id '%s'.", zoneTag));
-      }
+	    ZoneConfiguration zoneConfig = cit.toZoneConfig();
+	    zoneConfig.policy(cit.toPolicy());
+	    zoneConfig.zoneId(zoneId);
+	    zoneConfig.applicationId(appId);
+	    zoneConfig.certificateIssuingTemplateId(cit.id());
 
-      zoneId = tpz.id();
-      cit = cloud.certificateIssuingTemplateById(tpz.certificateIssuingTemplateId(), auth.apiKey());
-
-      if (cit == null){
-        throw new VCertException(format("Certificate issue template not found. Id provided =  [%s] ",
-            tpz.certificateIssuingTemplateId()));
-      }
-
-    } else {
-      // Find zone by project name and zone name
-      ProjectZone projectZone = null;
-      Projects projects = cloud.projects(auth.apiKey());
-      if (projects.projects().isEmpty()) {
-        throw new VCertException("No projects present.");
-      }
-
-      String projectName = zoneIdentifiers[1];
-      String zoneName = zoneIdentifiers[2];
-
-      for (Project project : projects.projects()) {
-        if (project.name().equals(projectName)) {
-          for (ProjectZone projZone : project.zones()) {
-            if (zoneName.equals(projZone.name())) {
-              projectZone = projZone;
-              break;
-            }
-          }
-        }
-      }
-
-      if (projectZone == null) {
-        throw new VCertException(
-            format("No zone with name '%s' in '%s' project.", zoneName, projectName));
-      }
-
-      zoneId = projectZone.id();
-      cit = projectZone.cit();
-
-      if (cit == null) {
-        throw new VCertException(format("No certificate issuing template ID for '%s' zone.", zone));
-      }
-    }
-
-    ZoneConfiguration zoneConfig = cit.toZoneConfig();
-    zoneConfig.policy(cit.toPolicy());
-    zoneConfig.zoneId(zoneId);
-
-    return zoneConfig;
+	    return zoneConfig;
   }
 
   @Override
@@ -227,7 +196,15 @@ public class CloudConnector implements Connector {
     	payload.validityPeriod(validityHours);
     	
     }
-    //support for validity hours ends 
+    //support for validity hours ends
+    
+    //add certificateIssuingTemplate and applicationId
+    payload.applicationId(zoneConfiguration.applicationId());
+    payload.certificateIssuingTemplateId(zoneConfiguration.certificateIssuingTemplateId());
+
+    //add client information
+    VCertUtils.addApliClientInformation(payload);
+
     
     CertificateRequestsResponse response =
         cloud.certificateRequest( auth.apiKey(), payload );
@@ -239,6 +216,7 @@ public class CloudConnector implements Connector {
 
   @Override
   public PEMCollection retrieveCertificate(CertificateRequest request) throws VCertException {
+	  CertificateStatus certificateStatus = null;
     if (request.fetchPrivateKey()) {
       throw new VCertException(
           "Failed to retrieve private key from Venafi Cloud service: not supported");
@@ -281,7 +259,7 @@ public class CloudConnector implements Connector {
         break;
       }
 
-      CertificateStatus certificateStatus = getCertificateStatus(request.pickupId());
+      certificateStatus = getCertificateStatus(request.pickupId());
       if ("ISSUED".equals(certificateStatus.status())) {
         break;
       } else if ("FAILED".equals(certificateStatus.status())) {
@@ -311,8 +289,14 @@ public class CloudConnector implements Connector {
     if (user == null || user.company() == null) {
       throw new VCertException("Must be authenticated to retieve certificate");
     }
+    
+    if(certificateStatus == null) {
+    	throw new VCertException("Was not able to retrieve certificate Status");
+    }
+    
+    String certificateId = certificateStatus.certificateIds().get(0);
 
-    if (isNotBlank(request.pickupId())) {
+    if (isNotBlank(certificateId)) {
 
       // Todo cleanup unnecessary switch
       String chainOption;
@@ -326,7 +310,7 @@ public class CloudConnector implements Connector {
           chainOption = "EE_FIRST";
           break;
       }
-      String body = certificateViaCSR(request.pickupId(), chainOption);
+      String body = certificateViaCSR(certificateId, chainOption);
       PEMCollection pemCollection =
           PEMCollection.fromResponse(body, request.chainOption(), request.privateKey(),
             request.keyPassword());
@@ -355,8 +339,17 @@ public class CloudConnector implements Connector {
 
   }
 
-  private String certificateAsPem(String requestId) {
-    return cloud.certificateAsPem(requestId, auth.apiKey());
+  public String certificateAsPem(String requestId) throws VCertException{
+	  Response response = cloud.certificateAsPem(requestId, auth.apiKey());
+	  if (response.status() != 200) {
+		  throw new VCertException(String
+				  .format("Invalid response fetching the certificate via CSR: %s", response.reason()));
+	  }
+	  try {
+		  return CharStreams.toString(response.body().asReader());
+	  } catch (IOException e) {
+		  throw new VCertException("Unable to read the PEM certificate");
+	  }
   }
 
   private CertificateStatus getCertificateStatus(String requestId) {
@@ -399,16 +392,13 @@ public class CloudConnector implements Connector {
     }
 
     final CertificateStatus status = cloud.certificateStatus(certificateRequestId, auth.apiKey());
-    VCertException.throwIfNull(status.managedCertificateId(), String.format(
-        "failed to submit renewal request for certificate: ManagedCertificateId is empty, certificate status is %s",
-        status.status()));
-    VCertException.throwIfNull(status.zoneId(), String.format(
-        "failed to submit renewal request for certificate: ZoneId is empty, certificate status is %s",
-        status.status()));
-
-    ManagedCertificate managedCertificate =
-        cloud.managedCertificate(status.managedCertificateId(), auth.apiKey());
-    if (!managedCertificate.latestCertificateRequestId().equals(certificateRequestId)) {
+    
+    String certificateId = status.certificateIds().get(0);
+    
+    
+    CertificateDetails certDetails = cloud.certificateDetails(certificateId, auth.apiKey());
+    
+    if (!certDetails.certificateRequestId().equals(certificateRequestId)) {
       final StringBuilder errorStr = new StringBuilder();
       errorStr.append("Certificate under requestId %s ");
       errorStr.append(isNotBlank(request.thumbprint())
@@ -419,13 +409,18 @@ public class CloudConnector implements Connector {
       errorStr.append("This error may happen when revoked certificate is requested to be renewed.");
 
       throw new VCertException(String.format(errorStr.toString(), certificateRequestId,
-          managedCertificate.id(), managedCertificate.latestCertificateRequestId()));
+    		  certDetails.id(), certDetails.certificateRequestId()));
     }
 
     final CertificateRequestsPayload certificateRequest = new CertificateRequestsPayload();
-    certificateRequest.zoneId(status.zoneId());
-    certificateRequest.existingManagedCertificateId(managedCertificate.id());
-
+    certificateRequest.existingCertificateId(certDetails.id());
+    certificateRequest.applicationId(status.applicationId());
+    certificateRequest.certificateIssuingTemplateId(status.certificateIssuingTemplateId());
+    
+    //add client information
+    VCertUtils.addApliClientInformation(certificateRequest);
+    
+  
     certificateRequest
         .reuseCSR(!(Objects.nonNull(request.request()) && request.request().csr().length > 0));
     if (!certificateRequest.reuseCSR) {
@@ -484,7 +479,7 @@ public class CloudConnector implements Connector {
   }
 
   @Data
-  static class CertificateRequestsPayload {
+  public static class CertificateRequestsPayload {
     // private String companyId;
     // private String downloadFormat;
     @SerializedName("certificateSigningRequest")
@@ -493,6 +488,10 @@ public class CloudConnector implements Connector {
     private String existingManagedCertificateId;
     private boolean reuseCSR;
     private String validityPeriod;
+    private String applicationId;
+    private String certificateIssuingTemplateId;
+    private String existingCertificateId;
+    private ApiClientInformation apiClientInformation;
   }
 
   @Data
@@ -512,5 +511,11 @@ public class CloudConnector implements Connector {
     private OffsetDateTime creationDate;
     private String pem;
     private String der;
+  }
+  
+  @Data
+  public static class ApiClientInformation{
+	  String type;
+	  String identifier;
   }
 }

@@ -1,0 +1,73 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/outagedetection/v1/applications/test_app/certificateissuingtemplates/test_zone"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+    "id": "9dad0e20-543b-11eb-9801-4fe1b5c46a3b",
+    "companyId": "b5ed6d60-22c4-11e7-ac27-035f0608fd2c",
+    "name": "test_zone",
+    "certificateAuthority": "BUILTIN",
+    "certificateAuthorityAccountId": "06d705c0-ae81-11e9-bdc4-e3fc25835e95",
+    "certificateAuthorityProductOptionId": "06d705c1-ae81-11e9-bdc4-e3fc25835e95",
+    "systemGenerated": false,
+    "creationDate": "2021-01-11T18:34:19.010+0000",
+    "modificationDate": "2021-01-13T16:20:27.502+0000",
+    "status": "AVAILABLE",
+    "reason": "",
+    "subjectCNRegexes":[
+        "^.*.example.com$",
+        "^.*.example.org$",
+        "^.*.example.net$",
+        "^.*.invalid$",
+        "^.*.local$",
+        "^.*.localhost$",
+        "^.*.test$"  
+    ],
+    "subjectORegexes": [
+        "^.*$"
+    ],
+    "subjectOURegexes": [
+       "^.*$"
+    ],
+    "subjectSTRegexes": [
+       "^.*$"
+    ],
+    "subjectLRegexes": [
+        "^.*$"
+    ],
+    "subjectCValues": [
+        "^.*$"
+    ],
+    "sanRegexes": [
+        "^.*$"
+    ],
+    "keyTypes": [
+        {
+            "keyType": "RSA",
+            "keyLengths": [
+                2048,
+                4096
+            ]
+        }
+    ],
+    "keyReuse": false,
+    "recommendedSettings": {
+        "subjectCNRegexes": [
+            "venafi.com"
+        ],
+        "subjectOValue": "Venafi Inc.",
+        "subjectOUValue": "Integrations",
+        "subjectSTValue": "Utah",
+        "subjectLValue": "Salt Lake",
+        "subjectCValue": "US",
+        "key": {
+            "type": "RSA",
+            "length": 4096
+        }
+    }
+}
+  }
+}
