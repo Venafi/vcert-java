@@ -61,7 +61,7 @@ public interface Cloud {
   Response certificateViaCSR(@Param("id") String id, @Param("apiKey") String apiKey,
       @Param("chainOrder") String chainOrder);
 
-  @Headers({"tppl-api-key: {apiKey}", "Content-Type: text/plain"})
+  @Headers({"tppl-api-key: {apiKey}"})
   @RequestLine("GET /outagedetection/v1/certificates/{id}/contents")
   Response certificateAsPem(@Param("id") String id, @Param("apiKey") String apiKey);
 

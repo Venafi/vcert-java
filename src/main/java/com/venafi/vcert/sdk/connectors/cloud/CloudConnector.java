@@ -122,7 +122,7 @@ public class CloudConnector implements Connector {
 	    	 
 	    	
 	    }else {
-	    	  throw new VCertException("The parameters: appName, citAlia or both are empty");
+	    	  throw new VCertException("The parameters: appName, citAlias or both are empty");
 	    }
 	    
 	    //get application id.
