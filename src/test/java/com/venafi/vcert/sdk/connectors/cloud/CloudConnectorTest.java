@@ -16,9 +16,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.Security;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,27 +32,25 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import feign.Request;
-import feign.Response;
-
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.CertificateStatus;
 import com.venafi.vcert.sdk.certificate.ChainOption;
 import com.venafi.vcert.sdk.certificate.KeyType;
-import com.venafi.vcert.sdk.certificate.ManagedCertificate;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.cloud.domain.Application;
+import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateDetails;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate.AllowedKeyType;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Company;
-import com.venafi.vcert.sdk.connectors.cloud.domain.Project;
-import com.venafi.vcert.sdk.connectors.cloud.domain.ProjectZone;
-import com.venafi.vcert.sdk.connectors.cloud.domain.Projects;
 import com.venafi.vcert.sdk.connectors.cloud.domain.User;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.endpoint.Authentication;
+
+import feign.Request;
+import feign.Response;
 
 @ExtendWith(MockitoExtension.class)
 class CloudConnectorTest {
@@ -110,12 +110,13 @@ class CloudConnectorTest {
     cit.subjectCValues(Arrays.asList());
     cit.sanDnsNameRegexes(Arrays.asList());
 
-    ProjectZone projectZone = new ProjectZone("12215be0-ff0a-11e9-a3f0-2b5db8116980",
-        "1a972260-fee7-11e9-a554-e72621a8452f", "My Zone", null, cit);
 
-    when(cloud.projects(eq(apiKey))).thenReturn(new Projects(Arrays.asList(
-        new Project("11f47f80-ff0a-11e9-a3f0-2b5db8116980", "1a972260-fee7-11e9-a554-e72621a8452f",
-            "My Project", "", Arrays.asList(), Arrays.asList(projectZone)))));
+    Application application = new Application();
+    application.id("d3d7e270-545b-11eb-a494-893c4e1e4fad");
+    
+    when(cloud.applicationByName(eq("test_app"),eq(apiKey))).thenReturn(application);
+    
+    when(cloud.certificateIssuingTemplateByAppNameAndCitAlias(eq("test_app"), eq("test_zone"), eq(apiKey))).thenReturn(cit);
 
     when(cloud.certificateRequest(eq(apiKey), any(CloudConnector.CertificateRequestsPayload.class))) // todo:
                                                                                                      // check
@@ -132,7 +133,7 @@ class CloudConnectorTest {
     final Authentication auth = new Authentication(null, null, apiKey);
     classUnderTest.authenticate(auth);
 
-    ZoneConfiguration zoneConfig = classUnderTest.readZoneConfiguration("My Project\\My Zone");
+    ZoneConfiguration zoneConfig = classUnderTest.readZoneConfiguration("test_app\\test_zone");
     classUnderTest.generateRequest(zoneConfig, request);
 
     String actual = classUnderTest.requestCertificate(request, zoneConfig);
@@ -161,9 +162,14 @@ class CloudConnectorTest {
         .keyPair(new KeyPair(pemCollection.certificate().getPublicKey(),
             pemCollection.privateKey()))
         .keyPassword(KEY_SECRET);
+    
+   List<String>  list = new ArrayList<String>();
+		   list.add("jackpot");
+    CertificateStatus status = new CertificateStatus().status("ISSUED")
+    		.certificateIds(list);
 
     when(cloud.certificateStatus(eq("jackpot"), eq(apiKey)))
-        .thenReturn(new CertificateStatus().status("ISSUED"));
+        .thenReturn(status);
     when(cloud.certificateViaCSR(eq("jackpot"), eq(apiKey), eq("ROOT_FIRST")))
         .thenReturn(Response.builder()
             .request(Request.create(Request.HttpMethod.GET, "http://localhost",
@@ -254,38 +260,52 @@ class CloudConnectorTest {
   void renewCertificate() throws VCertException {
     final String apiKey = "12345678-1234-1234-1234-123456789012";
     final Authentication auth = new Authentication(null, null, apiKey);
+    String requestId = "request_1";
 
     final String thumbprint = "52030990E3DC44199DA11C2D73E41EF8EAD8A4E1";
     final RenewalRequest renewalRequest = new RenewalRequest();
-
+    
+    CertificateRequest request = mock(CertificateRequest.class);
+    renewalRequest.request(request);
+    
     final Cloud.CertificateSearchResponse searchResponse =
         mock(Cloud.CertificateSearchResponse.class);
 
     final CertificateStatus certificateStatus = mock(CertificateStatus.class);
-    final ManagedCertificate managedCertificate = mock(ManagedCertificate.class);
+
     renewalRequest.thumbprint(thumbprint);
     final Cloud.Certificate certificate1 = new Cloud.Certificate();
-    certificate1.certificateRequestId("request_1");
+    certificate1.certificateRequestId(requestId);
 
     final CloudConnector.CertificateRequestsResponse requestsResponse =
         mock(CloudConnector.CertificateRequestsResponse.class);
 
     final CloudConnector.CertificateRequestsResponseData requestsResponseData =
         mock(CloudConnector.CertificateRequestsResponseData.class);
+    
+    
+    //CertificateDetails certDetails = cloud.certificateDetails(certificateId, auth.apiKey());
+    CertificateDetails certDetails = new CertificateDetails();
+    certDetails.id("007");
+    certDetails.certificateRequestId(requestId);
+    
+    List<String>  list = new ArrayList<String>();
+	   list.add(requestId);
 
-    when(cloud.searchCertificates(eq(apiKey), searchRequestArgumentCaptor.capture()))
+	 when(cloud.certificateDetails(eq(requestId), eq(apiKey))).thenReturn(certDetails);
+	    when(cloud.searchCertificates(eq(apiKey), searchRequestArgumentCaptor.capture()))
         .thenReturn(searchResponse);
     when(searchResponse.certificates()).thenReturn(singletonList(certificate1));
-    when(cloud.certificateStatus("request_1", apiKey)).thenReturn(certificateStatus);
-    when(certificateStatus.managedCertificateId()).thenReturn("test_managed_certificate_id");
-    when(certificateStatus.zoneId()).thenReturn("test_zone_id");
-    when(cloud.managedCertificate("test_managed_certificate_id", apiKey))
-        .thenReturn(managedCertificate);
-    when(managedCertificate.latestCertificateRequestId()).thenReturn("request_1");
+    when(cloud.certificateStatus(requestId, apiKey)).thenReturn(certificateStatus);
+    when(certificateStatus.certificateIds()).thenReturn(list);
+
     when(cloud.certificateRequest(eq(apiKey), any(CloudConnector.CertificateRequestsPayload.class)))
         .thenReturn(requestsResponse);
     when(requestsResponse.certificateRequests()).thenReturn(singletonList(requestsResponseData));
     when(requestsResponseData.id()).thenReturn("certificate_result");
+    String fakeCSR = "fake csr";
+    byte[] bytes = fakeCSR.getBytes();
+    when(renewalRequest.request().csr()).thenReturn(bytes);
 
     classUnderTest.authenticate(auth);
     assertThat(classUnderTest.renewCertificate(renewalRequest)).isEqualTo("certificate_result");

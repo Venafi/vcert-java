@@ -1,0 +1,30 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/outagedetection/v1/applications/name/test_app"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+    "id": "d3d7e270-545b-11eb-a494-893c4e1e4fad",
+    "companyId": "b5ed6d60-22c4-11e7-ac27-035f0608fd2c",
+    "name": "test_app",
+    "description": "just testing opensource code",
+    "organizationalUnitId": "4a893d30-e19b-11ea-bccc-410a265a369b",
+    "ownerIdsAndTypes": [
+        {
+            "ownerId": "4b6608d0-c203-11ea-b166-838bcf6999b0",
+            "ownerType": "USER"
+        }
+    ],
+    "fqDns": [],
+    "internalFqDns": [],
+    "externalIpRanges": [],
+    "internalIpRanges": [],
+    "internalPorts": [],
+    "certificateIssuingTemplateAliasIdMap": {
+        "test_zone": "9dad0e20-543b-11eb-9801-4fe1b5c46a3b"
+    }
+}	
+  }
+}

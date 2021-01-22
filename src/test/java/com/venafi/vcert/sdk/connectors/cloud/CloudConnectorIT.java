@@ -90,7 +90,7 @@ class CloudConnectorIT {
   void readZoneConfiguration() throws VCertException {
 
     ZoneConfiguration zoneConfiguration =
-        classUnderTest.readZoneConfiguration("My Project\\My Zone");
+        classUnderTest.readZoneConfiguration("test_app\\test_zone");
 
     assertThat(zoneConfiguration).isNotNull();
     assertThat(zoneConfiguration.organization().equals("Venafi Inc."));
@@ -147,7 +147,7 @@ class CloudConnectorIT {
   
   @Test
   void generateRequest() throws VCertException, IOException {
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration("My Project\\My Zone");
+    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration("test_app\\test_zone");
     String commonName = TestUtils.randomCN();
     CertificateRequest certificateRequest =
         new CertificateRequest().subject(new CertificateRequest.PKIXName().commonName(commonName))

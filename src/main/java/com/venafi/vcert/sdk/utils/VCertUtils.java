@@ -1,5 +1,7 @@
 package com.venafi.vcert.sdk.utils;
 
+import java.net.Inet4Address;
+import java.net.UnknownHostException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -10,6 +12,7 @@ import java.util.List;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.connectors.tpp.AbstractTppConnector.CertificateRequestsPayload;
 import com.venafi.vcert.sdk.connectors.tpp.AbstractTppConnector.NameValuePair;
+import com.venafi.vcert.sdk.connectors.cloud.CloudConnector.ApiClientInformation;
 import com.venafi.vcert.sdk.connectors.tpp.CustomFieldRequest;
 
 public class VCertUtils {
@@ -114,6 +117,26 @@ public class VCertUtils {
 				}
 			});
 		}
+	}
+	
+	public static String getIpAddress() throws UnknownHostException {
+		
+		return  Inet4Address.getLocalHost().getHostAddress();
+		
+	}
+
+	public static void addApiClientInformation(com.venafi.vcert.sdk.connectors.cloud.CloudConnector.CertificateRequestsPayload payload ) {
+		//add client information
+		ApiClientInformation clientInfo = new ApiClientInformation();
+		clientInfo.type(VCertConstants.DEFAULT_VENDOR_AND_PRODUCT_NAME );
+
+		try {
+			clientInfo.identifier(VCertUtils.getIpAddress());
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+
+		payload.apiClientInformation(clientInfo);
 	}
 
 }

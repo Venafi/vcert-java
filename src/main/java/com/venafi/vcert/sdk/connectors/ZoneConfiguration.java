@@ -36,6 +36,8 @@ public class ZoneConfiguration {
 
   private String zoneId;
   private AllowedKeyConfiguration keyConfig;
+  private String applicationId;
+  private String certificateIssuingTemplateId;
 
   /**
    * UpdateCertificateRequest updates a certificate request based on the zone configuration

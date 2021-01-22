@@ -1,6 +1,8 @@
 package com.venafi.vcert.sdk.certificate;
 
 import java.util.Collection;
+import java.util.List;
+
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.ToString;
@@ -18,6 +20,9 @@ public class CertificateStatus {
   private String modificationDate;
   private String certificateSigningRequest;
   private String subjectDN;
+  private List<String> certificateIds;
+  private String applicationId;
+  private String certificateIssuingTemplateId;
 
   @Data
   private static class CertificateStatueErrorInfomation {

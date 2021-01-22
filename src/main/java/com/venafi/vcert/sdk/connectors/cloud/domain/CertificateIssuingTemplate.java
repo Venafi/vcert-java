@@ -85,8 +85,13 @@ public class CertificateIssuingTemplate {
           .organizationalUnit(Collections.singletonList(recommendedSettings.subjectOUValue))
           .province(recommendedSettings.subjectSTValue).locality(recommendedSettings.subjectLValue);
       if (recommendedSettings.key() != null) {
-        zoneConfig.keyConfig(new AllowedKeyConfiguration(KeyType.from(recommendedSettings.key().type),
-            Collections.singletonList(recommendedSettings.key().length), null));
+
+        String type = recommendedSettings.key().type != null ? recommendedSettings.key().type : KeyType.defaultKeyType().name();
+        Integer length = recommendedSettings.key().length != null ? recommendedSettings.key().length : KeyType.defaultRsaLength();
+
+        zoneConfig.keyConfig(new AllowedKeyConfiguration(KeyType.from(type),
+            Collections.singletonList(length), null));
+
       }
     }
     return zoneConfig;

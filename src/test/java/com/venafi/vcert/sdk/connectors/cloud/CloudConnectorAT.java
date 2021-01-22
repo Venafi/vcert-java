@@ -116,10 +116,11 @@ class CloudConnectorAT {
 
   @Test
   void requestCertificateUnrestricted() throws VCertException, UnknownHostException {
-    String zoneName = System.getenv("CLOUDZONE2");
+    String zoneName = System.getenv("CLOUDZONE");
     ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
     CertificateRequest certificateRequest = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN()))
+        .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN()).
+        		organizationalUnit(Arrays.asList("DevOps")))
         .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
         .keyType(KeyType.RSA)
         .keyLength(2048);
