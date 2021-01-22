@@ -203,7 +203,7 @@ public class CloudConnector implements Connector {
     payload.certificateIssuingTemplateId(zoneConfiguration.certificateIssuingTemplateId());
 
     //add client information
-    VCertUtils.addApliClientInformation(payload);
+    VCertUtils.addApiClientInformation(payload);
 
     
     CertificateRequestsResponse response =
@@ -418,7 +418,7 @@ public class CloudConnector implements Connector {
     certificateRequest.certificateIssuingTemplateId(status.certificateIssuingTemplateId());
     
     //add client information
-    VCertUtils.addApliClientInformation(certificateRequest);
+    VCertUtils.addApiClientInformation(certificateRequest);
     
   
     certificateRequest

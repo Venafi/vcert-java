@@ -125,7 +125,7 @@ public class VCertUtils {
 		
 	}
 
-	public static void addApliClientInformation( com.venafi.vcert.sdk.connectors.cloud.CloudConnector.CertificateRequestsPayload payload ) {
+	public static void addApiClientInformation(com.venafi.vcert.sdk.connectors.cloud.CloudConnector.CertificateRequestsPayload payload ) {
 		//add client information
 		ApiClientInformation clientInfo = new ApiClientInformation();
 		clientInfo.type(VCertConstants.DEFAULT_VENDOR_AND_PRODUCT_NAME );
