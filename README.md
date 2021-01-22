@@ -65,6 +65,8 @@ client.authenticate(auth);
 ```
 
 Then use your client to request certificates:
+- For Trust Protection Platform, the `zone` format is the DN of a policy with or without the "\VED\Policy\" prefix (e.g. "\VED\Policy\Certificates\VCert" or simply "Certificates\VCert")
+- For Venafi Cloud, the `zone` format is the name of an OutagePREDICT Application and the API Alias of an Issuing Template assigned to it delimited by a single backslash character (e.g. "My Application\My CIT")
 
 ```java
 //////////////////////////////////////
@@ -149,7 +151,6 @@ CertificateRequest certificateRequest = new CertificateRequest().subject(
         .validityHours(720)
         .issuerHint("MICROSOFT"); // needed for TPP when the CA is "DIGICERT", "ENTRUST", or "MICROSOFT"
 ```
-
 
 To assign Custom Field values when requesting a certificate from Trust Protection Platform,
 construct a list of CustomField objects (name/value) and then add them to the request using
@@ -237,7 +238,7 @@ TPP REST APIs but please be advised this goes against Venafi recommendations.
 1. The Venafi Cloud REST API is accessible at https://api.venafi.cloud from the system where VCert
 will be executed.
 2. You have successfully registered for a Venafi Cloud account, have been granted at least the
-"DevOps" role, and know your API key.
+OutagePREDICT "Resource Owner" role, and know your API key.
 3. A CA Account and Issuing Template exist and have been configured with:
     1. Recommended Settings values for:
         1. Organizational Unit (OU)
@@ -249,8 +250,8 @@ will be executed.
         1. (Recommended) Limits Common Name and Subject Alternative Name to domains that are allowed by your organization
         2. (Recommended) Restricts the Key Length to 2048 or higher
         3. (Recommended) Does not allow Private Key Reuse
-4. A DevOps Project exists to which you have been granted access.
-5. A Zone has exists within the Project that uses the Issuing Template, and you know the Zone ID.
+4. An OutagePREDICT Application exists where you are among the owners, and you know the Application Name.
+5. An Issuing Template is assigned to the Application, and you know its API Alias.
 
 ## Acceptance Tests
 
