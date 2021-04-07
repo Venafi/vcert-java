@@ -2,10 +2,13 @@ package com.venafi.vcert.sdk;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.security.Security;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import com.venafi.vcert.sdk.policyspecification.domain.PolicySpecification;
 import feign.FeignException;
 
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
@@ -238,6 +241,61 @@ public class VCertTknClient implements TokenConnector {
     public Policy readPolicyConfiguration(String zone) throws VCertException {
         try {
             return connector.readPolicyConfiguration(zone);
+        } catch (FeignException e) {
+            throw VCertException.fromFeignException(e);
+        }
+    }
+
+    @Override
+    public void setPolicy(String policyName, Path filePath) throws VCertException {
+        try {
+            connector.setPolicy(policyName, filePath);
+        } catch (FeignException e) {
+            throw VCertException.fromFeignException(e);
+        }
+    }
+
+    @Override
+    public void setPolicy(String policyName, String policySpecificationContent) throws VCertException {
+        try {
+            connector.setPolicy(policyName, policySpecificationContent);
+        } catch (FeignException e) {
+            throw VCertException.fromFeignException(e);
+        }
+    }
+
+    @Override
+    public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
+        try {
+            connector.setPolicy(policyName, policySpecification);
+        } catch (FeignException e) {
+            throw VCertException.fromFeignException(e);
+        }
+    }
+
+    @Override
+    //public File getPolicySpecificationFile(String policyName) throws VCertException {
+    public File getPolicySpecificationFile(String policyName, Path filePath) throws VCertException {
+        try {
+            return connector.getPolicySpecificationFile(policyName, filePath);
+        } catch (FeignException e) {
+            throw VCertException.fromFeignException(e);
+        }
+    }
+
+    @Override
+    public String getPolicySpecificationString(String policyName) throws VCertException {
+        try {
+            return connector.getPolicySpecificationString(policyName);
+        } catch (FeignException e) {
+            throw VCertException.fromFeignException(e);
+        }
+    }
+
+    @Override
+    public PolicySpecification getPolicySpecification(String policyName) throws VCertException {
+        try {
+            return connector.getPolicySpecification(policyName);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         }

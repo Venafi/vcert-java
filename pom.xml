@@ -128,6 +128,11 @@
 		<artifactId>commons-lang3</artifactId>
 		<version>${commonslang3.version}</version>
 	</dependency>
+        <dependency>
+            <groupId>org.snakeyaml</groupId>
+            <artifactId>snakeyaml-engine</artifactId>
+            <version>2.2.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -190,6 +195,11 @@
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
+        </repository>
+        <repository>
+            <id>Sonatype-public</id>
+            <name>SnakeYAML repository</name>
+            <url>http://oss.sonatype.org/content/groups/public/</url>
         </repository>
     </repositories>
 

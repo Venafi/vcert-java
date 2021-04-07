@@ -7,7 +7,9 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import java.io.File;
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -37,8 +39,12 @@ import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.connectors.TokenConnector;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import com.venafi.vcert.sdk.policyspecification.api.domain.TPPPolicy;
+import com.venafi.vcert.sdk.policyspecification.domain.PolicySpecification;
+import com.venafi.vcert.sdk.policyspecification.parser.TPPPolicySpecificationConverter;
 import com.venafi.vcert.sdk.utils.Is;
 import com.venafi.vcert.sdk.utils.VCertUtils;
 
@@ -50,11 +56,13 @@ import lombok.Setter;
 
 public class TppTokenConnector extends AbstractTppConnector implements TokenConnector {
 
-    public TppTokenConnector(Tpp tpp){ super(tpp); }
-
     @Setter
     @VisibleForTesting
     private Authentication credentials;
+
+    private TppAPI tppAPI;
+
+    public TppTokenConnector(Tpp tpp){ super(tpp); }
 
     @Override
     public ConnectorType getType() {
@@ -496,6 +504,84 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         throw new UnsupportedOperationException("Method not yet implemented");
     }
 
+    @Override
+    public void setPolicy(String policyName, Path filePath) throws VCertException {
+        try {
+            TPPPolicy tppPolicy = TppConnectorUtils.getConverter(filePath.toString()).convertFromFile(filePath);
+            setPolicy(policyName, tppPolicy);
+        }catch (Exception e){
+            throw new VCertException(e);
+        }
+    }
+
+    @Override
+    public void setPolicy(String policyName, String policySpecificationString) throws VCertException {
+        try {
+            TPPPolicy tppPolicy = (TPPPolicy) TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertFromString(policySpecificationString);
+            setPolicy(policyName, tppPolicy);
+        }catch (Exception e){
+            throw new VCertException(e);
+        }
+    }
+
+    @Override
+    public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
+        try {
+            TPPPolicy tppPolicy = (TPPPolicy) TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertFromPolicySpecification(policySpecification);
+            setPolicy(policyName, tppPolicy);
+        }catch (Exception e){
+            throw new VCertException(e);
+        }
+    }
+
+    @Override
+    //public File getPolicySpecificationFile(String policyName, String  filePath) throws VCertException {
+    public File getPolicySpecificationFile(String policyName, Path filePath) throws VCertException {
+
+        File policySpecificationFile = null;
+        try {
+            TPPPolicy tppPolicy = getPolicy(policyName);
+
+            policySpecificationFile = TppConnectorUtils.getConverter(filePath.toString()).convertToFile( tppPolicy, filePath );
+
+        }catch (Exception e){
+            throw new VCertException(e);
+        }
+
+        return policySpecificationFile;
+    }
+
+    @Override
+    public String getPolicySpecificationString(String policyName) throws VCertException {
+
+        String policySpecificationString = null;
+        try {
+            TPPPolicy tppPolicy = getPolicy(policyName);
+
+            policySpecificationString = TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertToString( tppPolicy );
+
+        }catch (Exception e){
+            throw new VCertException(e);
+        }
+
+        return policySpecificationString;
+    }
+
+    @Override
+    public PolicySpecification getPolicySpecification(String policyName) throws VCertException {
+        PolicySpecification policySpecification = null;
+        try {
+            TPPPolicy tppPolicy = getPolicy(policyName);
+
+            policySpecification = TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertToPolicySpecification( tppPolicy );
+
+        }catch (Exception e){
+            throw new VCertException(e);
+        }
+
+        return policySpecification;
+    }
+
     private boolean isEmptyCredentials(Authentication credentials){
         if(credentials == null){
             return true;
@@ -518,5 +604,44 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         }
 
         return false;
+    }
+
+    @Override
+    protected String getAuthKey() throws VCertException {
+        return getAuthHeaderValue();
+    }
+
+    @Override
+    protected TppAPI getTppAPI() {
+        if(tppAPI == null){
+            tppAPI = new TppAPI(tpp) {
+                @Override
+                public DNIsValidResponse dnIsValid(DNIsValidRequest request, String tokenAuth) {
+                    return tpp.dnIsValidToken(request, tokenAuth);
+                }
+
+                @Override
+                CreateDNResponse createDN(CreateDNRequest request, String tokenAuth) {
+                    return tpp.createDNToken(request, tokenAuth);
+                }
+
+                @Override
+                SetPolicyAttributeResponse setPolicyAttribute(SetPolicyAttributeRequest request, String tokenAuth) {
+                    return tpp.setPolicyAttributeToken(request, tokenAuth);
+                }
+
+                @Override
+                GetPolicyAttributeResponse getPolicyAttribute(GetPolicyAttributeRequest request, String tokenAuth) {
+                    return tpp.getPolicyAttributeToken(request, tokenAuth);
+                }
+
+                @Override
+                GetPolicyResponse getPolicy(GetPolicyRequest request, String tokenAuth) {
+                    return tpp.getPolicyToken(request, tokenAuth);
+                }
+            };
+        }
+
+        return tppAPI;
     }
 }

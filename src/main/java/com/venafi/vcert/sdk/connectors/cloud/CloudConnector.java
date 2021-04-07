@@ -4,7 +4,10 @@ import static java.lang.String.format;
 import static java.time.Duration.ZERO;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -17,6 +20,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.venafi.vcert.sdk.policyspecification.domain.PolicySpecification;
+import com.venafi.vcert.sdk.policyspecification.parser.CloudPolicySpecificationConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Strings;
 
@@ -442,6 +447,89 @@ public class CloudConnector implements Connector {
   @Override
   public Policy readPolicyConfiguration(String zone) throws VCertException {
     throw new UnsupportedOperationException("Method not yet implemented");
+  }
+
+  @Override
+  public void setPolicy(String policyName, Path filePath) throws VCertException {
+    try {
+      CertificateIssuingTemplate cit = CloudConnectorUtils.getConverter(filePath.toString()).convertFromFile(filePath);
+      setPolicy(policyName, cit);
+    } catch ( Exception e ) {
+      throw new VCertException(e);
+    }
+  }
+
+  @Override
+  public void setPolicy(String policyName, String policySpecificationString) throws VCertException {
+    try {
+      CertificateIssuingTemplate cit = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertFromString(policySpecificationString);
+      setPolicy(policyName, cit);
+    } catch ( Exception e ) {
+      throw new VCertException(e);
+    }
+  }
+
+  @Override
+  public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
+    try {
+      CertificateIssuingTemplate cit = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertFromPolicySpecification(policySpecification);
+      setPolicy(policyName, cit);
+    } catch ( Exception e ) {
+      throw new VCertException(e);
+    }
+  }
+
+  private void setPolicy(String policyName, CertificateIssuingTemplate cit) throws VCertException {
+
+  }
+
+  @Override
+  public File getPolicySpecificationFile(String policyName, Path filePath) throws VCertException {
+    File policySpecificationFile = null;
+    try {
+      CertificateIssuingTemplate cit = getPolicy(policyName);
+
+      policySpecificationFile = CloudConnectorUtils.getConverter(filePath.toString()).convertToFile( cit, filePath );
+
+    }catch (Exception e){
+      throw new VCertException(e);
+    }
+
+    return policySpecificationFile;
+  }
+
+  @Override
+  public String getPolicySpecificationString(String policyName) throws VCertException {
+    String policySpecificationString = null;
+    try {
+      CertificateIssuingTemplate cit = getPolicy(policyName);
+
+      policySpecificationString = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertToString( cit );
+
+    }catch (Exception e){
+      throw new VCertException(e);
+    }
+
+    return policySpecificationString;
+  }
+
+  @Override
+  public PolicySpecification getPolicySpecification(String policyName) throws VCertException {
+    PolicySpecification policySpecification = null;
+    try {
+      CertificateIssuingTemplate cit = getPolicy(policyName);
+
+      policySpecification = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertToPolicySpecification( cit );
+
+    }catch (Exception e){
+      throw new VCertException(e);
+    }
+
+    return policySpecification;
+  }
+
+  private CertificateIssuingTemplate getPolicy(String policyName) throws VCertException {
+    return null;
   }
 
   private Cloud.CertificateSearchResponse searchCertificates(Cloud.SearchRequest searchRequest) {

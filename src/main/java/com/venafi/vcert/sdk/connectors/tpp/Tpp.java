@@ -4,6 +4,7 @@ package com.venafi.vcert.sdk.connectors.tpp;
 import java.util.List;
 import java.util.Map;
 import com.google.gson.annotations.SerializedName;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
 import feign.Headers;
 import feign.Param;
 import feign.QueryMap;
@@ -58,6 +59,25 @@ public interface Tpp {
   @Headers("x-venafi-api-key: {value}")
   Response ping(@Param("value") String value);
 
+  @RequestLine("POST Config/IsValid")
+  @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
+  DNIsValidResponse dnIsValid(DNIsValidRequest request, @Param("apiKey") String apiKey);
+
+  @RequestLine("POST Config/Create")
+  @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
+  CreateDNResponse createDN(CreateDNRequest request, @Param("apiKey") String apiKey);
+
+  @RequestLine("POST Config/WritePolicy")
+  @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
+  SetPolicyAttributeResponse setPolicyAttribute(SetPolicyAttributeRequest request, @Param("apiKey") String apiKey);
+
+  @RequestLine("POST Config/ReadPolicy")
+  @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
+  GetPolicyAttributeResponse getPolicyAttribute(GetPolicyAttributeRequest request, @Param("apiKey") String apiKey);
+
+  @RequestLine("POST Certificates/CheckPolicy")
+  @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
+  GetPolicyResponse getPolicy(GetPolicyRequest request, @Param("apiKey") String apiKey);
 
   //============================Authorization Token Specific operations============================\\
 
@@ -109,7 +129,27 @@ public interface Tpp {
   @Headers("Authorization: {value}")
   Response pingToken(@Param("value") String value);
 
-  //===============================================================================================\\
+  @RequestLine("POST /vedsdk/Config/IsValid")
+  @Headers({"Content-Type: application/json", "Authorization: {token}"})
+  DNIsValidResponse dnIsValidToken(DNIsValidRequest request, @Param("token") String token);
+
+  @RequestLine("POST /vedsdk/Config/Create")
+  @Headers({"Content-Type: application/json", "Authorization: {token}"})
+  CreateDNResponse createDNToken(CreateDNRequest request, @Param("token") String token);
+
+  @RequestLine("POST /vedsdk/Config/WritePolicy")
+  @Headers({"Content-Type: application/json", "Authorization: {token}"})
+  SetPolicyAttributeResponse setPolicyAttributeToken(SetPolicyAttributeRequest request, @Param("token") String token);
+
+  @RequestLine("POST /vedsdk/Config/ReadPolicy")
+  @Headers({"Content-Type: application/json", "Authorization: {token}"})
+  GetPolicyAttributeResponse getPolicyAttributeToken(GetPolicyAttributeRequest request, @Param("token") String token);
+
+  @RequestLine("POST /vedsdk/Certificates/CheckPolicy")
+  @Headers({"Content-Type: application/json", "Authorization: {token}"})
+  GetPolicyResponse getPolicyToken(GetPolicyRequest request, @Param("token") String token);
+
+  //=================================================================================================\
 
   static Tpp connect(String baseUrl) {
     return FeignUtils.client(Tpp.class, Config.builder().baseUrl(baseUrl).build());
