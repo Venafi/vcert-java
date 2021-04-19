@@ -11,6 +11,8 @@ public class PolicyResponse {
     private Boolean wildcardsAllowed;
     @SerializedName("CertificateAuthority")
     private SingleValueAttribute<String> certificateAuthority;
+    @SerializedName("ManagementType")
+    private SingleValueAttribute<String> managementType;
     @SerializedName("Subject")
     private SubjectResponse subject;
     @SerializedName("KeyPair")

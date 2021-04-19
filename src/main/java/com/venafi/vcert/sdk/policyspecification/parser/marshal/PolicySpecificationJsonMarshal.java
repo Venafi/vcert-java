@@ -4,9 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.venafi.vcert.sdk.policyspecification.domain.PolicySpecification;
 
-import java.io.File;
-import java.util.Scanner;
-
 public class PolicySpecificationJsonMarshal implements IPolicySpecificationMarshal {
 
     public static final PolicySpecificationJsonMarshal INSTANCE = new PolicySpecificationJsonMarshal();

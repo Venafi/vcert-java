@@ -77,6 +77,9 @@ public class PolicySpecificationYamlMarshal implements IPolicySpecificationMarsh
             if(policyMap.containsKey(PolicySpecificationConst.ATT_POLICY_CERTIFICATE_AUTHORITY))
                 policy.certificateAuthority((String)policyMap.get(PolicySpecificationConst.ATT_POLICY_CERTIFICATE_AUTHORITY));
 
+            if(policyMap.containsKey(PolicySpecificationConst.ATT_POLICY_AUTO_INSTALLED))
+                policy.autoInstalled((Boolean)policyMap.get(PolicySpecificationConst.ATT_POLICY_AUTO_INSTALLED));
+
             policy.subject( loadPolicySubjectFrom(policyMap) );
             policy.keyPair( loadPolicyKeyPairFrom(policyMap) );
             policy.subjectAltNames( loadPolicySubjectAlNamesFrom(policyMap) );
@@ -173,6 +176,9 @@ public class PolicySpecificationYamlMarshal implements IPolicySpecificationMarsh
 
             if(defaultsMap.containsKey(PolicySpecificationConst.ATT_DEFAULTS_DOMAIN))
                 defaults.domain((String)defaultsMap.get(PolicySpecificationConst.ATT_DEFAULTS_DOMAIN));
+
+            if(defaultsMap.containsKey(PolicySpecificationConst.ATT_DEFAULTS_AUTO_INSTALLED))
+                defaults.autoInstalled((Boolean)defaultsMap.get(PolicySpecificationConst.ATT_DEFAULTS_AUTO_INSTALLED));
 
             defaults.subject( loadDefaultsSubjectFrom(defaultsMap) );
             defaults.keyPair( loadDefaultsKeyPairFrom(defaultsMap) );

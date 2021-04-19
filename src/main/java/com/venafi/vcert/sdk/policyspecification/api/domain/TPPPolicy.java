@@ -11,6 +11,7 @@ public class TPPPolicy {
     private String[] domainSuffixWhiteList;
     private Integer prohibitWildcard;//0, 1
     private String certificateAuthority;
+    private AttributeLockable<String> managementType;
     /*@Setter(AccessLevel.NONE) */private AttributeLockable<String> organization;
     private AttributeLockable<String> organizationalUnit;
     /*@Setter(AccessLevel.NONE) */private AttributeLockable<String> city;
@@ -23,6 +24,10 @@ public class TPPPolicy {
     /*@Setter(AccessLevel.NONE) */private AttributeLockable<String> allowPrivateKeyReuse;//0, 1
     /*@Setter(AccessLevel.NONE) */private AttributeLockable<String> wantRenewal;//0, 1
     private String[] prohibitedSANTypes;
+
+    public void managementType(String value, boolean lock){
+        managementType(new AttributeLockable(new String[]{value}, lock));
+    }
 
     public void organization(String value, boolean lock){
         organization(new AttributeLockable(new String[]{value}, lock));

@@ -20,6 +20,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.venafi.vcert.sdk.connectors.cloud.domain.*;
+import com.venafi.vcert.sdk.connectors.cloud.endpoint.CAAccount;
+import com.venafi.vcert.sdk.policyspecification.api.domain.CloudPolicy;
 import com.venafi.vcert.sdk.policyspecification.domain.PolicySpecification;
 import com.venafi.vcert.sdk.policyspecification.parser.CloudPolicySpecificationConverter;
 import org.apache.commons.lang3.StringUtils;
@@ -40,10 +43,6 @@ import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
-import com.venafi.vcert.sdk.connectors.cloud.domain.Application;
-import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateDetails;
-import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
-import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.VCertUtils;
@@ -124,7 +123,6 @@ public class CloudConnector implements Connector {
 	    if((appName != null && appName != "") && (citAlias != null && citAlias != "")) {
 	    	
 	    	 cit = cloud.certificateIssuingTemplateByAppNameAndCitAlias(appName, citAlias, auth.apiKey());
-	    	 
 	    	
 	    }else {
 	    	  throw new VCertException("The parameters: appName, citAlias or both are empty");
@@ -452,8 +450,8 @@ public class CloudConnector implements Connector {
   @Override
   public void setPolicy(String policyName, Path filePath) throws VCertException {
     try {
-      CertificateIssuingTemplate cit = CloudConnectorUtils.getConverter(filePath.toString()).convertFromFile(filePath);
-      setPolicy(policyName, cit);
+      CloudPolicy cloudPolicy = CloudConnectorUtils.getConverter(filePath.toString()).convertFromFile(filePath);
+      setPolicy(policyName, cloudPolicy);
     } catch ( Exception e ) {
       throw new VCertException(e);
     }
@@ -462,8 +460,8 @@ public class CloudConnector implements Connector {
   @Override
   public void setPolicy(String policyName, String policySpecificationString) throws VCertException {
     try {
-      CertificateIssuingTemplate cit = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertFromString(policySpecificationString);
-      setPolicy(policyName, cit);
+      CloudPolicy cloudPolicy = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertFromString(policySpecificationString);
+      setPolicy(policyName, cloudPolicy);
     } catch ( Exception e ) {
       throw new VCertException(e);
     }
@@ -472,24 +470,28 @@ public class CloudConnector implements Connector {
   @Override
   public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
     try {
-      CertificateIssuingTemplate cit = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertFromPolicySpecification(policySpecification);
-      setPolicy(policyName, cit);
+      CloudPolicy cloudPolicy = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertFromPolicySpecification(policySpecification);
+      setPolicy(policyName, cloudPolicy);
     } catch ( Exception e ) {
       throw new VCertException(e);
     }
   }
 
-  private void setPolicy(String policyName, CertificateIssuingTemplate cit) throws VCertException {
-
+  private void setPolicy(String policyName, CloudPolicy cloudPolicy) throws VCertException {
+    //setting the parsed cit
+    CloudConnectorUtils.setCit(policyName, cloudPolicy.certificateIssuingTemplate(), cloudPolicy.caInfo(), auth.apiKey(), cloud);
   }
 
   @Override
   public File getPolicySpecificationFile(String policyName, Path filePath) throws VCertException {
-    File policySpecificationFile = null;
+    File policySpecificationFile;
     try {
       CertificateIssuingTemplate cit = getPolicy(policyName);
 
-      policySpecificationFile = CloudConnectorUtils.getConverter(filePath.toString()).convertToFile( cit, filePath );
+      CloudPolicy cloudPolicy = new CloudPolicy();
+      cloudPolicy.certificateIssuingTemplate(cit);
+
+      policySpecificationFile = CloudConnectorUtils.getConverter(filePath.toString()).convertToFile( cloudPolicy, filePath );
 
     }catch (Exception e){
       throw new VCertException(e);
@@ -500,11 +502,14 @@ public class CloudConnector implements Connector {
 
   @Override
   public String getPolicySpecificationString(String policyName) throws VCertException {
-    String policySpecificationString = null;
+    String policySpecificationString;
     try {
       CertificateIssuingTemplate cit = getPolicy(policyName);
 
-      policySpecificationString = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertToString( cit );
+      CloudPolicy cloudPolicy = new CloudPolicy();
+      cloudPolicy.certificateIssuingTemplate(cit);
+
+      policySpecificationString = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertToString( cloudPolicy );
 
     }catch (Exception e){
       throw new VCertException(e);
@@ -515,11 +520,15 @@ public class CloudConnector implements Connector {
 
   @Override
   public PolicySpecification getPolicySpecification(String policyName) throws VCertException {
-    PolicySpecification policySpecification = null;
+    PolicySpecification policySpecification;
     try {
       CertificateIssuingTemplate cit = getPolicy(policyName);
 
-      policySpecification = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertToPolicySpecification( cit );
+      CloudPolicy cloudPolicy = new CloudPolicy();
+      cloudPolicy.certificateIssuingTemplate( cit );
+      cloudPolicy.caInfo(getCAInfo( cit ));
+
+      policySpecification = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertToPolicySpecification( cloudPolicy );
 
     }catch (Exception e){
       throw new VCertException(e);
@@ -529,7 +538,21 @@ public class CloudConnector implements Connector {
   }
 
   private CertificateIssuingTemplate getPolicy(String policyName) throws VCertException {
-    return null;
+
+    CloudZone zone = new CloudZone(policyName);
+
+    return cloud.certificateIssuingTemplateByAppNameAndCitAlias(zone.appName(), zone.citAlias(), auth.apiKey());
+  }
+
+  private CloudPolicy.CAInfo getCAInfo( CertificateIssuingTemplate cit ) throws VCertException {
+    //CAAccountResponse caAccountResponse = cloud.getCAAccount(cit.certificateAuthority, cit.certificateAuthorityAccountId(), auth.apiKey());
+    CAAccount caAccountResponse = cloud.getCAAccount(cit.certificateAuthority, cit.certificateAuthorityAccountId(), auth.apiKey());
+
+    /*if (caAccountResponse.errors() != null ) {
+      throw new VCertCloudServerException(caAccountResponse);
+    }*/
+
+    return new CloudPolicy.CAInfo(cit.certificateAuthority, caAccountResponse.account().key(), cit.product().productName());
   }
 
   private Cloud.CertificateSearchResponse searchCertificates(Cloud.SearchRequest searchRequest) {

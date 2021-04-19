@@ -79,6 +79,10 @@ public interface Tpp {
   @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
   GetPolicyResponse getPolicy(GetPolicyRequest request, @Param("apiKey") String apiKey);
 
+  @RequestLine("POST Config/ClearPolicyAttribute")
+  @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
+  Response clearPolicyAttribute(ClearPolicyAttributeRequest request, @Param("apiKey") String apiKey);
+
   //============================Authorization Token Specific operations============================\\
 
   @RequestLine("POST /vedauth/authorize/oauth")
@@ -148,6 +152,10 @@ public interface Tpp {
   @RequestLine("POST /vedsdk/Certificates/CheckPolicy")
   @Headers({"Content-Type: application/json", "Authorization: {token}"})
   GetPolicyResponse getPolicyToken(GetPolicyRequest request, @Param("token") String token);
+
+  @RequestLine("POST /vedsdk/Config/ClearPolicyAttribute")
+  @Headers({"Content-Type: application/json", "Authorization: {token}"})
+  Response clearPolicyAttributeToken(ClearPolicyAttributeRequest request, @Param("token") String token);
 
   //=================================================================================================\
 

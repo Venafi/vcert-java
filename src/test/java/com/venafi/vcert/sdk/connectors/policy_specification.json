@@ -1,0 +1,80 @@
+{
+  "name": "",
+  "owners": [
+    "amoo"
+  ],
+  "users": [
+    "rvela",
+    "marco"
+  ],
+  "userAccess": "some data here",
+  "approvers": [
+    "ricardo",
+    "luis"
+  ],
+  "policy": {
+    "domains": [
+      "venafi.com",
+      "kwan.com"
+    ],
+    "maxValidDays": 120,
+    "wildcardAllowed": false,
+    "certificateAuthority": "\\VED\\Policy\\Certificate Authorities\\Microsoft CA\\QA Venafi CA - Server 90 Days",
+    "subject": {
+      "orgs": [
+        "venafi"
+      ],
+      "orgUnits": [
+        "DevOps",
+        "OpenSource"
+      ],
+      "localities": [
+        "Merida"
+      ],
+      "states": [
+        "Yucatan"
+      ],
+      "countries": [
+        "MX"
+      ]
+    },
+    "keyPair": {
+      "keyTypes": [
+        "RSA"
+      ],
+      "rsaKeySizes": [
+        3072
+      ],
+      "ellipticCurves": [
+        "P384"
+      ],
+      "serviceGenerated": false,
+      "reuseAllowed": false
+    },
+    "subjectAltNames": {
+      "dnsAllowed": false,
+      "ipAllowed": true,
+      "emailAllowed": false,
+      "uriAllowed": false,
+      "upnAllowed": false
+    }
+  },
+  "defaults": {
+    "domain": "venafi.com",
+    "subject": {
+      "org": "venafi",
+      "orgUnits": [
+        "DevOps"
+      ],
+      "locality": "Merida",
+      "state": "Yucatan",
+      "country": "MX"
+    },
+    "keyPair": {
+      "keyType": "RSA",
+      "rsaKeySize": 3072,
+      "ellipticCurve": "",
+      "generationType": ""
+    }
+  }
+}

@@ -2,6 +2,9 @@ package com.venafi.vcert.sdk.policyspecification.domain;
 
 public interface PolicySpecificationConst {
 
+    //
+    String ALLOW_ALL = ".*";
+
     //POLICY SPECIFICATION ATTRIBUTES
     String ATT_NAME = "name";
     String ATT_OWNERS = "owners";
@@ -16,6 +19,7 @@ public interface PolicySpecificationConst {
     String ATT_POLICY_WILDCARD_ALLOWED = "wildcardAllowed";
     String ATT_POLICY_MAX_VALID_DAYS = "maxValidDays";
     String ATT_POLICY_CERTIFICATE_AUTHORITY = "certificateAuthority";
+    String ATT_POLICY_AUTO_INSTALLED = "autoInstalled";
     String ATT_POLICY_SUBJECT = "subject";
     String ATT_POLICY_KEYPAIR = "keyPair";
     String ATT_POLICY_SUBJECT_ALT_NAMES = "subjectAltNames";
@@ -41,6 +45,7 @@ public interface PolicySpecificationConst {
 
     //DEFAULTS ATTRIBUTES
     String ATT_DEFAULTS_DOMAIN = "domain";
+    String ATT_DEFAULTS_AUTO_INSTALLED = "autoInstalled";
     String ATT_DEFAULTS_SUBJECT = "subject";
     String ATT_DEFAULTS_KEYPAIR = "keyPair";
     //DEFAULTS SUBJECT ATTRIBUTES

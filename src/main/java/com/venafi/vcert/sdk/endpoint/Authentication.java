@@ -48,7 +48,7 @@ public class Authentication {
 	@Override
 	public String toString() {
 		return Authentication.class.getSimpleName() + "(user=" + user + ", apiKey=" + apiKey
-				+ ", password=" + (!password.isEmpty() ? "****" : "not set") + ")";
+				+ ", password=" + (password!=null && !password.isEmpty() ? "****" : "not set") + ")";
 	}
 
 }

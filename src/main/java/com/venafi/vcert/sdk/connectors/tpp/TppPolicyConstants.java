@@ -9,6 +9,7 @@ public interface TppPolicyConstants {
     String TPP_CONTACT = "Contact";
     String TPP_APPROVER = "Approver";
     String TPP_CERTIFICATE_AUTHORITY = "Certificate Authority";
+    String TPP_MANAGEMENT_TYPE = "Management Type";
     String TPP_PROHIBIT_WILDCARD = "Prohibit Wildcard";
     String TPP_DOMAIN_SUFFIX_WHITELIST = "Domain Suffix Whitelist";
     String TPP_ORGANIZATION = "Organization";

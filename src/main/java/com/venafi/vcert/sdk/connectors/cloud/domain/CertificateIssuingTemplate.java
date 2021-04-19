@@ -12,6 +12,7 @@ import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.AllowedKeyConfiguration;
+import lombok.NoArgsConstructor;
 
 @Data
 public class CertificateIssuingTemplate {
@@ -22,6 +23,7 @@ public class CertificateIssuingTemplate {
   public String name;
   public String certificateAuthorityAccountId;
   public String certificateAuthorityProductOptionId;
+  public Product product;
   public Integer priority; // rank/priority within a CA
   public Boolean systemGenerated;
   public Date creationDate;
@@ -41,6 +43,14 @@ public class CertificateIssuingTemplate {
 
   @Data
   @AllArgsConstructor
+  public static class Product {
+    private String certificateAuthority;
+    private String productName;
+    private String validityPeriod;
+  }
+
+  @Data
+  @AllArgsConstructor
   public static class AllowedKeyType {
     private String keyType;
     private List<Integer> keyLengths;
@@ -48,6 +58,7 @@ public class CertificateIssuingTemplate {
 
   @Data
   @AllArgsConstructor
+  @NoArgsConstructor
   public static class RecommendedSettings {
     private String subjectOValue;
     private String subjectOUValue;
@@ -60,6 +71,7 @@ public class CertificateIssuingTemplate {
 
   @Data
   @AllArgsConstructor
+  @NoArgsConstructor
   public static class RecommendedSettingsKey {
     private String type;
     private Integer length;

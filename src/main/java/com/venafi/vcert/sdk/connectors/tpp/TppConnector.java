@@ -445,7 +445,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   @Override
   public void setPolicy(String policyName, String policySpecificationString) throws VCertException {
     try {
-      TPPPolicy tppPolicy = (TPPPolicy) TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertFromString(policySpecificationString);
+      TPPPolicy tppPolicy = TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertFromString(policySpecificationString);
       setPolicy(policyName, tppPolicy);
     }catch (Exception e){
       throw new VCertException(e);
@@ -455,7 +455,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   @Override
   public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
     try {
-      TPPPolicy tppPolicy = (TPPPolicy) TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertFromPolicySpecification(policySpecification);
+      TPPPolicy tppPolicy = TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertFromPolicySpecification(policySpecification);
       setPolicy(policyName, tppPolicy);
     }catch (Exception e){
       throw new VCertException(e);
@@ -464,7 +464,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
 
   @Override
   public File getPolicySpecificationFile(String policyName, Path filePath) throws VCertException {
-    File policySpecificationFile = null;
+    File policySpecificationFile;
     try {
       TPPPolicy tppPolicy = getPolicy(policyName);
 
@@ -479,7 +479,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
 
   @Override
   public String getPolicySpecificationString(String policyName) throws VCertException {
-    String policySpecificationString = null;
+    String policySpecificationString;
     try {
       TPPPolicy tppPolicy = getPolicy(policyName);
 
@@ -494,7 +494,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
 
   @Override
   public PolicySpecification getPolicySpecification(String policyName) throws VCertException {
-    PolicySpecification policySpecification = null;
+    PolicySpecification policySpecification;
     try {
       TPPPolicy tppPolicy = getPolicy(policyName);
 
@@ -508,41 +508,47 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   }
 
   @Override
-  protected String getAuthKey() throws  VCertException{
-    if(apiKey() == null)
-      throw new VCertException("API Key is null");
-
-    return apiKey();
-  }
-
-  @Override
   protected TppAPI getTppAPI() {
 
     if(tppAPI == null){
       tppAPI = new TppAPI(tpp) {
+
         @Override
-        public DNIsValidResponse dnIsValid(DNIsValidRequest request, String apiKey) {
-          return tpp.dnIsValid(request, apiKey);
+        String getAuthKey() throws VCertException {
+          if(apiKey() == null)
+            throw new VCertException("API Key is null");
+
+          return apiKey();
         }
 
         @Override
-        CreateDNResponse createDN(CreateDNRequest request, String apiKey) {
-          return tpp.createDN(request, apiKey);
+        public DNIsValidResponse dnIsValid(DNIsValidRequest request) throws VCertException {
+          return tpp.dnIsValid(request, getAuthKey());
         }
 
         @Override
-        SetPolicyAttributeResponse setPolicyAttribute(SetPolicyAttributeRequest request, String apiKey) {
-          return tpp.setPolicyAttribute(request, apiKey);
+        CreateDNResponse createDN(CreateDNRequest request) throws VCertException {
+          return tpp.createDN(request, getAuthKey());
         }
 
         @Override
-        GetPolicyAttributeResponse getPolicyAttribute(GetPolicyAttributeRequest request, String apiKey) {
-          return tpp.getPolicyAttribute(request, apiKey);
+        SetPolicyAttributeResponse setPolicyAttribute(SetPolicyAttributeRequest request) throws VCertException {
+          return tpp.setPolicyAttribute(request, getAuthKey());
         }
 
         @Override
-        GetPolicyResponse getPolicy(GetPolicyRequest request, String authKey) {
-          return tpp.getPolicy(request, authKey);
+        GetPolicyAttributeResponse getPolicyAttribute(GetPolicyAttributeRequest request) throws VCertException {
+          return tpp.getPolicyAttribute(request, getAuthKey());
+        }
+
+        @Override
+        GetPolicyResponse getPolicy(GetPolicyRequest request) throws VCertException {
+          return tpp.getPolicy(request, getAuthKey());
+        }
+
+        @Override
+        Response clearPolicyAttribute(ClearPolicyAttributeRequest request) throws VCertException {
+          return tpp.clearPolicyAttribute(request, getAuthKey());
         }
       };
     }
