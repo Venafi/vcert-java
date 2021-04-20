@@ -18,6 +18,7 @@
       "kwan.com"
     ],
     "maxValidDays": 120,
+    "certificateAuthority": "ENTRUST\\Entrust\\STANDARD_SSL",
     "wildcardAllowed": false,
     "subject": {
       "orgs": [

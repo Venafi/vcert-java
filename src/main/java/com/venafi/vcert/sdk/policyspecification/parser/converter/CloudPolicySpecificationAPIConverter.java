@@ -4,8 +4,6 @@ import com.venafi.vcert.sdk.certificate.KeySize;
 import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.connectors.cloud.CloudConstants;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
-import com.venafi.vcert.sdk.connectors.cloud.endpoint.DigicertCIT;
-import com.venafi.vcert.sdk.connectors.cloud.endpoint.EntrustCIT;
 import com.venafi.vcert.sdk.policyspecification.api.domain.CloudPolicy;
 import com.venafi.vcert.sdk.policyspecification.domain.*;
 
@@ -45,24 +43,24 @@ class PolicySpecificationToCloudPolicyConverter {
         CloudPolicy.CAInfo caInfo = getCertAuthorityInfo(policy);
         cloudPolicy.caInfo( caInfo );
 
-        CertificateIssuingTemplate cit;
-
-        switch ( caInfo.caType().toUpperCase() ) {
-            case CloudConstants.ENTRUST_TYPE:
-                cit = new EntrustCIT();
-                break;
-            case CloudConstants.DIGICERT_TYPE:
-                cit = new DigicertCIT();
-                break;
-            default:
-                cit = new CertificateIssuingTemplate();
-        }
+        CertificateIssuingTemplate cit = new CertificateIssuingTemplate();
 
         cloudPolicy.certificateIssuingTemplate(cit);
 
         cit.certificateAuthority(caInfo.caType());
 
-        cit.product( new CertificateIssuingTemplate.Product(caInfo.caType(), caInfo.vendorProductName(), getValidityPeriod( policy )));
+        cit.product( new CertificateIssuingTemplate.Product(caInfo.caType(), caInfo.vendorProductName(), getValidityPeriod( policy ), null, null, null) );
+
+        switch ( caInfo.caType().toUpperCase() ) {
+            case CloudConstants.ENTRUST_TYPE:
+                cit.trackingData(CloudConstants.ENTRUST_DEFAULT_TRACKING_DATA);
+                break;
+            case CloudConstants.DIGICERT_TYPE:
+                CertificateIssuingTemplate.Product product = cit.product();
+                product.hashAlgorithm("SHA256");
+                product.autoRenew(false);
+                break;
+        }
 
         List<String> domainsInRegex = convertDomainsToRegex( policy );
 

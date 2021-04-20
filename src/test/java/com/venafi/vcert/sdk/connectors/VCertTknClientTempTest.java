@@ -53,7 +53,7 @@ public class VCertTknClientTempTest {
     }
 
     public static void testVcertClientCloudUsingFile() throws VCertException {
-        String policyName = "vcert-marcos-0002\\marcos-test03";
+        String policyName = "vcert-marcos-0002\\marcos-test06";
         String filePath = "/Users/marcos/venafi/repos/vcert-java/src/test/java/com/venafi/vcert/sdk/connectors/cloud_policy_specification.json";
         String targetFilePath = "/Users/marcos/venafi/repos/vcert-java/src/test/java/com/venafi/vcert/sdk/connectors/returned_ps_from_VcertCloudClient_01.json";
         String tppl_api_key = "09b21986-6378-47b6-802a-763980219bf7";

@@ -24,6 +24,7 @@ public class CertificateIssuingTemplate {
   public String certificateAuthorityAccountId;
   public String certificateAuthorityProductOptionId;
   public Product product;
+  public TrackingData trackingData;
   public Integer priority; // rank/priority within a CA
   public Boolean systemGenerated;
   public Date creationDate;
@@ -43,11 +44,23 @@ public class CertificateIssuingTemplate {
 
   @Data
   @AllArgsConstructor
-  @NoArgsConstructor
   public static class Product {
     private String certificateAuthority;
     private String productName;
     private String validityPeriod;
+    private String hashAlgorithm;
+    private Boolean autoRenew;
+    private Integer organizationId;
+  }
+
+  @Data
+  @AllArgsConstructor
+  @NoArgsConstructor
+  public static class TrackingData {
+    private String certificateAuthority;
+    private String requesterName;
+    private String requesterEmail;
+    private String requesterPhone;
   }
 
   @Data

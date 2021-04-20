@@ -90,6 +90,10 @@ public interface Cloud {
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
   CITsList createCIT(CertificateIssuingTemplate cit, @Param("apiKey") String apiKey);
 
+  /*@RequestLine("POST /v1/certificateissuingtemplates")
+  @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+  CITsList createCIT(EntrustCIT cit, @Param("apiKey") String apiKey);*/
+
   @RequestLine("PUT /v1/certificateissuingtemplates/{id}")
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
   CertificateIssuingTemplate updateCIT(CertificateIssuingTemplate cit, @Param("id") String id, @Param("apiKey") String apiKey);

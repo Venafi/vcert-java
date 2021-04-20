@@ -53,7 +53,7 @@ public class CloudConnectorUtils {
         //setting the OrganizationId if the CA is DIGICERT
         if ( caInfo.caType().equals(CloudConstants.DIGICERT_TYPE) )
             if ( caAccountInfo.organizationId != null )
-                ((DigicertCIT.DigicertProduct)cit.product()).organizationId( caAccountInfo.organizationId );
+                cit.product().organizationId( caAccountInfo.organizationId );
             else
                 throw new VCertException( "It was not possible to determine the Organization Id from the DIGICERT Product." );
 
@@ -66,7 +66,7 @@ public class CloudConnectorUtils {
             cloud.updateCIT(cit, citFromServer.id(), apiKey);
             cit.id(citFromServer.id());
         } else { //create it
-            CITsList response = cloud.createCIT(cit, apiKey);
+            CITsList response = cloud.createCIT( cit, apiKey);
 
             //setting the citId resulting of the creation of the cit
             cit.id( response.certificateIssuingTemplates().get(0).id() );
@@ -76,12 +76,11 @@ public class CloudConnectorUtils {
     }
 
     public static CAAccountInfo getCAAccountInfo(CloudPolicy.CAInfo caInfo, String apiKey, Cloud cloud) throws VCertException {
-        CAAccountInfo CAAccountInfo = null;
 
         String caProductOptionId = null;
         Integer organizationId = null;
 
-                CAAccountsList caAccountsList = cloud.getCAAccounts(caInfo.caType(), apiKey);
+        CAAccountsList caAccountsList = cloud.getCAAccounts(caInfo.caType(), apiKey);
 
         for ( CAAccount caAccount : caAccountsList.accounts() ) {
             if ( caAccount.account().key().equals(caInfo.caAccountKey()) )
@@ -98,11 +97,7 @@ public class CloudConnectorUtils {
                 }
         }
 
-        if ( caProductOptionId != null || organizationId != null ) {
-            CAAccountInfo = new CAAccountInfo(caProductOptionId, organizationId);
-        }
-
-        return CAAccountInfo;
+        return new CAAccountInfo(caProductOptionId, organizationId);
     }
 
     public static CertificateIssuingTemplate getCIT( String citName, String apiKey, Cloud cloud ) throws VCertException {
