@@ -21,6 +21,17 @@ public class CAAccount {
     public static class ProductOption {
         private String id;
         private String productName;
+        private ProductDetails productDetails;
+    }
+
+    @Data
+    public static class ProductDetails {
+        private ProductTemplate productTemplate;
+    }
+
+    @Data
+    public static class ProductTemplate {
+        private Integer organizationId;
     }
 
 }

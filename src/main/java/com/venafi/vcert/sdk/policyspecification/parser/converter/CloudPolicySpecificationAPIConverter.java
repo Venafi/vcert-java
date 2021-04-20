@@ -2,7 +2,10 @@ package com.venafi.vcert.sdk.policyspecification.parser.converter;
 
 import com.venafi.vcert.sdk.certificate.KeySize;
 import com.venafi.vcert.sdk.certificate.KeyType;
+import com.venafi.vcert.sdk.connectors.cloud.CloudConstants;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
+import com.venafi.vcert.sdk.connectors.cloud.endpoint.DigicertCIT;
+import com.venafi.vcert.sdk.connectors.cloud.endpoint.EntrustCIT;
 import com.venafi.vcert.sdk.policyspecification.api.domain.CloudPolicy;
 import com.venafi.vcert.sdk.policyspecification.domain.*;
 
@@ -42,7 +45,19 @@ class PolicySpecificationToCloudPolicyConverter {
         CloudPolicy.CAInfo caInfo = getCertAuthorityInfo(policy);
         cloudPolicy.caInfo( caInfo );
 
-        CertificateIssuingTemplate cit = new CertificateIssuingTemplate();
+        CertificateIssuingTemplate cit;
+
+        switch ( caInfo.caType().toUpperCase() ) {
+            case CloudConstants.ENTRUST_TYPE:
+                cit = new EntrustCIT();
+                break;
+            case CloudConstants.DIGICERT_TYPE:
+                cit = new DigicertCIT();
+                break;
+            default:
+                cit = new CertificateIssuingTemplate();
+        }
+
         cloudPolicy.certificateIssuingTemplate(cit);
 
         cit.certificateAuthority(caInfo.caType());
@@ -128,7 +143,7 @@ class PolicySpecificationToCloudPolicyConverter {
         if( policy != null && policy.certificateAuthority() != null)
             certificateAuthorityString = policy.certificateAuthority();
         else
-            certificateAuthorityString = "BUILTIN\\Built-In CA\\Default Product";
+            certificateAuthorityString = CloudConstants.DEFAULT_PRODUCT;
 
         return new CloudPolicy.CAInfo(certificateAuthorityString);
     }
@@ -164,7 +179,7 @@ class PolicySpecificationToCloudPolicyConverter {
         List<String> regexValues = new ArrayList<>();
 
         for (String current : values ) {
-            String currentRegex = current.replaceAll( ".", "\\.");
+            String currentRegex = current.replaceAll( "\\.", "\\.");
             String wildCard = wildcardAllowed ? "*" : "";
             regexValues.add( String.format("[%sA-Za-z]{1}[A-Za-z0-9.-]*\\.", wildCard) + currentRegex );
         }

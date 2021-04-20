@@ -43,6 +43,7 @@ public class CertificateIssuingTemplate {
 
   @Data
   @AllArgsConstructor
+  @NoArgsConstructor
   public static class Product {
     private String certificateAuthority;
     private String productName;

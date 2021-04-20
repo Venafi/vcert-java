@@ -10,6 +10,8 @@ import com.venafi.vcert.sdk.policyspecification.api.domain.CloudPolicy;
 import com.venafi.vcert.sdk.policyspecification.parser.CloudPolicySpecificationConverter;
 import com.venafi.vcert.sdk.utils.VCertConstants;
 import feign.FeignException;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 import java.util.*;
 
@@ -39,13 +41,21 @@ public class CloudConnectorUtils {
         cit.name(cloudZone.citAlias());
 
         //getting the CAProductOptionId
-        String caProductOptionId = CloudConnectorUtils.getCAProductOptionId(caInfo, apiKey, cloud);
+        CAAccountInfo caAccountInfo = CloudConnectorUtils.getCAAccountInfo(caInfo, apiKey, cloud);
+        String caProductOptionId = caAccountInfo.productId;
 
         if (caProductOptionId == null )
             throw new VCertException("Specified CA doesn't exist");
 
         //Setting the CAProductOptionId to the parsed cit
         cit.certificateAuthorityProductOptionId( caProductOptionId );
+
+        //setting the OrganizationId if the CA is DIGICERT
+        if ( caInfo.caType().equals(CloudConstants.DIGICERT_TYPE) )
+            if ( caAccountInfo.organizationId != null )
+                ((DigicertCIT.DigicertProduct)cit.product()).organizationId( caAccountInfo.organizationId );
+            else
+                throw new VCertException( "It was not possible to determine the Organization Id from the DIGICERT Product." );
 
         //Getting the cit from the server
         CertificateIssuingTemplate citFromServer = CloudConnectorUtils.getCIT(cit.name(), apiKey, cloud);
@@ -65,22 +75,34 @@ public class CloudConnectorUtils {
         setCitToApp(policyName, cit, apiKey, cloud);
     }
 
-    public static String getCAProductOptionId( CloudPolicy.CAInfo caInfo, String apiKey, Cloud cloud) throws VCertException {
-        String caProductOptionId = null;
+    public static CAAccountInfo getCAAccountInfo(CloudPolicy.CAInfo caInfo, String apiKey, Cloud cloud) throws VCertException {
+        CAAccountInfo CAAccountInfo = null;
 
-        CAAccountsList caAccountsList = cloud.getCAAccounts(caInfo.caType(), apiKey);
+        String caProductOptionId = null;
+        Integer organizationId = null;
+
+                CAAccountsList caAccountsList = cloud.getCAAccounts(caInfo.caType(), apiKey);
 
         for ( CAAccount caAccount : caAccountsList.accounts() ) {
             if ( caAccount.account().key().equals(caInfo.caAccountKey()) )
                 for ( CAAccount.ProductOption productOption : caAccount.productOptions()) {
                     if(productOption.productName().equals(caInfo.vendorProductName())) {
                         caProductOptionId = productOption.id();
+
+                        if( caInfo.caType().equals( CloudConstants.DIGICERT_TYPE ) ) {
+                            if ( productOption.productDetails() != null && productOption.productDetails().productTemplate() != null )
+                                organizationId = productOption.productDetails().productTemplate().organizationId();
+                        }
                         break;
                     }
                 }
         }
 
-        return caProductOptionId;
+        if ( caProductOptionId != null || organizationId != null ) {
+            CAAccountInfo = new CAAccountInfo(caProductOptionId, organizationId);
+        }
+
+        return CAAccountInfo;
     }
 
     public static CertificateIssuingTemplate getCIT( String citName, String apiKey, Cloud cloud ) throws VCertException {
@@ -177,5 +199,13 @@ public class CloudConnectorUtils {
 
             cloud.updateApplication(application, appId, apiKey);
         }
+    }
+
+    @Data
+    @AllArgsConstructor
+    //Class to hold required info which is extracted by the method getAccountInfo
+    public static class CAAccountInfo {
+        private String productId;
+        private Integer organizationId;
     }
 }

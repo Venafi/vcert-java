@@ -24,8 +24,8 @@ public class VCertTknClientTempTest {
         try {
             //testVcertTknClientUsingFile(client);
             //testVcertTknClientUsingFileMinimalVersion();
-            //testVcertClientCloudUsingFile();
-            testVcertClientCloudUsingFileMinimalVersion();
+            testVcertClientCloudUsingFile();
+            //testVcertClientCloudUsingFileMinimalVersion();
 
         } catch ( Exception e) {
             e.printStackTrace();
