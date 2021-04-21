@@ -6,6 +6,7 @@ import com.venafi.vcert.sdk.connectors.cloud.CloudConstants;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.policyspecification.api.domain.CloudPolicy;
 import com.venafi.vcert.sdk.policyspecification.domain.*;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -177,7 +178,7 @@ class PolicySpecificationToCloudPolicyConverter {
         List<String> regexValues = new ArrayList<>();
 
         for (String current : values ) {
-            String currentRegex = current.replaceAll( "\\.", "\\.");
+            String currentRegex = StringUtils.replace(current, ".", "\\.");//current.replaceAll( "\\.", "\\.");
             String wildCard = wildcardAllowed ? "*" : "";
             regexValues.add( String.format("[%sA-Za-z]{1}[A-Za-z0-9.-]*\\.", wildCard) + currentRegex );
         }

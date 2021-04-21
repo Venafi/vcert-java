@@ -4,18 +4,10 @@ import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.VCertClient;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.VCertTknClient;
-import com.venafi.vcert.sdk.connectors.tpp.TokenInfo;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
-import com.venafi.vcert.sdk.policyspecification.domain.Defaults;
-import com.venafi.vcert.sdk.policyspecification.domain.DefaultsKeyPair;
-import com.venafi.vcert.sdk.policyspecification.domain.PolicySpecification;
 
-import java.io.File;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
 
 public class VCertTknClientTempTest {
 

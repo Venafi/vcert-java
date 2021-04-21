@@ -196,6 +196,48 @@ public class CloudConnectorUtils {
         }
     }
 
+    public static CloudPolicy getCloudPolicy( String policyName, String apiKey, Cloud cloud) throws VCertException{
+        CloudPolicy cloudPolicy = new CloudPolicy();
+
+        CertificateIssuingTemplate cit = getPolicy(policyName, apiKey, cloud);
+        cloudPolicy.certificateIssuingTemplate( cit );
+        cloudPolicy.caInfo(getCAInfo( cit, apiKey, cloud ));
+
+        return cloudPolicy;
+    }
+
+    private static CertificateIssuingTemplate getPolicy(String policyName, String apiKey, Cloud cloud) throws VCertException {
+
+        CloudZone zone = new CloudZone(policyName);
+
+        return cloud.certificateIssuingTemplateByAppNameAndCitAlias(zone.appName(), zone.citAlias(), apiKey);
+    }
+
+    private static CloudPolicy.CAInfo getCAInfo( CertificateIssuingTemplate cit, String apiKey, Cloud cloud ) throws VCertException {
+        CAAccount caAccount = cloud.getCAAccount(cit.certificateAuthority, cit.certificateAuthorityAccountId(), apiKey);
+
+        return new CloudPolicy.CAInfo(cit.certificateAuthority, caAccount.account().key(), getProductName(caAccount, cit));
+    }
+
+    private static String getProductName(CAAccount caAccount, CertificateIssuingTemplate cit) {
+        /*String productOptionName = null;
+        for ( CAAccount.ProductOption productOption : caAccount.productOptions()) {
+            if ( productOption.id().equals(cit.certificateAuthorityProductOptionId) ){
+                productOptionName = productOption.productName();
+                break;
+            }
+        }
+
+         return productOptionName;
+         */
+
+        return caAccount.productOptions().stream()
+                .filter(p -> p.id().equals(cit.certificateAuthorityProductOptionId))
+                .findFirst()
+                .get()
+                .productName();
+    }
+
     @Data
     @AllArgsConstructor
     //Class to hold required info which is extracted by the method getAccountInfo
