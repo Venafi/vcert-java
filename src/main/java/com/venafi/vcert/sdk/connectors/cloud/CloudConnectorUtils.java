@@ -6,9 +6,7 @@ import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CloudZone;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.connectors.cloud.endpoint.*;
-import com.venafi.vcert.sdk.policyspecification.api.domain.CloudPolicy;
-import com.venafi.vcert.sdk.policyspecification.parser.CloudPolicySpecificationConverter;
-import com.venafi.vcert.sdk.utils.VCertConstants;
+import com.venafi.vcert.sdk.policy.api.domain.CloudPolicy;
 import feign.FeignException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,24 +14,6 @@ import lombok.Data;
 import java.util.*;
 
 public class CloudConnectorUtils {
-
-    public static CloudPolicySpecificationConverter getConverter(String filePath) throws VCertException {
-
-      CloudPolicySpecificationConverter converter;
-
-      if (filePath != null) {
-        String fileExtension = filePath.substring(filePath.lastIndexOf(".") + 1);
-        String converterKey = fileExtension.equals(VCertConstants.YAML_EXTENSION2) ?  VCertConstants.YAML_EXTENSION : fileExtension;
-
-        converter = CloudPolicySpecificationConverter.getInstance(converterKey);
-
-        if (converter == null)
-          throw new VCertException("Format file is not supported");
-      }else
-        throw new VCertException("FilePath value is null");
-
-      return converter;
-    }
 
     public static void setCit(String policyName, CertificateIssuingTemplate cit, CloudPolicy.CAInfo caInfo, String apiKey, Cloud cloud) throws VCertException {
 
@@ -66,10 +46,8 @@ public class CloudConnectorUtils {
             cloud.updateCIT(cit, citFromServer.id(), apiKey);
             cit.id(citFromServer.id());
         } else { //create it
-            CITsList response = cloud.createCIT( cit, apiKey);
-
             //setting the citId resulting of the creation of the cit
-            cit.id( response.certificateIssuingTemplates().get(0).id() );
+            cit.id( createCIT(cit, apiKey, cloud));
         }
 
         setCitToApp(policyName, cit, apiKey, cloud);
@@ -220,17 +198,6 @@ public class CloudConnectorUtils {
     }
 
     private static String getProductName(CAAccount caAccount, CertificateIssuingTemplate cit) {
-        /*String productOptionName = null;
-        for ( CAAccount.ProductOption productOption : caAccount.productOptions()) {
-            if ( productOption.id().equals(cit.certificateAuthorityProductOptionId) ){
-                productOptionName = productOption.productName();
-                break;
-            }
-        }
-
-         return productOptionName;
-         */
-
         return caAccount.productOptions().stream()
                 .filter(p -> p.id().equals(cit.certificateAuthorityProductOptionId))
                 .findFirst()

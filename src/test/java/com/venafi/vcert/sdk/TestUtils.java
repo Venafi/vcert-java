@@ -124,7 +124,11 @@ public class TestUtils {
 		return String.format("t%d-%s.venafi.example.com", System.currentTimeMillis(),
 				RandomStringUtils.randomAlphabetic(4));
 	}
-	
+
+	public static String randomCITName() {
+		return String.format("t%d-%s-CIT-test", System.currentTimeMillis(),
+				RandomStringUtils.randomAlphabetic(4));
+	}
 	
 	public static String getAccessToken() throws VCertException {
 		String accesToken = "";

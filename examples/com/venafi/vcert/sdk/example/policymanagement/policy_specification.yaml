@@ -1,0 +1,50 @@
+---
+name: ''
+policy:
+  domains:
+    - venafi.com
+    - kwan.com
+    - yaml.com
+  wildcardAllowed: true
+  maxValidDays: 120
+  certificateAuthority: ENTRUST\\Entrust\\STANDARD_SSL
+  subject:
+    orgs:
+      - venafi.com
+    orgUnits:
+      - DevOps
+    localities:
+      - Merida
+    states:
+      - Yucatan
+    countries:
+      - MX
+  keyPair:
+    keyTypes:
+      - RSA
+    rsaKeySizes:
+      - 1024
+    ellipticCurves:
+      - P384
+    serviceGenerated: false
+    reuseAllowed: false
+  subjectAltNames:
+    dnsAllowed: false
+    ipAllowed: false
+    emailAllowed: false
+    uriAllowed: false
+    upnAllowed: false
+defaults:
+  domain: venafi.com
+  subject:
+    org: venafi.com
+    orgUnits:
+      - DevOps
+    locality: Merida
+    state: Yucatan
+    country: MX
+  keyPair:
+    keyType: RSA
+    rsaKeySize: 1024
+    ellipticCurve: ''
+    serviceGenerated: false

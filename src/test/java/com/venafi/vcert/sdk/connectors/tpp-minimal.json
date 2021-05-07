@@ -1,8 +1,0 @@
-{
-  "defaults": {
-    "keyPair": {
-      "keyType": "ECDSA",
-      "ellipticCurve": "P256"
-    }
-  }
-}

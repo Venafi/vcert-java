@@ -2,13 +2,11 @@ package com.venafi.vcert.sdk;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import java.io.File;
-import java.nio.file.Path;
 import java.security.Security;
 
 import com.google.common.annotations.VisibleForTesting;
 
-import com.venafi.vcert.sdk.policyspecification.domain.PolicySpecification;
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 import feign.FeignException;
 
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
@@ -246,7 +244,7 @@ public class VCertTknClient implements TokenConnector {
         }
     }
 
-    @Override
+    /*@Override
     public void setPolicy(String policyName, Path filePath) throws VCertException {
         try {
             connector.setPolicy(policyName, filePath);
@@ -262,7 +260,7 @@ public class VCertTknClient implements TokenConnector {
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         }
-    }
+    }*/
 
     @Override
     public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
@@ -273,8 +271,7 @@ public class VCertTknClient implements TokenConnector {
         }
     }
 
-    @Override
-    //public File getPolicySpecificationFile(String policyName) throws VCertException {
+    /*@Override
     public File getPolicySpecificationFile(String policyName, Path filePath) throws VCertException {
         try {
             return connector.getPolicySpecificationFile(policyName, filePath);
@@ -290,12 +287,12 @@ public class VCertTknClient implements TokenConnector {
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         }
-    }
+    }*/
 
     @Override
-    public PolicySpecification getPolicySpecification(String policyName) throws VCertException {
+    public PolicySpecification getPolicy(String policyName) throws VCertException {
         try {
-            return connector.getPolicySpecification(policyName);
+            return connector.getPolicy(policyName);
         } catch (FeignException e) {
             throw VCertException.fromFeignException(e);
         }

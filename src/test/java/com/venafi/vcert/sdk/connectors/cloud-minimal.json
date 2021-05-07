@@ -1,8 +1,0 @@
-{
-  "defaults": {
-    "keyPair": {
-      "keyType": "rsa",
-      "rsaKeySize": 1024
-    }
-  }
-}

@@ -1,0 +1,68 @@
+{
+  "name": "",
+  "policy": {
+    "domains": [
+      "venafi.com",
+      "kwan.com"
+    ],
+    "maxValidDays": 120,
+    "wildcardAllowed": false,
+    "certificateAuthority": "ENTRUST\\Entrust\\STANDARD_SSL",
+    "subject": {
+      "orgs": [
+        "venafi"
+      ],
+      "orgUnits": [
+        "DevOps",
+        "OpenSource"
+      ],
+      "localities": [
+        "Merida"
+      ],
+      "states": [
+        "Yucatan"
+      ],
+      "countries": [
+        "MX"
+      ]
+    },
+    "keyPair": {
+      "keyTypes": [
+        "RSA"
+      ],
+      "rsaKeySizes": [
+        1024
+      ],
+      "ellipticCurves": [
+        "P384"
+      ],
+      "serviceGenerated": true,
+      "reuseAllowed": true
+    },
+    "subjectAltNames": {
+      "dnsAllowed": true,
+      "ipAllowed": false,
+      "emailAllowed": false,
+      "uriAllowed": false,
+      "upnAllowed": false
+    }
+  },
+  "defaults": {
+    "domain": "venafi.com",
+    "subject": {
+      "org": "venafi",
+      "orgUnits": [
+        "DevOps"
+      ],
+      "locality": "Merida",
+      "state": "Yucatan",
+      "country": "MX"
+    },
+    "keyPair": {
+      "keyType": "RSA",
+      "rsaKeySize": 1024,
+      "ellipticCurve": "",
+      "serviceGenerated": ""
+    }
+  }
+}

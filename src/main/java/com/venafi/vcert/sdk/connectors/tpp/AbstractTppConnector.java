@@ -9,7 +9,7 @@ import com.google.gson.annotations.SerializedName;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
 
-import com.venafi.vcert.sdk.policyspecification.api.domain.TPPPolicy;
+import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -93,7 +93,7 @@ public abstract class AbstractTppConnector {
         TppConnectorUtils.setPolicyAttributes(tppPolicy, tppAPI);
     }
 
-    public TPPPolicy getPolicy(String policyName) throws VCertException {
+    public TPPPolicy getTPPPolicy(String policyName) throws VCertException {
 
         TPPPolicy tppPolicy = new TPPPolicy();
 

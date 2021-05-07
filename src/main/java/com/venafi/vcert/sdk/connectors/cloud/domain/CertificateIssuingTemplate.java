@@ -41,6 +41,9 @@ public class CertificateIssuingTemplate {
   public List<AllowedKeyType> keyTypes;
   public Boolean keyReuse;
   public RecommendedSettings recommendedSettings;
+  //added due the response return it in this position.
+  //For the case of the request to create/update it, this attribute is in the Product class level
+  private String validityPeriod;
 
   @Data
   @AllArgsConstructor

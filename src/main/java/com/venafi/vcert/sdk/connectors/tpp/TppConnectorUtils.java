@@ -2,19 +2,16 @@ package com.venafi.vcert.sdk.connectors.tpp;
 
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
-import com.venafi.vcert.sdk.policyspecification.api.domain.TPPPolicy;
-import com.venafi.vcert.sdk.policyspecification.parser.TPPPolicySpecificationConverter;
-import com.venafi.vcert.sdk.policyspecification.parser.converter.AltName;
-import com.venafi.vcert.sdk.utils.VCertConstants;
+import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
+import com.venafi.vcert.sdk.policy.converter.tpp.AltName;
 import feign.Response;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TppConnectorUtils {
 
-  public static TPPPolicySpecificationConverter getConverter(String filePath) throws VCertException {
+  /*public static TPPPolicySpecificationConverter getConverter(String filePath) throws VCertException {
 
     TPPPolicySpecificationConverter converter;
 
@@ -31,7 +28,7 @@ public class TppConnectorUtils {
       throw new VCertException("FilePath value is null");
 
     return converter;
-  }
+  }*/
 
   public static boolean dnExist(String dn, TppAPI tppAPI) throws VCertException {
     try {

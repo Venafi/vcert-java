@@ -7,9 +7,7 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import java.io.File;
 import java.net.InetAddress;
-import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,9 +40,9 @@ import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
-import com.venafi.vcert.sdk.policyspecification.api.domain.TPPPolicy;
-import com.venafi.vcert.sdk.policyspecification.domain.PolicySpecification;
-import com.venafi.vcert.sdk.policyspecification.parser.TPPPolicySpecificationConverter;
+import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
+import com.venafi.vcert.sdk.policy.converter.TPPPolicySpecificationConverter;
 import com.venafi.vcert.sdk.utils.Is;
 import com.venafi.vcert.sdk.utils.VCertUtils;
 
@@ -504,7 +502,7 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         throw new UnsupportedOperationException("Method not yet implemented");
     }
 
-    @Override
+    /*@Override
     public void setPolicy(String policyName, Path filePath) throws VCertException {
         try {
             TPPPolicy tppPolicy = TppConnectorUtils.getConverter(filePath.toString()).convertFromFile(filePath);
@@ -522,19 +520,19 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         }catch (Exception e){
             throw new VCertException(e);
         }
-    }
+    }*/
 
     @Override
     public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
         try {
-            TPPPolicy tppPolicy = TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertFromPolicySpecification(policySpecification);
+            TPPPolicy tppPolicy = TPPPolicySpecificationConverter.INSTANCE.convertFromPolicySpecification(policySpecification);
             setPolicy(policyName, tppPolicy);
         }catch (Exception e){
             throw new VCertException(e);
         }
     }
 
-    @Override
+    /*@Override
     public File getPolicySpecificationFile(String policyName, Path filePath) throws VCertException {
 
         File policySpecificationFile;
@@ -564,15 +562,15 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         }
 
         return policySpecificationString;
-    }
+    }*/
 
     @Override
-    public PolicySpecification getPolicySpecification(String policyName) throws VCertException {
+    public PolicySpecification getPolicy(String policyName) throws VCertException {
         PolicySpecification policySpecification;
         try {
-            TPPPolicy tppPolicy = getPolicy(policyName);
+            TPPPolicy tppPolicy = getTPPPolicy(policyName);
 
-            policySpecification = TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertToPolicySpecification( tppPolicy );
+            policySpecification = TPPPolicySpecificationConverter.INSTANCE.convertToPolicySpecification( tppPolicy );
 
         }catch (Exception e){
             throw new VCertException(e);

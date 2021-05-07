@@ -4,6 +4,7 @@ import static com.venafi.vcert.sdk.TestUtils.getTestIps;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -21,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
@@ -60,7 +62,8 @@ class TppTokenConnectorAT {
             Authentication authentication = Authentication.builder()
                     .user(System.getenv("TPPUSER"))
                     .password(System.getenv("TPPPASSWORD"))
-                    .scope("certificate:manage,revoke,discover")
+                    .clientId("api-all-access")
+                    .scope("certificate:manage,revoke,discover;configuration:manage")
                     .build();
 
             TokenInfo info = classUnderTest.getAccessToken(authentication);
@@ -450,5 +453,26 @@ class TppTokenConnectorAT {
   	  //so is enough to validate if certificate is created.
   	  assertTrue(pemCollection.certificate() != null);
 
+    }
+
+    @Test
+    @DisplayName("TPP - Testing the setPolicy() and getPolicy() methods")
+    public void createAndGetPolicy() throws VCertException {
+
+        String policyName = TppTestUtils.getRandomZone();
+
+        PolicySpecification policySpecification = TppTestUtils.getPolicySpecification();
+
+        classUnderTest.setPolicy(policyName, policySpecification);
+
+        PolicySpecification policySpecificationReturned = classUnderTest.getPolicy(policyName);
+
+        //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
+        //due it doesn't contain it
+        policySpecification.name(policySpecificationReturned.name());
+        //setting to null, because the returned should not contains the defaults
+        policySpecification.defaults(null);
+
+        assertEquals(policySpecification, policySpecificationReturned);
     }
 }

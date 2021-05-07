@@ -5,9 +5,7 @@ import static java.time.Duration.ZERO;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -21,9 +19,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.venafi.vcert.sdk.connectors.cloud.domain.*;
-import com.venafi.vcert.sdk.policyspecification.api.domain.CloudPolicy;
-import com.venafi.vcert.sdk.policyspecification.domain.PolicySpecification;
-import com.venafi.vcert.sdk.policyspecification.parser.CloudPolicySpecificationConverter;
+import com.venafi.vcert.sdk.policy.api.domain.CloudPolicy;
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
+import com.venafi.vcert.sdk.policy.converter.CloudPolicySpecificationConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Strings;
 
@@ -447,29 +445,9 @@ public class CloudConnector implements Connector {
   }
 
   @Override
-  public void setPolicy(String policyName, Path filePath) throws VCertException {
-    try {
-      CloudPolicy cloudPolicy = CloudConnectorUtils.getConverter(filePath.toString()).convertFromFile(filePath);
-      CloudConnectorUtils.setCit(policyName, cloudPolicy.certificateIssuingTemplate(), cloudPolicy.caInfo(), auth.apiKey(), cloud);
-    } catch ( Exception e ) {
-      throw new VCertException(e);
-    }
-  }
-
-  @Override
-  public void setPolicy(String policyName, String policySpecificationString) throws VCertException {
-    try {
-      CloudPolicy cloudPolicy = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertFromString(policySpecificationString);
-      CloudConnectorUtils.setCit(policyName, cloudPolicy.certificateIssuingTemplate(), cloudPolicy.caInfo(), auth.apiKey(), cloud);
-    } catch ( Exception e ) {
-      throw new VCertException(e);
-    }
-  }
-
-  @Override
   public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
     try {
-      CloudPolicy cloudPolicy = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertFromPolicySpecification(policySpecification);
+      CloudPolicy cloudPolicy = CloudPolicySpecificationConverter.INSTANCE.convertFromPolicySpecification(policySpecification);
       CloudConnectorUtils.setCit(policyName, cloudPolicy.certificateIssuingTemplate(), cloudPolicy.caInfo(), auth.apiKey(), cloud);
     } catch ( Exception e ) {
       throw new VCertException(e);
@@ -477,37 +455,11 @@ public class CloudConnector implements Connector {
   }
 
   @Override
-  public File getPolicySpecificationFile(String policyName, Path filePath) throws VCertException {
-    File policySpecificationFile;
-    try {
-      CloudPolicy cloudPolicy = CloudConnectorUtils.getCloudPolicy( policyName, auth.apiKey(), cloud );
-      policySpecificationFile = CloudConnectorUtils.getConverter(filePath.toString()).convertToFile( cloudPolicy, filePath );
-    }catch (Exception e){
-      throw new VCertException(e);
-    }
-
-    return policySpecificationFile;
-  }
-
-  @Override
-  public String getPolicySpecificationString(String policyName) throws VCertException {
-    String policySpecificationString;
-    try {
-      CloudPolicy cloudPolicy = CloudConnectorUtils.getCloudPolicy( policyName, auth.apiKey(), cloud );
-      policySpecificationString = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertToString( cloudPolicy );
-    }catch (Exception e){
-      throw new VCertException(e);
-    }
-
-    return policySpecificationString;
-  }
-
-  @Override
-  public PolicySpecification getPolicySpecification(String policyName) throws VCertException {
+  public PolicySpecification getPolicy(String policyName) throws VCertException {
     PolicySpecification policySpecification;
     try {
       CloudPolicy cloudPolicy = CloudConnectorUtils.getCloudPolicy( policyName, auth.apiKey(), cloud );
-      policySpecification = CloudPolicySpecificationConverter.CloudPolicySpecificationJsonConverter.convertToPolicySpecification( cloudPolicy );
+      policySpecification = CloudPolicySpecificationConverter.INSTANCE.convertToPolicySpecification( cloudPolicy );
     }catch (Exception e){
       throw new VCertException(e);
     }
