@@ -62,7 +62,6 @@ class TppTokenConnectorAT {
             Authentication authentication = Authentication.builder()
                     .user(System.getenv("TPPUSER"))
                     .password(System.getenv("TPPPASSWORD"))
-                    .clientId("api-all-access")
                     .scope("certificate:manage,revoke,discover;configuration:manage")
                     .build();
 
