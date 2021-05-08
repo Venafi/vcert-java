@@ -66,7 +66,7 @@ public interface Cloud {
   Response certificateAsPem(@Param("id") String id, @Param("apiKey") String apiKey);
 
   @Headers("tppl-api-key: {apiKey}")
-  @RequestLine("GET /v1/certificates/{id}")
+  @RequestLine("GET /outagedetection/v1/certificates/{id}")
   CertificateDetails certificateDetails(@Param("id") String id, @Param("apiKey") String apiKey);
 
   @RequestLine("GET ping")
