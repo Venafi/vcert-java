@@ -62,7 +62,7 @@ class TppTokenConnectorAT {
             Authentication authentication = Authentication.builder()
                     .user(System.getenv("TPPUSER"))
                     .password(System.getenv("TPPPASSWORD"))
-                    .clientId("vcert-sdk")
+                    .clientId(TestUtils.CLIENT_ID)
                     .scope("certificate:manage,revoke,discover;configuration:manage")
                     .build();
 
@@ -340,7 +340,7 @@ class TppTokenConnectorAT {
 
     @Test
     void refreshToken() throws VCertException{
-        TokenInfo refreshInfo = classUnderTest.refreshAccessToken("vcert-sdk");
+        TokenInfo refreshInfo = classUnderTest.refreshAccessToken(TestUtils.CLIENT_ID);
 
         assertThat(refreshInfo).isNotNull();
         assertThat(refreshInfo.authorized()).isTrue();
@@ -359,7 +359,7 @@ class TppTokenConnectorAT {
             .build();
         classUnderTest.credentials(invalidCredentials);
 
-        TokenInfo info = classUnderTest.refreshAccessToken("vcert-sdk");
+        TokenInfo info = classUnderTest.refreshAccessToken(TestUtils.CLIENT_ID);
 
         assertThat(info).isNotNull();
         assertThat(info.authorized()).isFalse();

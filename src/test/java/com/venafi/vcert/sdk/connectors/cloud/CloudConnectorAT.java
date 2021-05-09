@@ -308,7 +308,7 @@ class CloudConnectorAT {
         String policyName = CloudTestUtils.getRandomZone();
 
         PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
-        policySpecification.policy().certificateAuthority(VCertConstants.CLOUD_ENTRUST_CA_NAME);
+        policySpecification.policy().certificateAuthority(TestUtils.CLOUD_ENTRUST_CA_NAME);
 
         classUnderTest.setPolicy(policyName, policySpecification);
 
@@ -332,7 +332,7 @@ class CloudConnectorAT {
         String policyName = CloudTestUtils.getRandomZone();
 
         PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
-        policySpecification.policy().certificateAuthority(VCertConstants.CLOUD_DIGICERT_CA_NAME);
+        policySpecification.policy().certificateAuthority(TestUtils.CLOUD_DIGICERT_CA_NAME);
 
         classUnderTest.setPolicy(policyName, policySpecification);
 

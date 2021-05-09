@@ -2,20 +2,18 @@ package com.venafi.vcert.sdk.connectors.tpp;
 
 import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.policy.domain.*;
-import com.venafi.vcert.sdk.utils.VCertConstants;
-import org.apache.commons.lang3.RandomStringUtils;
 
 public class TppTestUtils {
 
     public static String getRandomZone() {
-        return VCertConstants.TPP_PM_ROOT+"\\"+TestUtils.randomCITName();
+        return TestUtils.TPP_PM_ROOT+"\\"+TestUtils.randomCITName();
     }
 
     public static PolicySpecification getPolicySpecification() {
         PolicySpecification policySpecification = PolicySpecification.builder()
                 .policy( Policy.builder()
                         .domains(new String[]{"venafi.com","kwan.com"})
-                        .certificateAuthority(VCertConstants.TPP_CA_NAME)
+                        .certificateAuthority(TestUtils.TPP_CA_NAME)
                         .wildcardAllowed(true)
                         .subject( Subject.builder()
                                 .orgs(new String[]{"venafi"})
