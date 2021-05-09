@@ -82,7 +82,7 @@ public abstract class AbstractTppConnector {
             //verifying that the policy's parent exists
             String parentName = tppPolicy.getParentName();
             if(!parentName.equals(TppPolicyConstants.TPP_ROOT_PATH) && !TppConnectorUtils.dnExist(parentName, tppAPI))
-                throw new VCertException("The policy's parent doesn't exist");
+                throw new VCertException(String.format("The policy's parent %s doesn't exist", parentName));
 
             //creating the policy
             TppConnectorUtils.createPolicy( policyName, tppAPI );
