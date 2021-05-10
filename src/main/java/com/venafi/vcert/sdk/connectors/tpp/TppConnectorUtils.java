@@ -11,25 +11,6 @@ import java.util.List;
 
 public class TppConnectorUtils {
 
-  /*public static TPPPolicySpecificationConverter getConverter(String filePath) throws VCertException {
-
-    TPPPolicySpecificationConverter converter;
-
-    if (filePath != null) {
-      String fileExtension = filePath.substring(filePath.lastIndexOf(".") + 1);
-
-      String convertorKey = fileExtension.equals(VCertConstants.YAML_EXTENSION2) ?  VCertConstants.YAML_EXTENSION : fileExtension;
-
-      converter = TPPPolicySpecificationConverter.getInstance(convertorKey);
-
-      if (converter == null)
-        throw new VCertException("Format file is not supported");
-    } else
-      throw new VCertException("FilePath value is null");
-
-    return converter;
-  }*/
-
   public static boolean dnExist(String dn, TppAPI tppAPI) throws VCertException {
     try {
       DNIsValidResponse dnIsValidResponse = tppAPI.dnIsValid(new DNIsValidRequest(dn));
@@ -239,12 +220,6 @@ public class TppConnectorUtils {
 
     if(getPolicyResponse != null && getPolicyResponse.error() != null)
       throw new VCertException(getPolicyResponse.error());
-
-    // Contact
-    //tppPolicy.contact( getAttributeValues( tppPolicy.policyName(), TppPolicyConstants.TPP_CONTACT, String.class));
-
-    // Approver
-    //tppPolicy.approver( getAttributeValues( tppPolicy.policyName(), TppPolicyConstants.TPP_APPROVER, String.class));
 
     PolicyResponse policyResponse = getPolicyResponse.policy();
 

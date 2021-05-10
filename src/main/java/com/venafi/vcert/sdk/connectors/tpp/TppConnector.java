@@ -430,26 +430,6 @@ public class TppConnector extends AbstractTppConnector implements Connector {
     throw new UnsupportedOperationException("Method not yet implemented");
   }
 
-  /*@Override
-  public void setPolicy(String policyName, Path filePath) throws VCertException {
-    try {
-      TPPPolicy tppPolicy = TppConnectorUtils.getConverter(filePath.toString()).convertFromFile(filePath);
-      setPolicy(policyName, tppPolicy);
-    }catch (Exception e){
-      throw new VCertException(e);
-    }
-  }
-
-  @Override
-  public void setPolicy(String policyName, String policySpecificationString) throws VCertException {
-    try {
-      TPPPolicy tppPolicy = TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertFromString(policySpecificationString);
-      setPolicy(policyName, tppPolicy);
-    }catch (Exception e){
-      throw new VCertException(e);
-    }
-  }*/
-
   @Override
   public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
     try {
@@ -459,36 +439,6 @@ public class TppConnector extends AbstractTppConnector implements Connector {
       throw new VCertException(e);
     }
   }
-
-  /*@Override
-  public File getPolicySpecificationFile(String policyName, Path filePath) throws VCertException {
-    File policySpecificationFile;
-    try {
-      TPPPolicy tppPolicy = getPolicy(policyName);
-
-      policySpecificationFile = TppConnectorUtils.getConverter(filePath.toString()).convertToFile( tppPolicy, filePath );
-
-    }catch (Exception e){
-      throw new VCertException(e);
-    }
-
-    return policySpecificationFile;
-  }
-
-  @Override
-  public String getPolicySpecificationString(String policyName) throws VCertException {
-    String policySpecificationString;
-    try {
-      TPPPolicy tppPolicy = getPolicy(policyName);
-
-      policySpecificationString = TPPPolicySpecificationConverter.TPPPolicySpecificationJsonConverter.convertToString( tppPolicy );
-
-    }catch (Exception e){
-      throw new VCertException(e);
-    }
-
-    return policySpecificationString;
-  }*/
 
   @Override
   public PolicySpecification getPolicy(String policyName) throws VCertException {

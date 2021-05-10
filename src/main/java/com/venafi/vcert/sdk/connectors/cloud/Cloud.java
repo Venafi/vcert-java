@@ -79,7 +79,6 @@ public interface Cloud {
 
   @RequestLine("GET /v1/certificateauthorities/{CA}/accounts/{id}")
   @Headers("tppl-api-key: {apiKey}")
-  //CAAccountResponse getCAAccount(@Param("CA") String caName, @Param("id") String id, @Param("apiKey") String apiKey);
   CAAccount getCAAccount(@Param("CA") String caName, @Param("id") String id, @Param("apiKey") String apiKey);
 
   @RequestLine("GET /v1/certificateissuingtemplates")
@@ -89,10 +88,6 @@ public interface Cloud {
   @RequestLine("POST /v1/certificateissuingtemplates")
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
   CITsList createCIT(CertificateIssuingTemplate cit, @Param("apiKey") String apiKey);
-
-  /*@RequestLine("POST /v1/certificateissuingtemplates")
-  @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
-  CITsList createCIT(EntrustCIT cit, @Param("apiKey") String apiKey);*/
 
   @RequestLine("PUT /v1/certificateissuingtemplates/{id}")
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})

@@ -188,15 +188,7 @@ public interface TokenConnector {
      */
     Policy readPolicyConfiguration(String zone) throws VCertException;
 
-    //void setPolicy(String policyName, Path filePath) throws VCertException;
-
-    //void setPolicy(String policyName, String policySpecificationString ) throws VCertException;
-
     void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException;
-
-    //File getPolicySpecificationFile(String policyName, Path filePath) throws VCertException;
-
-    //String getPolicySpecificationString(String policyName) throws VCertException;
 
     PolicySpecification getPolicy(String policyName) throws VCertException;
 }
