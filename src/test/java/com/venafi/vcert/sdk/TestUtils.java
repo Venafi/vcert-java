@@ -47,7 +47,7 @@ public class TestUtils {
 	public static final String TPP_ZONE = "TPPZONE";
 	public static final String TPP_PM_ROOT = System.getenv("TPP_PM_ROOT");
 	public static final String TPP_CA_NAME = System.getenv("TPP_CA_NAME");
-	public static final String CLIENT_ID = System.getenv("CLIENT_ID");
+	public static final String CLIENT_ID = "vcert-sdk";
 	public static final String CLOUD_ZONE = "CLOUDZONE";
 	public static final String API_KEY = "APIKEY";
 	public static final String CLOUD_ENTRUST_CA_NAME = System.getenv("CLOUD_ENTRUST_CA_NAME");

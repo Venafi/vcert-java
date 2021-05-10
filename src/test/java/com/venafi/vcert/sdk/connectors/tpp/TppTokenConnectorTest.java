@@ -1,5 +1,6 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
+import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
@@ -7,9 +8,7 @@ import com.venafi.vcert.sdk.connectors.LockableValue;
 import com.venafi.vcert.sdk.connectors.LockableValues;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
-import com.venafi.vcert.sdk.connectors.cloud.CloudTestUtils;
 import com.venafi.vcert.sdk.endpoint.Authentication;
-import com.venafi.vcert.sdk.policy.converter.cloud.CloudPolicySpecificationValidator;
 import com.venafi.vcert.sdk.policy.converter.tpp.TPPPolicySpecificationValidator;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecificationConst;
@@ -219,7 +218,7 @@ public class TppTokenConnectorTest {
 
         when(tpp.refreshToken(any(AbstractTppConnector.RefreshTokenRequest.class))).thenReturn(tokenResponse);
 
-        TokenInfo newInfo = classUnderTest.refreshAccessToken("vcert-sdk");
+        TokenInfo newInfo = classUnderTest.refreshAccessToken(TestUtils.CLIENT_ID);
         assertNotNull(newInfo);
         assertThat(newInfo.authorized()).isTrue();
         assertThat(newInfo.errorMessage()).isNull();
@@ -237,7 +236,7 @@ public class TppTokenConnectorTest {
 
         when(tpp.refreshToken(any(AbstractTppConnector.RefreshTokenRequest.class))).thenThrow(new FeignException.BadRequest("400 Grant has been revoked, has expired, or the refresh token is invalid", request, null));
 
-        TokenInfo info = classUnderTest.refreshAccessToken("vcert-sdk");
+        TokenInfo info = classUnderTest.refreshAccessToken(TestUtils.CLIENT_ID);
         assertThat(info).isNotNull();
         assertThat(info.authorized()).isFalse();
         assertThat(info.errorMessage()).isNotNull();
