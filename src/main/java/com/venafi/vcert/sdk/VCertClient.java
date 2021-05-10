@@ -227,24 +227,6 @@ public class VCertClient implements Connector {
     }
   }
 
-  /*@Override
-  public void setPolicy(String policyName, Path filePath) throws VCertException {
-    try {
-      connector.setPolicy(policyName, filePath);
-    } catch (FeignException e) {
-      throw VCertException.fromFeignException(e);
-    }
-  }
-
-  @Override
-  public void setPolicy(String policyName, String policySpecificationString) throws VCertException {
-    try {
-      connector.setPolicy(policyName, policySpecificationString);
-    } catch (FeignException e) {
-      throw VCertException.fromFeignException(e);
-    }
-  }*/
-
   @Override
   public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
     try {
@@ -253,24 +235,6 @@ public class VCertClient implements Connector {
       throw VCertException.fromFeignException(e);
     }
   }
-
-  /*@Override
-  public File getPolicySpecificationFile(String policyName, Path filePath) throws VCertException {
-    try {
-      return connector.getPolicySpecificationFile(policyName, filePath);
-    } catch (FeignException e) {
-      throw VCertException.fromFeignException(e);
-    }
-  }
-
-  @Override
-  public String getPolicySpecificationString(String policyName) throws VCertException {
-    try {
-      return connector.getPolicySpecificationString(policyName);
-    } catch (FeignException e) {
-      throw VCertException.fromFeignException(e);
-    }
-  }*/
 
   @Override
   public PolicySpecification getPolicy(String policyName) throws VCertException {
