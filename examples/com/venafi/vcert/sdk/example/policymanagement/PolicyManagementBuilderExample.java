@@ -16,7 +16,7 @@ import com.venafi.vcert.sdk.policy.domain.Policy;
  * The following test is to show how to use the policy management feature
  * in order to create/update and get a policy for both TPP and Cloud (OutagePredict)
  */
-public class PolicyManagementBuilderTest {
+public class PolicyManagementBuilderExample {
 
     public static void main(String args[]){
 
@@ -56,7 +56,7 @@ public class PolicyManagementBuilderTest {
                             .build())
                     .build();
 
-            //2. Get a VCertClient. For this time, it will used a VCertClient for TPP.
+            //2. Get a VCertClient. For this time, it is being to use a VCertClient for TPP.
             Authentication auth = Authentication.builder()
                     .user(user)
                     .password(password)
@@ -74,15 +74,15 @@ public class PolicyManagementBuilderTest {
             client.getAccessToken(auth);
 
             //3. Use the VCertClient method setPolicy() to set a Policy.
-            // If the the policy doesn't exist then that will be created.
-            // If the the policy exists then it will updated.
+            // If the the policy doesn't exist then it will be created.
+            // If the the policy exists then it will be updated.
 
             client.setPolicy(policyName, policySpecification);
 
             //4. You can get the Policy which you created/updated using the getPolicy method
             PolicySpecification policyTemp = client.getPolicy(policyName);
 
-            //5. then use it to write it in Yaml format.
+            //5. Then use it to write it in Yaml format.
             // This time we will use the Jackson parser to get the Yaml string.
             // You can learn more about Jackson parser in https://github.com/FasterXML/jackson
             //and http://tutorials.jenkov.com/java-json/jackson-objectmapper.html
