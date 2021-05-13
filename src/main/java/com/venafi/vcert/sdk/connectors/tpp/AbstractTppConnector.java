@@ -1,20 +1,18 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.annotations.SerializedName;
+import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
 
+import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
-
 
 public abstract class AbstractTppConnector {
     protected static final Pattern POLICY_REGEX = Pattern.compile("^\\\\VED\\\\Policy");
@@ -24,12 +22,6 @@ public abstract class AbstractTppConnector {
     protected static final String MISSING_CREDENTIALS_MESSAGE = FAILED_TO_AUTHENTICATE_MESSAGE + "missing credentials";
     protected static final String MISSING_REFRESH_TOKEN_MESSAGE = FAILED_TO_AUTHENTICATE_MESSAGE + "missing refresh token";
     protected static final String MISSING_ACCESS_TOKEN_MESSAGE = FAILED_TO_AUTHENTICATE_MESSAGE + "missing access token";
-
-    protected final Tpp tpp;
-
-    @Getter
-    protected String zone;
-    protected String vendorAndProductName;
     protected static final String TPP_ATTRIBUTE_MANAGEMENT_TYPE = "Management Type";
     protected static final String TPP_ATTRIBUTE_MANUAL_CSR = "Manual Csr";
 
@@ -47,9 +39,21 @@ public abstract class AbstractTppConnector {
         }
     };
 
+    protected final Tpp tpp;
+
+    @Getter
+    protected String zone;
+    protected String vendorAndProductName;
+
+    protected TppAPI tppAPI;
+
     public AbstractTppConnector(Tpp tpp) {
+
         this.tpp = tpp;
+        this.tppAPI = getTppAPI();
     }
+
+    protected abstract TppAPI getTppAPI();
 
     @VisibleForTesting
     String getPolicyDN(final String zone) {
@@ -62,6 +66,47 @@ public abstract class AbstractTppConnector {
             result = "\\VED\\Policy" + result;
         }
         return result;
+    }
+
+    public void setPolicy(String policyName, TPPPolicy tppPolicy) throws VCertException {
+
+        //ensuring that the policy name starts with the tpp_root_path
+        if (!policyName.startsWith(TppPolicyConstants.TPP_ROOT_PATH))
+            policyName = TppPolicyConstants.TPP_ROOT_PATH + policyName;
+
+        tppPolicy.policyName( policyName );
+
+        //if the policy doesn't exist
+        if(!TppConnectorUtils.dnExist(policyName, tppAPI)){
+
+            //verifying that the policy's parent exists
+            String parentName = tppPolicy.getParentName();
+            if(!parentName.equals(TppPolicyConstants.TPP_ROOT_PATH) && !TppConnectorUtils.dnExist(parentName, tppAPI))
+                throw new VCertException(String.format("The policy's parent %s doesn't exist", parentName));
+
+            //creating the policy
+            TppConnectorUtils.createPolicy( policyName, tppAPI );
+        } else
+            TppConnectorUtils.resetAttributes(policyName, tppAPI);
+
+        //creating policy's attributes.
+        TppConnectorUtils.setPolicyAttributes(tppPolicy, tppAPI);
+    }
+
+    public TPPPolicy getTPPPolicy(String policyName) throws VCertException {
+
+        TPPPolicy tppPolicy = new TPPPolicy();
+
+        //ensuring that the policy name starts with the tpp_root_path
+        if (!policyName.startsWith(TppPolicyConstants.TPP_ROOT_PATH))
+            policyName = TppPolicyConstants.TPP_ROOT_PATH + policyName;
+
+        tppPolicy.policyName( policyName );
+
+        //populating the tppPolicy
+        TppConnectorUtils.populatePolicy(tppPolicy, tppAPI);
+
+        return tppPolicy;
     }
 
     @Data

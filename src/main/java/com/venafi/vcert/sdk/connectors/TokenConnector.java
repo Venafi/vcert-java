@@ -6,6 +6,7 @@ import com.venafi.vcert.sdk.certificate.*;
 import com.venafi.vcert.sdk.connectors.tpp.TokenInfo;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 
 public interface TokenConnector {
 
@@ -186,4 +187,8 @@ public interface TokenConnector {
      * @throws VCertException
      */
     Policy readPolicyConfiguration(String zone) throws VCertException;
+
+    void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException;
+
+    PolicySpecification getPolicy(String policyName) throws VCertException;
 }

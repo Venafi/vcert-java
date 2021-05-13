@@ -4,6 +4,7 @@ import static java.lang.String.format;
 import static java.time.Duration.ZERO;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -17,6 +18,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.venafi.vcert.sdk.connectors.cloud.domain.*;
+import com.venafi.vcert.sdk.policy.api.domain.CloudPolicy;
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
+import com.venafi.vcert.sdk.policy.converter.CloudPolicySpecificationConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Strings;
 
@@ -35,10 +40,6 @@ import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
-import com.venafi.vcert.sdk.connectors.cloud.domain.Application;
-import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateDetails;
-import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
-import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.VCertUtils;
@@ -119,7 +120,6 @@ public class CloudConnector implements Connector {
 	    if((appName != null && appName != "") && (citAlias != null && citAlias != "")) {
 	    	
 	    	 cit = cloud.certificateIssuingTemplateByAppNameAndCitAlias(appName, citAlias, auth.apiKey());
-	    	 
 	    	
 	    }else {
 	    	  throw new VCertException("The parameters: appName, citAlias or both are empty");
@@ -442,6 +442,29 @@ public class CloudConnector implements Connector {
   @Override
   public Policy readPolicyConfiguration(String zone) throws VCertException {
     throw new UnsupportedOperationException("Method not yet implemented");
+  }
+
+  @Override
+  public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
+    try {
+      CloudPolicy cloudPolicy = CloudPolicySpecificationConverter.INSTANCE.convertFromPolicySpecification(policySpecification);
+      CloudConnectorUtils.setCit(policyName, cloudPolicy.certificateIssuingTemplate(), cloudPolicy.caInfo(), auth.apiKey(), cloud);
+    } catch ( Exception e ) {
+      throw new VCertException(e);
+    }
+  }
+
+  @Override
+  public PolicySpecification getPolicy(String policyName) throws VCertException {
+    PolicySpecification policySpecification;
+    try {
+      CloudPolicy cloudPolicy = CloudConnectorUtils.getCloudPolicy( policyName, auth.apiKey(), cloud );
+      policySpecification = CloudPolicySpecificationConverter.INSTANCE.convertToPolicySpecification( cloudPolicy );
+    }catch (Exception e){
+      throw new VCertException(e);
+    }
+
+    return policySpecification;
   }
 
   private Cloud.CertificateSearchResponse searchCertificates(Cloud.SearchRequest searchRequest) {

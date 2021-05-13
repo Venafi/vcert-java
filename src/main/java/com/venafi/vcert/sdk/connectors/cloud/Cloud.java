@@ -1,6 +1,5 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
-
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -14,6 +13,7 @@ import com.venafi.vcert.sdk.connectors.cloud.domain.Application;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateDetails;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
+import com.venafi.vcert.sdk.connectors.cloud.endpoint.*;
 import com.venafi.vcert.sdk.utils.FeignUtils;
 
 import feign.Headers;
@@ -72,6 +72,34 @@ public interface Cloud {
   @RequestLine("GET ping")
   @Headers("x-venafi-api-key: {apiKey}")
   Response ping(@Param("apiKey") String apiKey);
+
+  @RequestLine("GET /v1/certificateauthorities/{CA}/accounts")
+  @Headers("tppl-api-key: {apiKey}")
+  CAAccountsList getCAAccounts(@Param("CA") String caName, @Param("apiKey") String apiKey);
+
+  @RequestLine("GET /v1/certificateauthorities/{CA}/accounts/{id}")
+  @Headers("tppl-api-key: {apiKey}")
+  CAAccount getCAAccount(@Param("CA") String caName, @Param("id") String id, @Param("apiKey") String apiKey);
+
+  @RequestLine("GET /v1/certificateissuingtemplates")
+  @Headers("tppl-api-key: {apiKey}")
+  CITsList getCITs(@Param("apiKey") String apiKey);
+
+  @RequestLine("POST /v1/certificateissuingtemplates")
+  @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+  CITsList createCIT(CertificateIssuingTemplate cit, @Param("apiKey") String apiKey);
+
+  @RequestLine("PUT /v1/certificateissuingtemplates/{id}")
+  @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+  CertificateIssuingTemplate updateCIT(CertificateIssuingTemplate cit, @Param("id") String id, @Param("apiKey") String apiKey);
+
+  @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+  @RequestLine("POST /outagedetection/v1/applications")
+  ApplicationsList createApplication(Application application, @Param("apiKey") String apiKey);
+
+  @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+  @RequestLine("PUT /outagedetection/v1/applications/{id}")
+  Application updateApplication(Application application, @Param("id") String id, @Param("apiKey") String apiKey);
 
   static Cloud connect(String baseUrl) {
     return FeignUtils.client(Cloud.class, 

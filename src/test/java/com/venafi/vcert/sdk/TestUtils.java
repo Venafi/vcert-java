@@ -45,9 +45,15 @@ public class TestUtils {
 	public static final String TPP_PASSWORD = "TPPPASSWORD";
 	public static final String TPP_TOKEN_URL = "TPP_TOKEN_URL";
 	public static final String TPP_ZONE = "TPPZONE";
+	public static final String TPP_PM_ROOT = System.getenv("TPP_PM_ROOT");
+	public static final String TPP_CA_NAME = System.getenv("TPP_CA_NAME");
+	public static final String CLIENT_ID = "vcert-sdk";
 	public static final String CLOUD_ZONE = "CLOUDZONE";
 	public static final String API_KEY = "APIKEY";
-	
+	public static final String CLOUD_ENTRUST_CA_NAME = System.getenv("CLOUD_ENTRUST_CA_NAME");
+	public static final String CLOUD_DIGICERT_CA_NAME = System.getenv("CLOUD_DIGICERT_CA_NAME");
+
+
 	private static String loadFileContents(String name) throws IOException {
 		ClassLoader classLoader = TestUtils.class.getClassLoader();
 		return new String(Files.readAllBytes(Paths.get(classLoader.getResource(name).getPath())));
@@ -124,7 +130,11 @@ public class TestUtils {
 		return String.format("t%d-%s.venafi.example.com", System.currentTimeMillis(),
 				RandomStringUtils.randomAlphabetic(4));
 	}
-	
+
+	public static String randomCITName() {
+		return String.format("t%d-%s-CIT-test", System.currentTimeMillis(),
+				RandomStringUtils.randomAlphabetic(4));
+	}
 	
 	public static String getAccessToken() throws VCertException {
 		String accesToken = "";

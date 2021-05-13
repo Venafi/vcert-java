@@ -1,6 +1,7 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -19,6 +20,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 
+import com.venafi.vcert.sdk.policy.domain.*;
+import com.venafi.vcert.sdk.utils.VCertConstants;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
@@ -47,228 +50,302 @@ import feign.FeignException;
 
 class CloudConnectorAT {
 
-  private CloudConnector classUnderTest;
+    private CloudConnector classUnderTest;
 
-  @BeforeEach
-  public void authenticate() throws VCertException {
-    Security.addProvider(new BouncyCastleProvider());
-    Cloud cloud = Cloud.connect(System.getenv("CLOUDURL"));
-    classUnderTest = new CloudConnector(cloud);
-    Authentication authentication = new Authentication(null, null, System.getenv("APIKEY"));
-    classUnderTest.authenticate(authentication);
-  }
-
-  @Test
-  void readZoneConfiguration() throws VCertException {
-    try {
-      classUnderTest.readZoneConfiguration(System.getenv("CLOUDZONE"));
-    } catch (FeignException fe) {
-      throw VCertException.fromFeignException(fe);
+    @BeforeEach
+    public void authenticate() throws VCertException {
+        Security.addProvider(new BouncyCastleProvider());
+        Cloud cloud = Cloud.connect(System.getenv("CLOUDURL"));
+        classUnderTest = new CloudConnector(cloud);
+        Authentication authentication = new Authentication(null, null, System.getenv("APIKEY"));
+        classUnderTest.authenticate(authentication);
     }
-  }
 
-  @Test
-  void generateRequest() throws VCertException, IOException {
-    String zoneName = System.getenv("CLOUDZONE");
-    String commonName = TestUtils.randomCN();
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
-    CertificateRequest certificateRequest = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(commonName)
-            .organization(Collections.singletonList("Venafi, Inc."))
-            .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
-            .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
-            .province(Collections.singletonList("Utah")))
-        .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
-        .keyType(KeyType.RSA);
+    @Test
+    void readZoneConfiguration() throws VCertException {
+        try {
+            classUnderTest.readZoneConfiguration(System.getenv("CLOUDZONE"));
+        } catch (FeignException fe) {
+            throw VCertException.fromFeignException(fe);
+        }
+    }
 
-    certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    assertThat(certificateRequest.csr()).isNotEmpty();
+    @Test
+    void generateRequest() throws VCertException, IOException {
+        String zoneName = System.getenv("CLOUDZONE");
+        String commonName = TestUtils.randomCN();
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
+        CertificateRequest certificateRequest = new CertificateRequest()
+                .subject(new CertificateRequest.PKIXName().commonName(commonName)
+                        .organization(Collections.singletonList("Venafi, Inc."))
+                        .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
+                        .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
+                        .province(Collections.singletonList("Utah")))
+                .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
+                .keyType(KeyType.RSA);
 
-    PKCS10CertificationRequest request = (PKCS10CertificationRequest) new PEMParser(
-        new StringReader(Strings.fromByteArray(certificateRequest.csr()))).readObject();
+        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
+        assertThat(certificateRequest.csr()).isNotEmpty();
 
-    String subject = request.getSubject().toString();
-    assertThat(subject).contains(String.format("CN=%s", commonName));
-    assertThat(subject).contains("O=Venafi\\, Inc.");
-    assertThat(subject).contains("OU=Engineering");
-    assertThat(subject).contains("OU=Automated Tests");
-    assertThat(subject).contains("C=US");
-    assertThat(subject).contains("L=SLC");
-    assertThat(subject).contains("ST=Utah");
-  }
+        PKCS10CertificationRequest request = (PKCS10CertificationRequest) new PEMParser(
+                new StringReader(Strings.fromByteArray(certificateRequest.csr()))).readObject();
 
-  @Test
-  void requestCertificate() throws VCertException, UnknownHostException {
-    String zoneName = System.getenv("CLOUDZONE");
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
-    CertificateRequest certificateRequest = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
-            .organization(Collections.singletonList("Venafi, Inc."))
-            .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
-            .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
-            .province(Collections.singletonList("Utah")))
-        .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
-        .keyType(KeyType.RSA);
-    certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
-    assertThat(certificateId).isNotNull();
-  }
+        String subject = request.getSubject().toString();
+        assertThat(subject).contains(String.format("CN=%s", commonName));
+        assertThat(subject).contains("O=Venafi\\, Inc.");
+        assertThat(subject).contains("OU=Engineering");
+        assertThat(subject).contains("OU=Automated Tests");
+        assertThat(subject).contains("C=US");
+        assertThat(subject).contains("L=SLC");
+        assertThat(subject).contains("ST=Utah");
+    }
 
-  @Test
-  void requestCertificateUnrestricted() throws VCertException, UnknownHostException {
-    String zoneName = System.getenv("CLOUDZONE");
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
-    CertificateRequest certificateRequest = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN()).
-        		organizationalUnit(Arrays.asList("DevOps")))
-        .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
-        .keyType(KeyType.RSA)
-        .keyLength(2048);
-    certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
-    assertThat(certificateId).isNotNull();
-  }
+    @Test
+    void requestCertificate() throws VCertException, UnknownHostException {
+        String zoneName = System.getenv("CLOUDZONE");
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
+        CertificateRequest certificateRequest = new CertificateRequest()
+                .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
+                        .organization(Collections.singletonList("Venafi, Inc."))
+                        .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
+                        .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
+                        .province(Collections.singletonList("Utah")))
+                .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
+                .keyType(KeyType.RSA);
+        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
+        String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
+        assertThat(certificateId).isNotNull();
+    }
 
-  @Test
-  void retrieveCertificate() throws VCertException, UnknownHostException {
-    String zoneName = System.getenv("CLOUDZONE");
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
-    CertificateRequest certificateRequest = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
-            .organization(Collections.singletonList("Venafi, Inc."))
-            .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
-            .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
-            .province(Collections.singletonList("Utah")))
-        .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
-        .keyType(KeyType.RSA);
+    @Test
+    void requestCertificateUnrestricted() throws VCertException, UnknownHostException {
+        String zoneName = System.getenv("CLOUDZONE");
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
+        CertificateRequest certificateRequest = new CertificateRequest()
+                .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN()).
+                        organizationalUnit(Arrays.asList("DevOps")))
+                .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
+                .keyType(KeyType.RSA)
+                .keyLength(2048);
+        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
+        String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
+        assertThat(certificateId).isNotNull();
+    }
 
-    certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
-    assertThat(certificateId).isNotNull();
+    @Test
+    void retrieveCertificate() throws VCertException, UnknownHostException {
+        String zoneName = System.getenv("CLOUDZONE");
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
+        CertificateRequest certificateRequest = new CertificateRequest()
+                .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
+                        .organization(Collections.singletonList("Venafi, Inc."))
+                        .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
+                        .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
+                        .province(Collections.singletonList("Utah")))
+                .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
+                .keyType(KeyType.RSA);
 
-    certificateRequest.pickupId(certificateId);
-    PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest);
+        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
+        String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
+        assertThat(certificateId).isNotNull();
 
-    assertThat(pemCollection.certificate()).isNotNull();
-    assertThat(pemCollection.chain()).hasSize(2);
-    assertThat(pemCollection.privateKey()).isNotNull();
-  }
+        certificateRequest.pickupId(certificateId);
+        PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest);
 
-  @Test
-  void revokeCertificate() throws VCertException {
-    assertThrows(UnsupportedOperationException.class, () -> {
-      classUnderTest.revokeCertificate(new RevocationRequest());
-    });
-  }
+        assertThat(pemCollection.certificate()).isNotNull();
+        assertThat(pemCollection.chain()).hasSize(2);
+        assertThat(pemCollection.privateKey()).isNotNull();
+    }
 
-  @Test
-  void renewCertificate() throws VCertException, UnknownHostException,
-      CertificateException {
-    String zoneName = System.getenv("CLOUDZONE");
-    String commonName = TestUtils.randomCN();
-    ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
-    CertificateRequest certificateRequest = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(commonName)
-            .organization(Collections.singletonList("Venafi, Inc."))
-            .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
-            .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
-            .province(Collections.singletonList("Utah")))
-        .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
-        .keyType(KeyType.RSA);
+    @Test
+    void revokeCertificate() throws VCertException {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            classUnderTest.revokeCertificate(new RevocationRequest());
+        });
+    }
 
-    certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
-    String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
-    assertThat(certificateId).isNotNull();
+    @Test
+    void renewCertificate() throws VCertException, UnknownHostException,
+            CertificateException {
+        String zoneName = System.getenv("CLOUDZONE");
+        String commonName = TestUtils.randomCN();
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
+        CertificateRequest certificateRequest = new CertificateRequest()
+                .subject(new CertificateRequest.PKIXName().commonName(commonName)
+                        .organization(Collections.singletonList("Venafi, Inc."))
+                        .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
+                        .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
+                        .province(Collections.singletonList("Utah")))
+                .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
+                .keyType(KeyType.RSA);
 
-    certificateRequest.pickupId(certificateId);
+        certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
+        String certificateId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
+        assertThat(certificateId).isNotNull();
 
-    PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest);
-    X509Certificate cert = (X509Certificate) pemCollection.certificate();
+        certificateRequest.pickupId(certificateId);
 
-    String thumbprint = DigestUtils.sha1Hex(cert.getEncoded()).toUpperCase();
+        PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest);
+        X509Certificate cert = (X509Certificate) pemCollection.certificate();
 
-    CertificateRequest certificateRequestToRenew = new CertificateRequest()
-        .subject(new CertificateRequest.PKIXName().commonName(commonName)
-            .organization(Collections.singletonList("Venafi, Inc."))
-            .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
-            .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
-            .province(Collections.singletonList("Utah")))
-        .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
-        .keyType(KeyType.RSA);
-    classUnderTest.generateRequest(zoneConfiguration, certificateRequestToRenew);
+        String thumbprint = DigestUtils.sha1Hex(cert.getEncoded()).toUpperCase();
 
-    String renewRequestId = classUnderTest.renewCertificate(
-        new RenewalRequest().request(certificateRequestToRenew).thumbprint(thumbprint));
+        CertificateRequest certificateRequestToRenew = new CertificateRequest()
+                .subject(new CertificateRequest.PKIXName().commonName(commonName)
+                        .organization(Collections.singletonList("Venafi, Inc."))
+                        .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
+                        .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
+                        .province(Collections.singletonList("Utah")))
+                .dnsNames(Collections.singletonList(InetAddress.getLocalHost().getHostName()))
+                .keyType(KeyType.RSA);
+        classUnderTest.generateRequest(zoneConfiguration, certificateRequestToRenew);
 
-    assertThat(renewRequestId).isNotNull();
-  }
+        String renewRequestId = classUnderTest.renewCertificate(
+                new RenewalRequest().request(certificateRequestToRenew).thumbprint(thumbprint));
 
-  @Test
-  void importCertificate() {
-    assertThrows(UnsupportedOperationException.class,
-        () -> classUnderTest.importCertificate(new ImportRequest()));
-  }
+        assertThat(renewRequestId).isNotNull();
+    }
 
-  @Test
-  void readPolicyConfiguration() {
-    assertThrows(UnsupportedOperationException.class,
-        () -> classUnderTest.readPolicyConfiguration("zone"));
-  }
-  
-  @Test
-  @DisplayName("Create a cerfiticate and validate specified validity hours - Cloud")
-  public void createCertificateValidateValidityHours() throws VCertException {
+    @Test
+    void importCertificate() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> classUnderTest.importCertificate(new ImportRequest()));
+    }
 
-	  String zone = System.getenv(TestUtils.CLOUD_ZONE);
-	  String apiKey = System.getenv(TestUtils.API_KEY);
+    @Test
+    void readPolicyConfiguration() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> classUnderTest.readPolicyConfiguration("zone"));
+    }
 
-	  String commonName = TestUtils.randomCN();
+    @Test
+    @DisplayName("Create a certificate and validate specified validity hours - Cloud")
+    public void createCertificateValidateValidityHours() throws VCertException {
 
-	  final Authentication auth = Authentication.builder()
-			  .apiKey(apiKey)
-			  .build();
+        String zone = System.getenv(TestUtils.CLOUD_ZONE);
+        String apiKey = System.getenv(TestUtils.API_KEY);
 
-	  final Config config = Config.builder()
-			  .connectorType(ConnectorType.CLOUD)
-			  .build();
+        String commonName = TestUtils.randomCN();
 
-	  final VCertClient client = new VCertClient(config);
-	  client.authenticate(auth);
+        final Authentication auth = Authentication.builder()
+                .apiKey(apiKey)
+                .build();
 
-	  CertificateRequest certificateRequest = new CertificateRequest().subject(
-			  new CertificateRequest.PKIXName()
-			  .commonName(commonName)
-			  .organization(Collections.singletonList("Venafi"))
-			  .organizationalUnit(Arrays.asList("DevOps"))
-			  .country(Collections.singletonList("US"))
-			  .locality(Collections.singletonList("Salt Lake City"))
-			  .province(Collections.singletonList("Utah")))
-			  .keyType(KeyType.RSA)
-			  .validityHours(TestUtils.VALID_HOURS);
+        final Config config = Config.builder()
+                .connectorType(ConnectorType.CLOUD)
+                .build();
 
-	  ZoneConfiguration zoneConfiguration = client.readZoneConfiguration(zone);
-	  certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);
+        final VCertClient client = new VCertClient(config);
+        client.authenticate(auth);
 
-	  // Submit the certificate request
-	  client.requestCertificate(certificateRequest, zoneConfiguration);
+        CertificateRequest certificateRequest = new CertificateRequest().subject(
+                new CertificateRequest.PKIXName()
+                        .commonName(commonName)
+                        .organization(Collections.singletonList("Venafi"))
+                        .organizationalUnit(Arrays.asList("DevOps"))
+                        .country(Collections.singletonList("US"))
+                        .locality(Collections.singletonList("Salt Lake City"))
+                        .province(Collections.singletonList("Utah")))
+                .keyType(KeyType.RSA)
+                .validityHours(TestUtils.VALID_HOURS);
 
-	  // Retrieve PEM collection from Venafi
-	  PEMCollection pemCollection = client.retrieveCertificate(certificateRequest);
+        ZoneConfiguration zoneConfiguration = client.readZoneConfiguration(zone);
+        certificateRequest = client.generateRequest(zoneConfiguration, certificateRequest);
 
-	  Date notAfter = pemCollection.certificate().getNotAfter();
-	  LocalDate notAfterDate = notAfter.toInstant().atOffset(ZoneOffset.UTC).toLocalDate();
+        // Submit the certificate request
+        client.requestCertificate(certificateRequest, zoneConfiguration);
+
+        // Retrieve PEM collection from Venafi
+        PEMCollection pemCollection = client.retrieveCertificate(certificateRequest);
+
+        Date notAfter = pemCollection.certificate().getNotAfter();
+        LocalDate notAfterDate = notAfter.toInstant().atOffset(ZoneOffset.UTC).toLocalDate();
 
 
-	  Instant now = Instant.now();
-	  LocalDateTime utcDateTime = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
+        Instant now = Instant.now();
+        LocalDateTime utcDateTime = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
 
-	  int validityDays = VCertUtils.getValidityDays(TestUtils.VALID_HOURS);
-	  utcDateTime = utcDateTime.plusDays(validityDays);
+        int validityDays = VCertUtils.getValidityDays(TestUtils.VALID_HOURS);
+        utcDateTime = utcDateTime.plusDays(validityDays);
 
-	  LocalDate nowDateInUTC = utcDateTime.toLocalDate();
+        LocalDate nowDateInUTC = utcDateTime.toLocalDate();
 
-	  //Dates should be equals if not then it will fail
-	  assertTrue(notAfterDate.compareTo(nowDateInUTC) == 0);
+        //Dates should be equals if not then it will fail
+        assertTrue(notAfterDate.compareTo(nowDateInUTC) == 0);
 
-  }
+    }
+
+    @Test
+    @DisplayName("Cloud - Testing the setPolicy() and getPolicy() methods")
+    public void createAndGetPolicy() throws VCertException {
+
+        String policyName = CloudTestUtils.getRandomZone();
+
+        PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
+
+        classUnderTest.setPolicy(policyName, policySpecification);
+
+        PolicySpecification policySpecificationReturned = classUnderTest.getPolicy(policyName);
+
+        //The original domain values will be converted to regex values when the PolicySpecification is set
+        // so therefore the domain values are updated in order to match with the expected ones
+        policySpecification.policy().domains(new String[]{"[*A-Za-z]{1}[A-Za-z0-9.-]*\\.venafi\\.com", "[*A-Za-z]{1}[A-Za-z0-9.-]*\\.kwan\\.com"});
+
+        //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
+        //due it doesn't contain it
+        policySpecification.name(policySpecificationReturned.name());
+        //The returned policySpecification will contains the default cloud CA, then it will needed
+        //to set it to the policySpecification source
+        policySpecification.policy().certificateAuthority(VCertConstants.CLOUD_DEFAULT_CA);
+
+        assertEquals(policySpecification, policySpecificationReturned);
+    }
+
+    @Test
+    @DisplayName("Cloud - Testing the setPolicy() and getPolicy() methods for Entrust CA")
+    public void createAndGetPolicyForEntrust() throws VCertException {
+
+        String policyName = CloudTestUtils.getRandomZone();
+
+        PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
+        policySpecification.policy().certificateAuthority(TestUtils.CLOUD_ENTRUST_CA_NAME);
+
+        classUnderTest.setPolicy(policyName, policySpecification);
+
+        PolicySpecification policySpecificationReturned = classUnderTest.getPolicy(policyName);
+
+        //The original domain values will be converted to regex values when the PolicySpecification is set
+        // so therefore the domain values are updated in order to match with the expected ones
+        policySpecification.policy().domains(new String[]{"[*A-Za-z]{1}[A-Za-z0-9.-]*\\.venafi\\.com", "[*A-Za-z]{1}[A-Za-z0-9.-]*\\.kwan\\.com"});
+
+        //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
+        //due it doesn't contain it
+        policySpecification.name(policySpecificationReturned.name());
+
+        assertEquals(policySpecification, policySpecificationReturned);
+    }
+
+    @Test
+    @DisplayName("Cloud - Testing the setPolicy() and getPolicy() methods for Digicert CA")
+    public void createAndGetPolicyForDigicert() throws VCertException {
+
+        String policyName = CloudTestUtils.getRandomZone();
+
+        PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
+        policySpecification.policy().certificateAuthority(TestUtils.CLOUD_DIGICERT_CA_NAME);
+
+        classUnderTest.setPolicy(policyName, policySpecification);
+
+        PolicySpecification policySpecificationReturned = classUnderTest.getPolicy(policyName);
+
+        //The original domain values will be converted to regex values when the PolicySpecification is set
+        // so therefore the domain values are updated in order to match with the expected ones
+        policySpecification.policy().domains(new String[]{"[*A-Za-z]{1}[A-Za-z0-9.-]*\\.venafi\\.com", "[*A-Za-z]{1}[A-Za-z0-9.-]*\\.kwan\\.com"});
+
+        //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
+        //due it doesn't contain it
+        policySpecification.name(policySpecificationReturned.name());
+
+        assertEquals(policySpecification, policySpecificationReturned);
+    }
 }

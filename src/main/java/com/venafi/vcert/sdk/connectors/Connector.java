@@ -9,6 +9,7 @@ import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 
 public interface Connector {
 
@@ -146,4 +147,8 @@ public interface Connector {
    * @throws VCertException
    */
   Policy readPolicyConfiguration(String zone) throws VCertException;
+
+  void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException;
+
+  PolicySpecification getPolicy(String policyName) throws VCertException;
 }

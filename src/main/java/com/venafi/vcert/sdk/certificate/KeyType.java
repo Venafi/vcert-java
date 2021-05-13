@@ -1,10 +1,12 @@
 package com.venafi.vcert.sdk.certificate;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.List;
 
 public enum KeyType {
-  RSA, ECDSA;
+  RSA("rsa"), ECDSA("ecdsa");
 
   public static KeyType from(String value) {
     switch (value.toLowerCase()) {
@@ -17,6 +19,13 @@ public enum KeyType {
       default:
         throw new IllegalArgumentException(String.format("unknown key type: %s", value));
     }
+  }
+
+  @Getter
+  private final String value;
+
+  KeyType(String value) {
+    this.value = value;
   }
 
   public PublicKeyAlgorithm X509Type() {

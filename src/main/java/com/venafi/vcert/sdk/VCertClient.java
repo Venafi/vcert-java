@@ -1,8 +1,10 @@
 package com.venafi.vcert.sdk;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import java.security.Security;
 import com.google.common.annotations.VisibleForTesting;
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 import feign.FeignException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
@@ -220,6 +222,24 @@ public class VCertClient implements Connector {
   public Policy readPolicyConfiguration(String zone) throws VCertException {
     try {
       return connector.readPolicyConfiguration(zone);
+    } catch (FeignException e) {
+      throw VCertException.fromFeignException(e);
+    }
+  }
+
+  @Override
+  public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
+    try {
+      connector.setPolicy(policyName, policySpecification);
+    } catch (FeignException e) {
+      throw VCertException.fromFeignException(e);
+    }
+  }
+
+  @Override
+  public PolicySpecification getPolicy(String policyName) throws VCertException {
+    try {
+      return connector.getPolicy(policyName);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
     }

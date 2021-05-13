@@ -38,8 +38,12 @@ import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
+import com.venafi.vcert.sdk.policy.converter.TPPPolicySpecificationConverter;
 import com.venafi.vcert.sdk.utils.Is;
 import com.venafi.vcert.sdk.utils.VCertUtils;
 
@@ -52,6 +56,8 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   OffsetDateTime bestBeforeEnd;
   @Getter
   private String apiKey;
+
+  private TppAPI tppAPI;
 
   public TppConnector(Tpp tpp) {
     super(tpp);
@@ -422,5 +428,78 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   @Override
   public Policy readPolicyConfiguration(String zone) throws VCertException {
     throw new UnsupportedOperationException("Method not yet implemented");
+  }
+
+  @Override
+  public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
+    try {
+      TPPPolicy tppPolicy = TPPPolicySpecificationConverter.INSTANCE.convertFromPolicySpecification(policySpecification);
+      setPolicy(policyName, tppPolicy);
+    }catch (Exception e){
+      throw new VCertException(e);
+    }
+  }
+
+  @Override
+  public PolicySpecification getPolicy(String policyName) throws VCertException {
+    PolicySpecification policySpecification;
+    try {
+      TPPPolicy tppPolicy = getTPPPolicy(policyName);
+
+      policySpecification = TPPPolicySpecificationConverter.INSTANCE.convertToPolicySpecification( tppPolicy );
+
+    }catch (Exception e){
+      throw new VCertException(e);
+    }
+
+    return policySpecification;
+  }
+
+  @Override
+  protected TppAPI getTppAPI() {
+
+    if(tppAPI == null){
+      tppAPI = new TppAPI(tpp) {
+
+        @Override
+        String getAuthKey() throws VCertException {
+          if(apiKey() == null)
+            throw new VCertException("API Key is null");
+
+          return apiKey();
+        }
+
+        @Override
+        public DNIsValidResponse dnIsValid(DNIsValidRequest request) throws VCertException {
+          return tpp.dnIsValid(request, getAuthKey());
+        }
+
+        @Override
+        CreateDNResponse createDN(CreateDNRequest request) throws VCertException {
+          return tpp.createDN(request, getAuthKey());
+        }
+
+        @Override
+        SetPolicyAttributeResponse setPolicyAttribute(SetPolicyAttributeRequest request) throws VCertException {
+          return tpp.setPolicyAttribute(request, getAuthKey());
+        }
+
+        @Override
+        GetPolicyAttributeResponse getPolicyAttribute(GetPolicyAttributeRequest request) throws VCertException {
+          return tpp.getPolicyAttribute(request, getAuthKey());
+        }
+
+        @Override
+        GetPolicyResponse getPolicy(GetPolicyRequest request) throws VCertException {
+          return tpp.getPolicy(request, getAuthKey());
+        }
+
+        @Override
+        Response clearPolicyAttribute(ClearPolicyAttributeRequest request) throws VCertException {
+          return tpp.clearPolicyAttribute(request, getAuthKey());
+        }
+      };
+    }
+    return tppAPI;
   }
 }

@@ -12,6 +12,7 @@ import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.AllowedKeyConfiguration;
+import lombok.NoArgsConstructor;
 
 @Data
 public class CertificateIssuingTemplate {
@@ -22,6 +23,8 @@ public class CertificateIssuingTemplate {
   public String name;
   public String certificateAuthorityAccountId;
   public String certificateAuthorityProductOptionId;
+  public Product product;
+  public TrackingData trackingData;
   public Integer priority; // rank/priority within a CA
   public Boolean systemGenerated;
   public Date creationDate;
@@ -38,6 +41,30 @@ public class CertificateIssuingTemplate {
   public List<AllowedKeyType> keyTypes;
   public Boolean keyReuse;
   public RecommendedSettings recommendedSettings;
+  //added due the response return it in this position.
+  //For the case of the request to create/update it, this attribute is in the Product class level
+  private String validityPeriod;
+
+  @Data
+  @AllArgsConstructor
+  public static class Product {
+    private String certificateAuthority;
+    private String productName;
+    private String validityPeriod;
+    private String hashAlgorithm;
+    private Boolean autoRenew;
+    private Integer organizationId;
+  }
+
+  @Data
+  @AllArgsConstructor
+  @NoArgsConstructor
+  public static class TrackingData {
+    private String certificateAuthority;
+    private String requesterName;
+    private String requesterEmail;
+    private String requesterPhone;
+  }
 
   @Data
   @AllArgsConstructor
@@ -48,6 +75,7 @@ public class CertificateIssuingTemplate {
 
   @Data
   @AllArgsConstructor
+  @NoArgsConstructor
   public static class RecommendedSettings {
     private String subjectOValue;
     private String subjectOUValue;
@@ -60,6 +88,7 @@ public class CertificateIssuingTemplate {
 
   @Data
   @AllArgsConstructor
+  @NoArgsConstructor
   public static class RecommendedSettingsKey {
     private String type;
     private Integer length;
