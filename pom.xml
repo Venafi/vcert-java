@@ -12,7 +12,6 @@
         <lombok.version>1.18.6</lombok.version>
         <bouncycastle.version>1.61</bouncycastle.version>
         <feign.version>10.4.0</feign.version>
-        <guava.version>24.1.1-jre</guava.version>
         <log4j.version>2.13.3</log4j.version>
         <junit.version>5.3.1</junit.version>
         <mockito.version>2.25.1</mockito.version>
@@ -70,13 +69,6 @@
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>${log4j.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
