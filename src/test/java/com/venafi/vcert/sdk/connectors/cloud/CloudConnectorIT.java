@@ -14,11 +14,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.Strings;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import com.github.jenspiegsa.wiremockextension.InjectServer;
-import com.github.jenspiegsa.wiremockextension.WireMockExtension;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.venafi.vcert.sdk.SignatureAlgorithm;
 import com.venafi.vcert.sdk.TestUtils;
@@ -28,22 +26,26 @@ import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 
-@ExtendWith(WireMockExtension.class)
 class CloudConnectorIT {
 
-  @InjectServer
-  private WireMockServer serverMock;
+  private WireMockServer serverMock = new WireMockServer();
 
   private CloudConnector classUnderTest;
 
   @BeforeEach
   void setup() throws VCertException {
+	serverMock.start();
     Security.addProvider(new BouncyCastleProvider());
     classUnderTest = new CloudConnector(Cloud.connect("http://localhost:" + serverMock.port())); // todo
                                                                                                  // String.format()
     Authentication authentication =
         new Authentication(null, null, "12345678-1234-1234-1234-123456789012");
     classUnderTest.authenticate(authentication);
+  }
+  
+  @AfterEach
+  void tearDown() {
+	serverMock.stop();
   }
 
   @Test
