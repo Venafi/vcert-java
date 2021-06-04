@@ -34,6 +34,7 @@ class CloudConnectorIT {
 
   @BeforeEach
   void setup() throws VCertException {
+	serverMock.start();
     Security.addProvider(new BouncyCastleProvider());
     classUnderTest = new CloudConnector(Cloud.connect("http://localhost:" + serverMock.port())); // todo
                                                                                                  // String.format()
@@ -44,7 +45,7 @@ class CloudConnectorIT {
   
   @AfterEach
   void tearDown() {
-	  serverMock.stop();
+	serverMock.stop();
   }
 
   @Test

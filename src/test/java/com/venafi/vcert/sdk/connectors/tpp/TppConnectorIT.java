@@ -27,6 +27,7 @@ class TppConnectorIT {
 
   @BeforeEach
   void setup() throws VCertException {
+	serverMock.start();
     classUnderTest =
         new TppConnector(Tpp.connect("http://localhost:" + serverMock.port() + "/vedsdk/")); // todo
                                                                                              // String.format()
@@ -36,7 +37,7 @@ class TppConnectorIT {
   
   @AfterEach
   void tearDown() {
-	  serverMock.stop();
+	serverMock.stop();
   }
 
   @Test
