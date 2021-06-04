@@ -12,15 +12,17 @@
         <lombok.version>1.18.6</lombok.version>
         <bouncycastle.version>1.61</bouncycastle.version>
         <feign.version>10.4.0</feign.version>
+        <guava.version>30.1.1-jre</guava.version>
         <log4j.version>2.13.3</log4j.version>
         <junit.version>5.3.1</junit.version>
         <mockito.version>2.25.1</mockito.version>
         <wiremock.version>2.22.0</wiremock.version>
-        <wiremock-extension.version>0.4.0</wiremock-extension.version>
         <assertj.version>3.12.2</assertj.version>
         <ini4j.version>0.5.4</ini4j.version>
         <commonslang3.version>3.11</commonslang3.version>
         <jarName>${project.artifactId}-${project.version}</jarName>
+        <httpclient.version>4.5.13</httpclient.version>
+        <httpcore.version>4.4.14</httpcore.version>
     </properties>
 
     <dependencies>
@@ -70,6 +72,11 @@
             <version>${log4j.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.version}</version>
@@ -100,11 +107,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.JensPiegsa</groupId>
-            <artifactId>wiremock-extension</artifactId>
-            <version>${wiremock-extension.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
@@ -120,6 +122,16 @@
 		    <artifactId>commons-lang3</artifactId>
 		    <version>${commonslang3.version}</version>
 	    </dependency>
+	    <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${httpclient.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>${httpcore.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -177,12 +189,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <repositories>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
-
 </project>

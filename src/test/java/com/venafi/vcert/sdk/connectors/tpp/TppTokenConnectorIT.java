@@ -1,15 +1,14 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
-import com.github.jenspiegsa.wiremockextension.InjectServer;
-import com.github.jenspiegsa.wiremockextension.WireMockExtension;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static com.venafi.vcert.sdk.SignatureAlgorithm.SHA256WithRSA;
 import static com.venafi.vcert.sdk.certificate.EllipticCurve.*;
@@ -18,11 +17,9 @@ import static com.venafi.vcert.sdk.certificate.KeyType.ECDSA;
 import static com.venafi.vcert.sdk.certificate.KeyType.RSA;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(WireMockExtension.class)
 public class TppTokenConnectorIT {
 
-    @InjectServer
-    private WireMockServer serverMock;
+    private WireMockServer serverMock = new WireMockServer();
     private TppTokenConnector classUnderTest;
     private TokenInfo info;
 
@@ -36,6 +33,11 @@ public class TppTokenConnectorIT {
                 .build();
         classUnderTest.credentials(auth);
         info = classUnderTest.getAccessToken();
+    }
+    
+    @AfterEach
+    void tearDown() {
+  	  serverMock.stop();
     }
 
     @Test
