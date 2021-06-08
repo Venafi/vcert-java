@@ -4,9 +4,65 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.venafi.vcert.sdk</groupId>
+    <groupId>io.github.venafi</groupId>
     <artifactId>vcert-java</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.1</version>
+    <packaging>jar</packaging>
+    
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>VCert is a Java library, SDK, designed to simplify key generation and enrollment of machine identities (also known as SSL/TLS certificates and keys) that comply with enterprise security policy by using the Venafi Platform or Venafi Cloud.</description>
+    <url>https://github.com/Venafi/vcert-java</url>
+    
+    <licenses>
+    	<license>
+    		<name>The Apache License, Version 2.0</name>
+    		<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    	</license>
+    </licenses>
+    
+    <developers>
+    	<developer>
+    		<name>Ryan Treat</name>
+    		<email>Ryan.Treat@venafi.com</email>
+    		<organization>Venafi, Inc.</organization>
+    		<organizationUrl>https://www.venafi.com/</organizationUrl>
+    	</developer>
+    	<developer>
+    		<name>Marcos Albornoz</name>
+    		<email>marcos.albornoz@venafi.com</email>
+    		<organization>Venafi, Inc.</organization>
+    		<organizationUrl>https://www.venafi.com/</organizationUrl>
+    	</developer>
+    	<developer>
+    		<name>Russel Vela</name>
+    		<email>russel.vela@venafi.com</email>
+    		<organization>Venafi, Inc.</organization>
+    		<organizationUrl>https://www.venafi.com/</organizationUrl>
+    	</developer>
+    	<developer>
+    		<name>Angel Moo</name>
+    		<email>angel.moo@venafi.com</email>
+    		<organization>Venafi, Inc.</organization>
+    		<organizationUrl>https://www.venafi.com/</organizationUrl>
+    	</developer>
+    </developers>
+    
+    <scm>
+    	<connection>scm:git:git://github.com/Venafi/vcert-java.git</connection>
+    	<developerConnection>scm:git:ssh://github.com:Venafi/vcert-java.git</developerConnection>
+    	<url>https://github.com/Venafi/vcert-java/tree/master</url>
+    </scm>
+    
+    <distributionManagement>
+    	<snapshotRepository>
+    		<id>ossrh</id>
+    		<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+  		</snapshotRepository>
+  		<repository>
+    		<id>ossrh</id>
+    		<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+  		</repository>
+	</distributionManagement>
 
     <properties>
         <lombok.version>1.18.6</lombok.version>
@@ -187,6 +243,46 @@
                     </execution>
                 </executions>
             </plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.2.0</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.3.0</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>3.0.1</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+          				<goals>
+							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
         </plugins>
     </build>
 </project>
