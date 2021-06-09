@@ -227,6 +227,9 @@ public class VCertClient implements Connector {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
     try {
@@ -236,6 +239,9 @@ public class VCertClient implements Connector {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public PolicySpecification getPolicy(String policyName) throws VCertException {
     try {

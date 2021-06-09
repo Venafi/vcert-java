@@ -43,7 +43,6 @@ public class ZoneConfiguration {
    * UpdateCertificateRequest updates a certificate request based on the zone configuration
    * retrieved from the remote endpoint
    * 
-   * @return
    */
   public void applyCertificateRequestDefaultSettingsIfNeeded(CertificateRequest request) {
     CertificateRequest.PKIXName subject = request.subject();

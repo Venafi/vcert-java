@@ -244,6 +244,9 @@ public class VCertTknClient implements TokenConnector {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
         try {
@@ -253,6 +256,9 @@ public class VCertTknClient implements TokenConnector {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public PolicySpecification getPolicy(String policyName) throws VCertException {
         try {
