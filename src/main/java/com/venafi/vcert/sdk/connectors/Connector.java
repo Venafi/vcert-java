@@ -11,6 +11,12 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 
+
+/**
+ * 
+ * This represents the connector to TPP or Cloud 
+ *
+ */
 public interface Connector {
 
   /**
@@ -148,7 +154,21 @@ public interface Connector {
    */
   Policy readPolicyConfiguration(String zone) throws VCertException;
 
+  /**
+   * Create/update a policy based on the policySpecification passed as argument.
+   * 
+   * @param policyName
+   * @param policySpecification
+   * @throws VCertException
+   */
   void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException;
 
+  /**
+   * Returns the policySpecification from the policy which matches with the policyName argument.
+   * 
+   * @param policyName
+   * @return
+   * @throws VCertException
+   */
   PolicySpecification getPolicy(String policyName) throws VCertException;
 }
