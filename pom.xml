@@ -6,7 +6,7 @@
 
     <groupId>io.github.venafi</groupId>
     <artifactId>vcert-java</artifactId>
-    <version>${env.ARTIFACT_RELEASE_VERSION}</version>
+    <version>0.6.2</version>
     <packaging>jar</packaging>
     
     <name>${project.groupId}:${project.artifactId}</name>
