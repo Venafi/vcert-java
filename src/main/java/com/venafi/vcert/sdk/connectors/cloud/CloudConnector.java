@@ -1,5 +1,6 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
+import static com.venafi.vcert.sdk.connectors.cloud.CloudConnectorException.*;
 import static java.lang.String.format;
 import static java.time.Duration.ZERO;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -92,8 +93,7 @@ public class CloudConnector implements Connector {
   public void ping() throws VCertException {
     Response response = doPing();
     if (response.status() != 200) {
-      throw new VCertException(format("Unexpected status code on Venafi Cloud ping. Status: %d %s",
-          response.status(), response.reason()));
+      throw new UnexpectedStatusException( response.status(), response.reason());
     }
   }
 
@@ -103,7 +103,7 @@ public class CloudConnector implements Connector {
 
   @Override
   public void authenticate(Authentication auth) throws VCertException {
-    VCertException.throwIfNull(auth, "failed to authenticate: missing credentials");
+    VCertException.throwIfNull(auth, "Failed to authenticate: missing credentials");
     this.auth = auth;
     this.user = cloud.authorize(auth.apiKey());
   }
@@ -122,7 +122,7 @@ public class CloudConnector implements Connector {
 	    	 cit = cloud.certificateIssuingTemplateByAppNameAndCitAlias(appName, citAlias, auth.apiKey());
 	    	
 	    }else {
-	    	  throw new VCertException("The parameters: appName, citAlias or both are empty");
+	    	  throw new ZoneFormatException("The parameters: appName, citAlias or both are empty");
 	    }
 	    
 	    //get application id.
@@ -153,14 +153,14 @@ public class CloudConnector implements Connector {
         break;
       case UserProvidedCSR:
         if (request.csr().length == 0) {
-          throw new VCertException("CSR was supposed to be provided by user, but it's empty");
+          throw new CSRNotProvidedByUserException();
         }
         break;
       case ServiceGeneratedCSR:
         request.csr(null);
         break;
       default:
-        throw new VCertException(format("Unrecognized request CSR origin %s", request.csrOrigin()));
+        throw new UnreconigzedCSROriginException(request.csrOrigin());
     }
 
     return request;
@@ -180,10 +180,10 @@ public class CloudConnector implements Connector {
     }
 
     if (CsrOriginOption.ServiceGeneratedCSR == request.csrOrigin()) {
-      throw new VCertException("service generated CSR is not supported by Saas service");
+      throw new UnsupportedServiceGeneratedCSRException();
     }
     if (user == null || user.company() == null) {
-      throw new VCertException("Must be authenticated to request a certificate");
+      throw new UserNotAuthenticatedException("Must be authenticated to request a certificate");
     }
     
     CertificateRequestsPayload payload = new CertificateRequestsPayload()
@@ -218,8 +218,7 @@ public class CloudConnector implements Connector {
   public PEMCollection retrieveCertificate(CertificateRequest request) throws VCertException {
 	  CertificateStatus certificateStatus = null;
     if (request.fetchPrivateKey()) {
-      throw new VCertException(
-          "Failed to retrieve private key from Venafi Cloud service: not supported");
+      throw new UnsupportedPrivateKeyRetrieveException();
     }
     String certId = "";
     if (isBlank(request.pickupId()) && isNotBlank(request.thumbprint())) {
@@ -227,8 +226,7 @@ public class CloudConnector implements Connector {
       Cloud.CertificateSearchResponse certificateSearchResponse =
           searchCertificatesByFingerprint(request.thumbprint());
       if (certificateSearchResponse.certificates().size() == 0) {
-        throw new VCertException(
-            format("No certificate found using fingerprint %s", request.thumbprint()));
+        throw new CertificateNotFoundByFingerprintException(request.thumbprint());
       }
 
       List<String> reqIds = new ArrayList<>();
@@ -237,7 +235,7 @@ public class CloudConnector implements Connector {
         reqIds.add(certificate.certificateRequestId());
         if (isNotBlank(certificateRequestId)
             && certificateRequestId.equals(certificate.certificateRequestId())) {
-          isOnlyOneCertificateRequestId = true;
+          isOnlyOneCertificateRequestId = false;
         }
         if (isNotBlank(certificate.certificateRequestId())) {
           certificateRequestId = certificate.certificateRequestId();
@@ -246,8 +244,7 @@ public class CloudConnector implements Connector {
         }
       }
       if (!isOnlyOneCertificateRequestId) {
-        throw new VCertException(format(
-            "More than one CertificateRequestId was found with the same Fingerprint: %s", reqIds));
+        throw new MoreThanOneCertificateRequestIdException(reqIds);
       }
       request.pickupId(certificateRequestId);
     }
@@ -263,35 +260,32 @@ public class CloudConnector implements Connector {
       if ("ISSUED".equals(certificateStatus.status())) {
         break;
       } else if ("FAILED".equals(certificateStatus.status())) {
-        throw new VCertException(
-            format("Failed to retrieve certificate. Status: %s", certificateStatus.toString()));
+        throw new CertificateStatusFailedException( certificateStatus.toString());
       }
 
       // Status either REQUESTED or PENDING
       if (ZERO.equals(request.timeout())) {
-        throw new VCertException(format("Failed to retrieve certificate %s. Status %s",
-            request.pickupId(), certificateStatus.status()));
+        throw new CertificatePendingException(request.pickupId());
       }
 
       if (Instant.now().isAfter(startTime.plus(request.timeout()))) {
-        throw new VCertException(
-            format("Timeout trying to retrieve certificate %s", request.pickupId()));
+        throw new RetrieveCertificateTimeoutException(request.pickupId());
       }
 
       try {
         TimeUnit.SECONDS.sleep(2);
       } catch (InterruptedException e) {
         e.printStackTrace();
-        throw new VCertException("Error attempting to retry", e);
+        throw new AttemptToRetryException(e);
       }
     }
 
     if (user == null || user.company() == null) {
-      throw new VCertException("Must be authenticated to retieve certificate");
+      throw new UserNotAuthenticatedException("Must be authenticated to retieve certificate");
     }
     
     if(certificateStatus == null) {
-    	throw new VCertException("Was not able to retrieve certificate Status");
+    	throw new FailedToRetrieveCertificateStatusException(request.pickupId());
     }
     
     String certificateId = certificateStatus.certificateIds().get(0);
@@ -310,35 +304,90 @@ public class CloudConnector implements Connector {
           chainOption = "EE_FIRST";
           break;
       }
-      String body = certificateViaCSR(certificateId, chainOption);
+      String body = certificateViaCSR(certificateId, chainOption, request);
       PEMCollection pemCollection =
           PEMCollection.fromResponse(body, request.chainOption(), request.privateKey(),
             request.keyPassword());
       request.checkCertificate(pemCollection.certificate());
       return pemCollection;
     } else {
-      String body = certificateAsPem(certId);
+      String body = certificateAsPem(certId, request);
       return PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore,
         request.privateKey(), request.keyPassword());
     }
   }
 
-  private String certificateViaCSR(String requestId, String chainOrder) throws VCertException {
-    // We should decode this as is not REST, multiple decoders should be supported
-    // by feign as a potential improvement.
-    Response response = cloud.certificateViaCSR(requestId, auth.apiKey(), chainOrder);
-    if (response.status() != 200) {
-      throw new VCertException(String
-          .format("Invalid response fetching the certificate via CSR: %s", response.reason()));
-    }
-    try {
-      return CharStreams.toString(response.body().asReader());
-    } catch (IOException e) {
-      throw new VCertException("Unable to read the PEM certificate");
-    }
+  private String certificateViaCSR(String certificateId, String chainOrder, CertificateRequest request) throws VCertException {
+	  // We should decode this as is not REST, multiple decoders should be supported
+	  // by feign as a potential improvement.
+	  Instant startTime = Instant.now();
+	  while (true) {
 
+		  Response response = cloud.certificateViaCSR(certificateId, auth.apiKey(), chainOrder);
+		  if (response.status() == 200) {
+			  try {
+				  return CharStreams.toString(response.body().asReader());
+			  } catch (IOException e) {
+				  throw new UnableToReadPEMCertificateException(certificateId);
+			  }
+		  }
+
+		  // Status either REQUESTED or PENDING
+		  if (ZERO.equals(request.timeout())) {
+			  throw new CertificatePendingException(request.pickupId());
+		  }
+
+		  if (Instant.now().isAfter(startTime.plus(request.timeout()))) {
+			  throw new RetrieveCertificateTimeoutException(request.pickupId());
+		  }
+
+		  try {
+			  TimeUnit.SECONDS.sleep(2);
+		  } catch (InterruptedException e) {
+			  e.printStackTrace();
+			  throw new AttemptToRetryException(e);
+		  }
+	  }
   }
 
+  private String certificateAsPem(String certificateId, CertificateRequest request) throws VCertException{
+	  
+	  Instant startTime = Instant.now();
+	  while (true) {
+
+		  Response response = cloud.certificateAsPem(certificateId, auth.apiKey());
+		  if (response.status() == 200) {
+			  try {
+				  return CharStreams.toString(response.body().asReader());
+			  } catch (IOException e) {
+				  throw new UnableToReadPEMCertificateException(certificateId);
+			  }
+		  }
+
+		  // Status either REQUESTED or PENDING
+		  if (ZERO.equals(request.timeout())) {
+			  throw new CertificatePendingException(request.pickupId());
+		  }
+
+		  if (Instant.now().isAfter(startTime.plus(request.timeout()))) {
+			  throw new RetrieveCertificateTimeoutException(request.pickupId());
+		  }
+
+		  try {
+			  TimeUnit.SECONDS.sleep(2);
+		  } catch (InterruptedException e) {
+			  e.printStackTrace();
+			  throw new AttemptToRetryException(e);
+		  }
+	  }
+  }
+  
+  /**
+   * @deprecated
+   * @param requestId
+   * @return
+   * @throws VCertException
+   */
   public String certificateAsPem(String requestId) throws VCertException{
 	  Response response = cloud.certificateAsPem(requestId, auth.apiKey());
 	  if (response.status() != 200) {
@@ -373,13 +422,9 @@ public class CloudConnector implements Connector {
           .collect(Collectors.toSet());
 
       if (requestIds.size() > 1) {
-        throw new VCertException(String.format(
-            "More than one CertificateRequestId was found with the same Fingerprint: %s",
-            request.thumbprint()));
-
+        throw new MoreThanOneCertificateRequestIdException(request.thumbprint());
       } else if (requestIds.size() == 0) {
-        throw new VCertException(String.format(
-            "Cloud service can not find a certificate with Fingerprint: %s", request.thumbprint()));
+        throw new CertificateNotFoundByFingerprintException(request.thumbprint());
       }
 
       certificateRequestId = requestIds.iterator().next();
@@ -387,8 +432,7 @@ public class CloudConnector implements Connector {
     } else if (isNotBlank(request.certificateDN())) {
       certificateRequestId = request.certificateDN();
     } else {
-      throw new VCertException(
-          "failed to create renewal request: CertificateDN or Thumbprint required");
+      throw new CertificateDNOrFingerprintWasNotProvidedException();
     }
 
     final CertificateStatus status = cloud.certificateStatus(certificateRequestId, auth.apiKey());
@@ -426,7 +470,7 @@ public class CloudConnector implements Connector {
     if (!certificateRequest.reuseCSR) {
       certificateRequest.csr(Strings.fromByteArray(request.request().csr()));
     }else {
-    	throw new VCertException( "A CSR should be specified." );
+    	throw new CSRNotProvidedException();
     }
 
     CertificateRequestsResponse response =
