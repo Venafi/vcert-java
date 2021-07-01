@@ -24,11 +24,18 @@ requires 19.2 or higher; for earlier versions, username/password authentication 
 
 ## Installation
 
-The current version of this library can be installed using Maven:
-
-```sh
-mvn install
+VCert-Java is in [Maven Central Repository](https://search.maven.org/search?q=g:io.github.venafi) so 
+it can be integrated in Maven projects adding the following dependency configuration in the pom.xml:
 ```
+<dependency>
+  <groupId>io.github.venafi</groupId>
+  <artifactId>vcert-java</artifactId>
+  <version>0.6.2</version>
+</dependency>
+```
+For integrations in other build tools, please visit the 
+[latest release page in Maven Central Repository](https://search.maven.org/artifact/io.github.venafi/vcert-java/0.6.2/jar).
+
 
 ## Usage
 
