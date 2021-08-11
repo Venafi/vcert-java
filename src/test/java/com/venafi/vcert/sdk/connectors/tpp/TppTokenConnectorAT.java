@@ -31,6 +31,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.sshtools.common.publickey.SshKeyPairGenerator;
+import com.sshtools.common.publickey.SshKeyUtils;
+import com.sshtools.common.ssh.components.SshKeyPair;
 import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertException;
@@ -43,6 +46,8 @@ import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
+import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
@@ -62,7 +67,7 @@ class TppTokenConnectorAT {
             Authentication authentication = Authentication.builder()
                     .user(System.getenv("TPPUSER"))
                     .password(System.getenv("TPPPASSWORD"))
-                    .scope("certificate:manage,revoke,discover;configuration:manage")
+                    .scope("certificate:manage,revoke,discover;configuration:manage;ssh:manage")
                     .build();
 
             TokenInfo info = classUnderTest.getAccessToken(authentication);
@@ -473,5 +478,37 @@ class TppTokenConnectorAT {
         policySpecification.defaults(null);
 
         assertEquals(policySpecification, policySpecificationReturned);
+    }
+    
+    @Test
+    @DisplayName("TPP - Testing the requestSshCertificate() and retrieveSshCertificate() methods when KeyPair is provided")
+    public void requestAndRetrieveSshCertificateWithKeyPairProvided() throws VCertException {
+    	
+    	try {
+    		SshKeyPair pair = SshKeyPairGenerator.generateKeyPair(SshKeyPairGenerator.SSH2_RSA, 3072);
+    		
+    		//String privateKeyData = SshKeyUtils.getFormattedKey(pair, "my-passphrase");
+    		String publicKeyData = SshKeyUtils.getFormattedKey(pair.getPublicKey(), "comment");
+    		
+    		SshCertificateRequest req = new SshCertificateRequest()
+    				.keyId(TppTestUtils.getRandSshKeyId())
+    				.validityPeriod("4h")
+    				.cadn("\\VED\\Certificate Authority\\SSH\\Templates\\open-source-test-cit")//os.Getenv("SSH_CA")
+    				.publicKeyData(publicKeyData)
+    				.sourceAddresses(new String[]{"test.com"});
+    		
+    		String pickUpID = classUnderTest.requestSshCertificate(req);
+    		
+    		req.pickupID(pickUpID);
+    		
+    		SshCertRetrieveDetails sshCertRetrieveDetails  = classUnderTest.retrieveSshCertificate(req);
+    		
+    		System.out.println(sshCertRetrieveDetails);
+    		
+    	} catch (VCertException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new VCertException( e );
+		}
     }
 }

@@ -9,8 +9,13 @@ import java.util.List;
 
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CsrOriginOption;
+import com.venafi.vcert.sdk.connectors.ConnectorException;
 
 /**
+ * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException}. 
+ * The {@link ConnectorException} contains exactly the same child Classes like this class which is being deprecated, for example 
+ * the class {@link com.venafi.vcert.sdk.connectors.cloud.CloudConnectorException.UnexpectedStatusException} has his counter part 
+ * {@link com.venafi.vcert.sdk.connectors.ConnectorException.UnexpectedStatusException}.
  * @author Marcos E. Albornoz Abud
  *
  */
@@ -33,6 +38,10 @@ public class CloudConnectorException extends VCertException {
 		super(message);
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.UnexpectedStatusException}.
+	 *
+	 */
 	public static class UnexpectedStatusException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -47,6 +56,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.ZoneFormatException}.
+	 *
+	 */
 	public static class ZoneFormatException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -56,6 +69,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CSRNotProvidedByUserException}.
+	 *
+	 */
 	public static class CSRNotProvidedByUserException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -65,6 +82,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.UnreconigzedCSROriginException}.
+	 *
+	 */
 	public static class UnreconigzedCSROriginException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -77,6 +98,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.UnsupportedServiceGeneratedCSRException}.
+	 *
+	 */
 	public static class UnsupportedServiceGeneratedCSRException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -86,6 +111,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.UserNotAuthenticatedException}.
+	 *
+	 */
 	public static class UserNotAuthenticatedException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -95,6 +124,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.UnsupportedPrivateKeyRetrieveException}.
+	 *
+	 */
 	public static class UnsupportedPrivateKeyRetrieveException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -104,6 +137,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByFingerprintException}.
+	 *
+	 */
 	public static class CertificateNotFoundByFingerprintException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -113,6 +150,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.MoreThanOneCertificateRequestIdException}.
+	 *
+	 */
 	public static class MoreThanOneCertificateRequestIdException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -128,6 +169,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificateStatusFailedException}.
+	 *
+	 */
 	public static class CertificateStatusFailedException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -137,6 +182,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.AttemptToRetryException}.
+	 *
+	 */
 	public static class AttemptToRetryException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -146,6 +195,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.FailedToRetrieveCertificateStatusException}.
+	 *
+	 */
 	public static class FailedToRetrieveCertificateStatusException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -155,6 +208,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.UnableToReadPEMCertificateException}.
+	 *
+	 */
 	public static class UnableToReadPEMCertificateException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -167,6 +224,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificatePendingException}.
+	 *
+	 */
 	public static class CertificatePendingException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -179,6 +240,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.RetrieveCertificateTimeoutException}.
+	 *
+	 */
 	public static class RetrieveCertificateTimeoutException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -191,6 +256,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrFingerprintWasNotProvidedException}.
+	 *
+	 */
 	public static class CertificateDNOrFingerprintWasNotProvidedException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -200,6 +269,10 @@ public class CloudConnectorException extends VCertException {
 		}
 	}
 	
+	/**
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CSRNotProvidedException}.
+	 *
+	 */
 	public static class CSRNotProvidedException extends CloudConnectorException {
 		
 		private static final long serialVersionUID = 1L;

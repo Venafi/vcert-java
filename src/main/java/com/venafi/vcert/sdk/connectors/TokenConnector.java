@@ -209,4 +209,8 @@ public interface TokenConnector {
      * @throws VCertException
      */
     PolicySpecification getPolicy(String policyName) throws VCertException;
+    
+    String requestSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException;
+    
+    SshCertRetrieveDetails retrieveSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException;
 }

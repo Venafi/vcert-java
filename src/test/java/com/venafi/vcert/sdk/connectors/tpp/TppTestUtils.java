@@ -1,5 +1,7 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
+import java.time.Instant;
+
 import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.policy.domain.*;
 
@@ -43,7 +45,7 @@ public class TppTestUtils {
                                 .build())
                         .keyPair( DefaultsKeyPair.builder()
                                 .keyType("RSA")
-                                .rsaKeySize(new Integer(1024))
+                                .rsaKeySize(Integer.valueOf(1024))
                                 .build())
                         .build())
                 .build();
@@ -53,7 +55,12 @@ public class TppTestUtils {
     public static String getVCertExceptionMessage( String message ) {
         return "com.venafi.vcert.sdk.VCertException: " + message;
     }
+    
     public static String getVCertExceptionMessage( String message, String ...attributeNames ) {
         return getVCertExceptionMessage(String.format(message, attributeNames));
+    }
+    
+    public static String getRandSshKeyId() {
+    	return String.format("vcert-go-%d-SSHCert", Instant.now().getEpochSecond());
     }
 }

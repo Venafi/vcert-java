@@ -184,6 +184,12 @@
             <artifactId>httpcore</artifactId>
             <version>${httpcore.version}</version>
         </dependency>
+		<dependency>
+			<groupId>com.sshtools</groupId>
+			<artifactId>maverick-base</artifactId>
+			<version>3.0.3-FINAL</version>
+			<scope>test</scope>
+		</dependency>
     </dependencies>
 
 	<build>

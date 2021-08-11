@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import com.google.gson.annotations.SerializedName;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.*;
+
 import feign.Headers;
 import feign.Param;
 import feign.QueryMap;
@@ -82,6 +84,14 @@ public interface Tpp {
   @RequestLine("POST Config/ClearPolicyAttribute")
   @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
   Response clearPolicyAttribute(ClearPolicyAttributeRequest request, @Param("apiKey") String apiKey);
+  
+  @RequestLine("POST SSHCertificates/request")
+  @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
+  TppSshCertRequestResponse requestSshCertificate(TppSshCertRequest request, @Param("apiKey") String apiKey);
+  
+  @RequestLine("POST SSHCertificates/retrieve")
+  @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
+  TppSshCertRetrieveResponse retrieveSshCertificate(TppSshCertRetrieveRequest request, @Param("apiKey") String apiKey);
 
   //============================Authorization Token Specific operations============================\\
 
@@ -156,6 +166,14 @@ public interface Tpp {
   @RequestLine("POST /vedsdk/Config/ClearPolicyAttribute")
   @Headers({"Content-Type: application/json", "Authorization: {token}"})
   Response clearPolicyAttributeToken(ClearPolicyAttributeRequest request, @Param("token") String token);
+  
+  @RequestLine("POST /vedsdk/SSHCertificates/request")
+  @Headers({"Content-Type: application/json", "Authorization: {token}"})
+  TppSshCertRequestResponse requestSshCertificateToken(TppSshCertRequest request, @Param("token") String token);
+  
+  @RequestLine("POST /vedsdk/SSHCertificates/retrieve")
+  @Headers({"Content-Type: application/json", "Authorization: {token}"})
+  TppSshCertRetrieveResponse retrieveSshCertificateToken(TppSshCertRetrieveRequest request, @Param("token") String token);
 
   //=================================================================================================\
 
