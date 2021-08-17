@@ -188,7 +188,7 @@ public interface Connector {
   /**
    * Retrieve a requested SSH Certificate
    * @param sshCertificateRequest The {@link com.venafi.vcert.sdk.certificate.SshCertificateRequest SshCertificateRequest} instance needed to do the request. 
-   * </br>It's mandatory to set the PickUpID which is the value of the DN returned when the SSH Certificate was requested.
+   * <br>It's mandatory to set the PickUpID which is the value of the DN returned when the SSH Certificate was requested.
    * For more information about of which properties should be filled, please review the documentation of 
    * {@link com.venafi.vcert.sdk.certificate.SshCertificateRequest SshCertificateRequest}.
    * @return A {@link com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails SshCertRetrieveDetails} containing the Certificate Data of the created Certificate.

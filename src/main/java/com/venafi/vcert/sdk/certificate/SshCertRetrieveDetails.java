@@ -8,7 +8,7 @@ import lombok.Data;
 
 /**
  * This class represents the Response Object to use to "retrieve" a requested SSH Certificate.
- * </br> </br>
+ * <br> <br>
  * For more information related to the "Retrieve SSH Certificates" action see 
  * {@link com.venafi.vcert.sdk.VCertClient#retrieveSshCertificate(SshCertificateRequest) VCertClient.retrieveSshCertificate(SshCertificateRequest)} or  
  * {@link com.venafi.vcert.sdk.VCertTknClient#retrieveSshCertificate(SshCertificateRequest) VCertTknClient.retrieveSshCertificate(SshCertificateRequest)} 
