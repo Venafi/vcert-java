@@ -61,6 +61,6 @@ public class TppTestUtils {
     }
     
     public static String getRandSshKeyId() {
-    	return String.format("vcert-go-%d-SSHCert", Instant.now().getEpochSecond());
+    	return String.format("vcert-java-%d-SSHCert", Instant.now().getEpochSecond());
     }
 }

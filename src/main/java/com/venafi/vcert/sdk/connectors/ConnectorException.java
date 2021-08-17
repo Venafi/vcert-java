@@ -222,5 +222,19 @@ public class ConnectorException extends VCertException {
 	    			+ "A new CSR must be provided in the request");
 		}
 	}
+	
+	public static class RequestCertificateException extends ConnectorException {
+		
+		private static final long serialVersionUID = 1L;
+		
+		int errorCode;
+		String errorMessage;
+		
+		public RequestCertificateException(int errorCode, String errorMessage) {
+			super(format("Error requesting certificate, error code: %d, error description: %s", errorCode, errorMessage));
+			this.errorCode = errorCode;
+			this.errorMessage = errorMessage;
+		}
+	}
 
 }

@@ -5,6 +5,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
 import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
+import com.venafi.vcert.sdk.connectors.ConnectorException.RequestCertificateException;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequest;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequestResponse;
@@ -340,13 +341,12 @@ public class TppConnectorUtils {
 	  
 	  try {
 		  requestResponse = tppAPI.requestSshCertificate(request);
-		  
-		  if( !requestResponse.response().success() )
-			  throw new VCertException(String.format("Error requesting certificate, error code: %d, error description: %s", requestResponse.response().errorCode(), requestResponse.response().errorMessage()));
-		  
 	  } catch (Exception e) {
 		  throw new VCertException(e);
 	  }
+	  
+	  if( !requestResponse.response().success() )
+		  throw new RequestCertificateException(requestResponse.response().errorCode(), requestResponse.response().errorMessage());
 	  
 	  return requestResponse;
   }
