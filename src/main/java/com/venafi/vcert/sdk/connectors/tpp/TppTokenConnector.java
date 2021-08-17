@@ -33,11 +33,17 @@ import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.PublicKeyAlgorithm;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
+import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.connectors.TokenConnector;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequest;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequestResponse;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveRequest;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveResponse;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
@@ -526,6 +532,22 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
 
         return policySpecification;
     }
+    
+	@Override
+	public String requestSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException {
+		
+		TppSshCertRequestResponse tppSshCertRequestResponse = super.requestTppSshCertificate(sshCertificateRequest);
+		
+		return tppSshCertRequestResponse.dn();
+	}
+
+	@Override
+	public SshCertRetrieveDetails retrieveSshCertificate(SshCertificateRequest sshCertificateRequest)
+			throws VCertException {
+		
+		return super.retrieveTppSshCertificate(sshCertificateRequest);
+	}
+	
 
     private boolean isEmptyCredentials(Authentication credentials){
         if(credentials == null){
@@ -557,6 +579,7 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
 
             tppAPI = new TppAPI(tpp) {
 
+            	@Override
                 public String getAuthKey() throws VCertException {
                     return getAuthHeaderValue();
                 }
@@ -590,6 +613,16 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
                 Response clearPolicyAttribute(ClearPolicyAttributeRequest request) throws VCertException {
                     return tpp.clearPolicyAttributeToken(request, getAuthKey());
                 }
+
+        		@Override
+        		TppSshCertRequestResponse requestSshCertificate(TppSshCertRequest request) throws VCertException {
+        			return tpp.requestSshCertificateToken(request, getAuthKey());
+        		}
+
+        		@Override
+        		TppSshCertRetrieveResponse retrieveSshCertificate(TppSshCertRetrieveRequest request) throws VCertException {
+        			return tpp.retrieveSshCertificateToken(request, getAuthKey());
+        		}
             };
         }
 

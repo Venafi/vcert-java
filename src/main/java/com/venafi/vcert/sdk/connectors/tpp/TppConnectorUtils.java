@@ -1,13 +1,24 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
+import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
+import com.venafi.vcert.sdk.connectors.ConnectorException.RequestCertificateException;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequest;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequestResponse;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveRequest;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveResponse;
 import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
 import com.venafi.vcert.sdk.policy.converter.tpp.AltName;
 import feign.Response;
 
 import java.util.ArrayList;
 import java.util.List;
+
+
 
 public class TppConnectorUtils {
 
@@ -322,6 +333,65 @@ public class TppConnectorUtils {
 
     if( prohibitedSANTypes.size()>0 )
       tppPolicy.prohibitedSANTypes(prohibitedSANTypes.toArray(new String[0]));
+  }
+  
+  public static TppSshCertRequestResponse requestTppSshCertificate(TppSshCertRequest request, TppAPI tppAPI) throws VCertException {
+	  
+	  TppSshCertRequestResponse requestResponse;
+	  
+	  try {
+		  requestResponse = tppAPI.requestSshCertificate(request);
+	  } catch (Exception e) {
+		  throw new VCertException(e);
+	  }
+	  
+	  if( !requestResponse.response().success() )
+		  throw new RequestCertificateException(requestResponse.response().errorCode(), requestResponse.response().errorMessage());
+	  
+	  return requestResponse;
+  }
+  
+  public static TppSshCertRequest convertToTppSshCertReq(SshCertificateRequest sshCertificateRequest) throws VCertException {
+	  TppSshCertRequest tppSshCertRequest = new TppSshCertRequest();
+
+	  tppSshCertRequest.cadn( isNotBlank(sshCertificateRequest.cadn()) ? sshCertificateRequest.cadn(): null );
+	  tppSshCertRequest.policyDN( isNotBlank(sshCertificateRequest.policyDN()) ? sshCertificateRequest.policyDN() : null );
+	  tppSshCertRequest.objectName( isNotBlank(sshCertificateRequest.objectName()) ? sshCertificateRequest.objectName() : null );
+	  tppSshCertRequest.destinationAddresses( sshCertificateRequest.destinationAddresses() != null && sshCertificateRequest.destinationAddresses().length > 0 ? sshCertificateRequest.destinationAddresses() : null );
+	  tppSshCertRequest.keyId( isNotBlank(sshCertificateRequest.keyId()) ? sshCertificateRequest.keyId() : null );
+	  tppSshCertRequest.principals( sshCertificateRequest.principals() != null && sshCertificateRequest.principals().length > 0 ? sshCertificateRequest.principals() : null );
+	  tppSshCertRequest.validityPeriod( isNotBlank(sshCertificateRequest.validityPeriod()) ? sshCertificateRequest.validityPeriod() : null );
+	  tppSshCertRequest.publicKeyData( isNotBlank(sshCertificateRequest.publicKeyData()) ? sshCertificateRequest.publicKeyData() : null );
+	  tppSshCertRequest.extensions( sshCertificateRequest.extensions() != null && !sshCertificateRequest.extensions().isEmpty() ? sshCertificateRequest.extensions() : null );
+	  tppSshCertRequest.forceCommand( isNotBlank(sshCertificateRequest.forceCommand()) ? sshCertificateRequest.forceCommand() : null );
+	  tppSshCertRequest.sourceAddresses( sshCertificateRequest.sourceAddresses() != null && sshCertificateRequest.sourceAddresses().length > 0  ? sshCertificateRequest.sourceAddresses() : null );
+
+	  return tppSshCertRequest;
+  }
+
+  public static TppSshCertRetrieveRequest convertToTppSshCertRetReq(SshCertificateRequest sshCertificateRequest) throws VCertException {
+	  TppSshCertRetrieveRequest tppSshCertRetrieveRequest = new TppSshCertRetrieveRequest();
+
+	  tppSshCertRetrieveRequest.dn( isNotBlank(sshCertificateRequest.pickupID()) ? sshCertificateRequest.pickupID() : null );
+	  tppSshCertRetrieveRequest.guid( isNotBlank(sshCertificateRequest.guid()) ? sshCertificateRequest.guid() : null );
+	  tppSshCertRetrieveRequest.privateKeyPassphrase( isNotBlank(sshCertificateRequest.privateKeyPassphrase()) ? sshCertificateRequest.privateKeyPassphrase() : null );
+
+	  return tppSshCertRetrieveRequest;
+  }
+
+  public static SshCertRetrieveDetails convertToSshCertRetrieveDetails(TppSshCertRetrieveResponse tppSshCertRetrieveResponse) throws VCertException {
+	  SshCertRetrieveDetails sshCertRetrieveDetails = new SshCertRetrieveDetails();
+
+	  sshCertRetrieveDetails.certificateDetails( tppSshCertRetrieveResponse.certificateDetails() );
+	  sshCertRetrieveDetails.privateKeyData( tppSshCertRetrieveResponse.privateKeyData() );
+	  sshCertRetrieveDetails.publicKeyData( tppSshCertRetrieveResponse.publicKeyData() );
+	  sshCertRetrieveDetails.certificateData( tppSshCertRetrieveResponse.certificateData() );
+	  sshCertRetrieveDetails.guid( tppSshCertRetrieveResponse.guid() );
+	  sshCertRetrieveDetails.dn( tppSshCertRetrieveResponse.dn() );
+	  sshCertRetrieveDetails.caGuid( tppSshCertRetrieveResponse.caGuid() );
+	  sshCertRetrieveDetails.cadn( tppSshCertRetrieveResponse.cadn() );
+
+	  return sshCertRetrieveDetails;
   }
 
 }

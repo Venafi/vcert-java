@@ -38,6 +38,8 @@ import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
+import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
@@ -509,6 +511,17 @@ public class CloudConnector implements Connector {
     }
 
     return policySpecification;
+  }
+  
+  @Override
+  public String requestSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException {
+	  throw new UnsupportedOperationException("Method not yet implemented");
+  }
+
+  @Override
+  public SshCertRetrieveDetails retrieveSshCertificate(SshCertificateRequest sshCertificateRequest)
+  		throws VCertException {
+	  throw new UnsupportedOperationException("Method not yet implemented");
   }
 
   private Cloud.CertificateSearchResponse searchCertificates(Cloud.SearchRequest searchRequest) {

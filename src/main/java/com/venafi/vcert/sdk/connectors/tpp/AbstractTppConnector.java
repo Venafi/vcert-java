@@ -1,14 +1,26 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
+import static java.time.Duration.ZERO;
+
+import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.annotations.SerializedName;
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
+import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
-
+import com.venafi.vcert.sdk.connectors.ConnectorException.*;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequest;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequestResponse;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveRequest;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveResponse;
 import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -107,6 +119,84 @@ public abstract class AbstractTppConnector {
         TppConnectorUtils.populatePolicy(tppPolicy, tppAPI);
 
         return tppPolicy;
+    }
+    
+    protected TppSshCertRetrieveRequest convertToTppSshCertRetReq(SshCertificateRequest sshCertificateRequest) throws VCertException {
+    	TppSshCertRetrieveRequest tppSshCertRetrieveRequest = new TppSshCertRetrieveRequest();
+    	
+    	tppSshCertRetrieveRequest.dn( sshCertificateRequest.pickupID() != null && !sshCertificateRequest.pickupID().equals("") ? sshCertificateRequest.pickupID() : null );
+    	tppSshCertRetrieveRequest.guid( sshCertificateRequest.guid() != null && !sshCertificateRequest.guid().equals("") ? sshCertificateRequest.guid() : null );
+    	tppSshCertRetrieveRequest.privateKeyPassphrase( sshCertificateRequest.privateKeyPassphrase() != null && !sshCertificateRequest.privateKeyPassphrase().equals("") ? sshCertificateRequest.privateKeyPassphrase() : null );
+    	
+		return tppSshCertRetrieveRequest;
+	}
+    
+    protected SshCertRetrieveDetails convertToTppSshCertReq(TppSshCertRetrieveResponse tppSshCertRetrieveResponse) throws VCertException {
+    	SshCertRetrieveDetails sshCertRetrieveDetails = new SshCertRetrieveDetails();
+
+    	sshCertRetrieveDetails.certificateDetails( tppSshCertRetrieveResponse.certificateDetails() );
+    	sshCertRetrieveDetails.privateKeyData( tppSshCertRetrieveResponse.privateKeyData() );
+    	sshCertRetrieveDetails.publicKeyData( tppSshCertRetrieveResponse.publicKeyData() );
+    	sshCertRetrieveDetails.certificateData( tppSshCertRetrieveResponse.certificateData() );
+    	sshCertRetrieveDetails.guid( tppSshCertRetrieveResponse.guid() );
+    	sshCertRetrieveDetails.dn( tppSshCertRetrieveResponse.dn() );
+    	sshCertRetrieveDetails.caGuid( tppSshCertRetrieveResponse.caGuid() );
+    	sshCertRetrieveDetails.cadn( tppSshCertRetrieveResponse.cadn() );
+
+    	return sshCertRetrieveDetails;
+	}
+    
+    protected TppSshCertRequestResponse requestTppSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException {
+    	
+    	TppSshCertRequest tppSshCertRequest = TppConnectorUtils.convertToTppSshCertReq(sshCertificateRequest);
+    	
+    	return TppConnectorUtils.requestTppSshCertificate(tppSshCertRequest, tppAPI);
+    }
+    
+    protected SshCertRetrieveDetails retrieveTppSshCertificate(SshCertificateRequest sshCertificateRequest) 
+			throws VCertException {
+		
+		TppSshCertRetrieveResponse tppSshCertRetrieveResponse = null;
+		
+		TppSshCertRetrieveRequest tppSshCertRetrieveRequest = TppConnectorUtils.convertToTppSshCertRetReq(sshCertificateRequest);
+		
+		// TODO move this retry logic to feign client
+        Instant startTime = Instant.now();
+        while (true) {
+        	tppSshCertRetrieveResponse = retrieveTppSshCertificate(tppSshCertRetrieveRequest);
+        	
+        	//if the certificate was returned(Issued)
+        	if( StringUtils.isNotBlank(tppSshCertRetrieveResponse.certificateData())) {
+        		break;
+        	}
+        	
+        	//if the certificate request was rejected
+        	if( tppSshCertRetrieveResponse.response().success() && tppSshCertRetrieveResponse.status().equals("Rejected") )
+        		throw new CertificateRejectedException(sshCertificateRequest.pickupID());
+
+        	//if the certificate is pending to be issued
+            if (ZERO.equals(sshCertificateRequest.timeout())) {
+                throw new CertificatePendingException(sshCertificateRequest.pickupID());
+            }
+            
+            //if the timeout was reached
+            if (Instant.now().isAfter(startTime.plus(sshCertificateRequest.timeout()))) {
+                throw new RetrieveCertificateTimeoutException(sshCertificateRequest.pickupID());
+            }
+
+            try {
+                TimeUnit.SECONDS.sleep(2);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                throw new AttemptToRetryException(e);
+            }
+        }
+        
+        return TppConnectorUtils.convertToSshCertRetrieveDetails(tppSshCertRetrieveResponse);
+	}
+    
+    private TppSshCertRetrieveResponse retrieveTppSshCertificate(TppSshCertRetrieveRequest request) throws VCertException {
+    	return getTppAPI().retrieveSshCertificate(request);
     }
 
     @Data
