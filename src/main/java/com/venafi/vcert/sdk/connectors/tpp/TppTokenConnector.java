@@ -134,7 +134,7 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
             this.credentials.refreshToken(accessTokenInfo.refreshToken());
         } catch(Unauthorized | BadRequest e){
             accessTokenInfo = new TokenInfo(null, null, -1, null, null,
-                null, -1, false, e.getMessage());
+                null, -1, false, e.getMessage() + " " + new String(e.content()) );
         }
         return accessTokenInfo;
     }
@@ -163,7 +163,7 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
             return tokenInfo;
         }catch (FeignException.BadRequest e){
             tokenInfo = new TokenInfo(null, null, -1, null, null,
-                null, -1, false, e.getMessage());
+                null, -1, false, e.getMessage() + " " + new String(e.content()));
         }
         return tokenInfo;
     }

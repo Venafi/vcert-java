@@ -234,7 +234,7 @@ public class TppTokenConnectorTest {
     void refreshAccessTokenInvalid() throws VCertException{
         final Request request = Request.create(Request.HttpMethod.POST, "", new HashMap<String, Collection<String>>(), null);
 
-        when(tpp.refreshToken(any(AbstractTppConnector.RefreshTokenRequest.class))).thenThrow(new FeignException.BadRequest("400 Grant has been revoked, has expired, or the refresh token is invalid", request, null));
+        when(tpp.refreshToken(any(AbstractTppConnector.RefreshTokenRequest.class))).thenThrow(new FeignException.BadRequest("400 Grant has been revoked, has expired, or the refresh token is invalid", request, new byte[]{}) );
 
         TokenInfo info = classUnderTest.refreshAccessToken(TestUtils.CLIENT_ID);
         assertThat(info).isNotNull();
