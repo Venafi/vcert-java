@@ -138,7 +138,7 @@ public class CloudConnectorException extends VCertException {
 	}
 	
 	/**
-	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByFingerprintException}.
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByThumbprintException}.
 	 *
 	 */
 	public static class CertificateNotFoundByFingerprintException extends CloudConnectorException {
