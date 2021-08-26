@@ -1,6 +1,5 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
-import static java.lang.String.format;
 import static java.time.Duration.ZERO;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
@@ -37,6 +36,20 @@ import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
 import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
+import com.venafi.vcert.sdk.connectors.ConnectorException.AttemptToRetryException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.CSRNotProvidedByUserException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrFingerprintWasNotProvidedException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByFingerprintException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.CertificatePendingException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.CouldNotParseRevokeReasonException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.MissingCredentialsException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.MoreThanOneCertificateRequestIdException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.RenewFailureException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.RetrieveCertificateTimeoutException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.RevokeFailureException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.TppManualCSRNotEnabledException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.TppPingException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.TppRequestCertificateNotAllowedException;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
@@ -97,10 +110,8 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   @Override
   public void ping() throws VCertException {
     Response response = doPing();
-    if (response.status() != 200) {
-      throw new VCertException(
-          format("ping failed with status %d and reason %s", response.status(), response.reason()));
-    }
+    if (response.status() != 200)
+        throw new TppPingException(response.status(), response.reason());
   }
 
   private Response doPing() {
@@ -108,7 +119,10 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   }
 
   public void authenticate(Authentication auth) throws VCertException {
-	VCertException.throwIfNull(auth, MISSING_CREDENTIALS_MESSAGE);
+	  
+	if(auth == null) 
+		throw new MissingCredentialsException();
+	
     AuthorizeResponse response = tpp.authorize(new AuthorizeRequest(auth.user(), auth.password()));
     apiKey = response.apiKey();
     bestBeforeEnd = response.validUntil();
@@ -135,31 +149,27 @@ public class TppConnector extends AbstractTppConnector implements Connector {
       config = readZoneConfiguration(zone);
     }
     String tppMgmtType = config.customAttributeValues().get(TPP_ATTRIBUTE_MANAGEMENT_TYPE);
-    if ("Monitoring".equals(tppMgmtType) || "Unassigned".equals(tppMgmtType)) {
-      throw new VCertException(
-          "Unable to request certificate from TPP, current TPP configuration would not allow the request to be processed");
-    }
+    if ("Monitoring".equals(tppMgmtType) || "Unassigned".equals(tppMgmtType))
+        throw new TppRequestCertificateNotAllowedException();
 
     config.applyCertificateRequestDefaultSettingsIfNeeded(request);
 
     switch (request.csrOrigin()) {
       case LocalGeneratedCSR: {
-        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR))) {
-          throw new VCertException(
-              "Unable to request certificate by local generated CSR when zone configuration is 'Manual Csr' = 0");
-        }
+        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR))) 
+        	throw new TppManualCSRNotEnabledException(request.csrOrigin());
+        
         request.generatePrivateKey();
         request.generateCSR();
         break;
       }
       case UserProvidedCSR: {
-        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR))) {
-          throw new VCertException(
-              "Unable to request certificate with user provided CSR when zone configuration is 'Manual Csr' = 0");
-        }
-        if (Is.blank(request.csr())) {
-          throw new VCertException("CSR was supposed to be provided by user, but it's empty");
-        }
+        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR))) 
+        	throw new TppManualCSRNotEnabledException(request.csrOrigin());
+        
+        if (Is.blank(request.csr())) 
+        	throw new CSRNotProvidedByUserException();
+        
         break;
       }
       case ServiceGeneratedCSR: {
@@ -286,15 +296,12 @@ public class TppConnector extends AbstractTppConnector implements Connector {
     if (isNotBlank(request.pickupId()) && isNotBlank(request.thumbprint())) {
       Tpp.CertificateSearchResponse searchResult =
           searchCertificatesByFingerprint(request.thumbprint());
-      if (searchResult.certificates().size() == 0) {
-        throw new VCertException(
-            format("No certificate found using fingerprint %s", request.thumbprint()));
-      }
-      if (searchResult.certificates().size() > 1) {
-        throw new VCertException(format(
-            "Error: more than one CertificateRequestId was found with the same thumbprint %s",
-            request.thumbprint()));
-      }
+      if (searchResult.certificates().size() == 0)
+      	throw new CertificateNotFoundByFingerprintException(request.thumbprint());
+      
+      if (searchResult.certificates().size() > 1) 
+          throw new MoreThanOneCertificateRequestIdException(request.thumbprint());
+      
       request.pickupId(searchResult.certificates().get(0).certificateRequestId());
     }
 
@@ -320,21 +327,17 @@ public class TppConnector extends AbstractTppConnector implements Connector {
         return pemCollection;
       }
 
-      if (ZERO.equals(request.timeout())) {
-        throw new VCertException(format("Failed to retrieve certificate %s. Status %s",
-            request.pickupId(), retrieveResponse.status()));
-      }
+      if (ZERO.equals(request.timeout()))
+          throw new CertificatePendingException(request.pickupId());
 
-      if (Instant.now().isAfter(startTime.plus(request.timeout()))) {
-        throw new VCertException(
-            format("Timeout trying to retrieve certificate %s", request.pickupId()));
-      }
+      if (Instant.now().isAfter(startTime.plus(request.timeout())))
+          throw new RetrieveCertificateTimeoutException(request.pickupId());
 
       try {
         TimeUnit.SECONDS.sleep(2);
       } catch (InterruptedException e) {
         e.printStackTrace();
-        throw new VCertException("Error attempting to retry", e);
+        throw new AttemptToRetryException(e);
       }
     }
   }
@@ -359,18 +362,16 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   @Override
   public void revokeCertificate(RevocationRequest request) throws VCertException {
     Integer reason = revocationReasons.get(request.reason());
-    if (reason == null) {
-      throw new VCertException(format("could not parse revocation reason `%s`", request.reason()));
-    }
+    if (reason == null)
+        throw new CouldNotParseRevokeReasonException(request.reason());
 
     CertificateRevokeRequest revokeRequest = new CertificateRevokeRequest()
         .certificateDN(request.certificateDN()).thumbprint(request.thumbprint()).reason(reason)
         .comments(request.comments()).disable(request.disable());
 
     Tpp.CertificateRevokeResponse revokeResponse = revokeCertificate(revokeRequest);
-    if (!revokeResponse.success()) {
-      throw new VCertException(format("Revocation error: %s", revokeResponse.error()));
-    }
+    if (!revokeResponse.success()) 
+    	throw new RevokeFailureException(revokeResponse.error());
   }
 
   private Tpp.CertificateRevokeResponse revokeCertificate(CertificateRevokeRequest request) {
@@ -384,23 +385,19 @@ public class TppConnector extends AbstractTppConnector implements Connector {
     if (isNotBlank(request.thumbprint()) && isBlank(request.certificateDN())) {
       Tpp.CertificateSearchResponse searchResult =
           searchCertificatesByFingerprint(request.thumbprint());
-      if (searchResult.certificates().isEmpty()) {
-        throw new VCertException(
-            String.format("No certificate found using fingerprint %s", request.thumbprint()));
-      }
-      if (searchResult.certificates().size() > 1) {
-        throw new VCertException(
-            String.format("More than one certificate was found with the same thumbprint"));
-      }
+      if (searchResult.certificates().isEmpty())
+          throw new CertificateNotFoundByFingerprintException(request.thumbprint());
+      
+      if (searchResult.certificates().size() > 1)
+          throw new MoreThanOneCertificateRequestIdException(request.thumbprint());
+      
       certificateDN = searchResult.certificates().get(0).certificateRequestId();
     } else {
       certificateDN = request.certificateDN();
     }
 
-    if (isNull(certificateDN)) {
-      throw new VCertException(
-          "Failed to create renewal request: CertificateDN or Thumbprint required");
-    }
+    if (isNull(certificateDN)) 
+        throw new CertificateDNOrFingerprintWasNotProvidedException();
 
     final CertificateRenewalRequest renewalRequest = new CertificateRenewalRequest();
     renewalRequest.certificateDN(certificateDN);
@@ -411,9 +408,8 @@ public class TppConnector extends AbstractTppConnector implements Connector {
     }
 
     final Tpp.CertificateRenewalResponse response = tpp.renewCertificate(renewalRequest, apiKey());
-    if (!response.success()) {
-      throw new VCertException(String.format("Certificate renewal error: %s", response.error()));
-    }
+    if (!response.success())
+    	throw new RenewFailureException(response.error());
 
     return certificateDN;
   }
