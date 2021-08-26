@@ -257,7 +257,7 @@ public class CloudConnectorException extends VCertException {
 	}
 	
 	/**
-	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrFingerprintWasNotProvidedException}.
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrThumbprintWasNotProvidedException}.
 	 *
 	 */
 	public static class CertificateDNOrFingerprintWasNotProvidedException extends CloudConnectorException {

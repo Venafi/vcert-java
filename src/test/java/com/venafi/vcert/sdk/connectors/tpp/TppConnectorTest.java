@@ -32,6 +32,7 @@ import com.venafi.vcert.sdk.connectors.LockableValue;
 import com.venafi.vcert.sdk.connectors.LockableValues;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.ConnectorException.MoreThanOneCertificateWithSameThumbprintException;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 
 @ExtendWith(MockitoExtension.class)
@@ -151,7 +152,8 @@ class TppConnectorTest {
 
     final Throwable throwable =
         assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
-    assertThat(throwable.getMessage()).contains("More than one certificate was found");
+    //assertThat(throwable.getMessage()).contains("More than one certificate was found");
+    assertThat(throwable instanceof MoreThanOneCertificateWithSameThumbprintException);
   }
 
   @Test

@@ -175,12 +175,12 @@ public class ConnectorException extends VCertException {
 		}
 	}
 	
-	public static class CertificateNotFoundByFingerprintException extends ConnectorException {
+	public static class CertificateNotFoundByThumbprintException extends ConnectorException {
 		
 		private static final long serialVersionUID = 1L;
 		
-		public CertificateNotFoundByFingerprintException(String fingerprint) {
-			super(format("No certificate found using fingerprint %s", fingerprint));
+		public CertificateNotFoundByThumbprintException(String thumbprint) {
+			super(format("No certificate found using thumbprint %s", thumbprint));
 		}
 	}
 	
@@ -194,8 +194,22 @@ public class ConnectorException extends VCertException {
 			super(format(message, reqIds));
 		}
 		
-		public MoreThanOneCertificateRequestIdException(String fingerprint) {
-			super(format(message, fingerprint));
+		public MoreThanOneCertificateRequestIdException(String thumbprint) {
+			super(format(message, thumbprint));
+		}
+	}
+	
+	public static class MoreThanOneCertificateWithSameThumbprintException extends ConnectorException {
+		
+		private static final long serialVersionUID = 1L;
+		
+		private final static String message = "More than one Certificate was found with the same thumbprint: %s";
+		
+		String thumbprint;
+		
+		public MoreThanOneCertificateWithSameThumbprintException(String thumbprint) {
+			super(format(message, thumbprint));
+			this.thumbprint = thumbprint;
 		}
 	}
 	
@@ -275,11 +289,11 @@ public class ConnectorException extends VCertException {
 	}
 	
 	
-	public static class CertificateDNOrFingerprintWasNotProvidedException extends ConnectorException {
+	public static class CertificateDNOrThumbprintWasNotProvidedException extends ConnectorException {
 		
 		private static final long serialVersionUID = 1L;
 		
-		public CertificateDNOrFingerprintWasNotProvidedException() {
+		public CertificateDNOrThumbprintWasNotProvidedException() {
 			super("Failed to create renewal request: CertificateDN or Thumbprint required");
 		}
 	}

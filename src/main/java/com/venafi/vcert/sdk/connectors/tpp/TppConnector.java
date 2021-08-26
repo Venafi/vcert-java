@@ -38,12 +38,12 @@ import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.ConnectorException.AttemptToRetryException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.CSRNotProvidedByUserException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrFingerprintWasNotProvidedException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByFingerprintException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrThumbprintWasNotProvidedException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByThumbprintException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.CertificatePendingException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.CouldNotParseRevokeReasonException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingCredentialsException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.MoreThanOneCertificateRequestIdException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.MoreThanOneCertificateWithSameThumbprintException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.RenewFailureException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.RetrieveCertificateTimeoutException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.RevokeFailureException;
@@ -297,10 +297,10 @@ public class TppConnector extends AbstractTppConnector implements Connector {
       Tpp.CertificateSearchResponse searchResult =
           searchCertificatesByFingerprint(request.thumbprint());
       if (searchResult.certificates().size() == 0)
-      	throw new CertificateNotFoundByFingerprintException(request.thumbprint());
+      	throw new CertificateNotFoundByThumbprintException(request.thumbprint());
       
       if (searchResult.certificates().size() > 1) 
-          throw new MoreThanOneCertificateRequestIdException(request.thumbprint());
+          throw new MoreThanOneCertificateWithSameThumbprintException(request.thumbprint());
       
       request.pickupId(searchResult.certificates().get(0).certificateRequestId());
     }
@@ -386,10 +386,10 @@ public class TppConnector extends AbstractTppConnector implements Connector {
       Tpp.CertificateSearchResponse searchResult =
           searchCertificatesByFingerprint(request.thumbprint());
       if (searchResult.certificates().isEmpty())
-          throw new CertificateNotFoundByFingerprintException(request.thumbprint());
+          throw new CertificateNotFoundByThumbprintException(request.thumbprint());
       
       if (searchResult.certificates().size() > 1)
-          throw new MoreThanOneCertificateRequestIdException(request.thumbprint());
+          throw new MoreThanOneCertificateWithSameThumbprintException(request.thumbprint());
       
       certificateDN = searchResult.certificates().get(0).certificateRequestId();
     } else {
@@ -397,7 +397,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
     }
 
     if (isNull(certificateDN)) 
-        throw new CertificateDNOrFingerprintWasNotProvidedException();
+        throw new CertificateDNOrThumbprintWasNotProvidedException();
 
     final CertificateRenewalRequest renewalRequest = new CertificateRenewalRequest();
     renewalRequest.certificateDN(certificateDN);
