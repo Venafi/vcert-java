@@ -15,7 +15,7 @@ import com.venafi.vcert.sdk.connectors.ConnectorException;
  * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException}. 
  * The {@link ConnectorException} contains exactly the same child Classes like this class which is being deprecated, for example 
  * the class {@link com.venafi.vcert.sdk.connectors.cloud.CloudConnectorException.UnexpectedStatusException} has his counter part 
- * {@link com.venafi.vcert.sdk.connectors.ConnectorException.UnexpectedStatusException}.
+ * {@link com.venafi.vcert.sdk.connectors.ConnectorException.CloudPingException}.
  * @author Marcos E. Albornoz Abud
  *
  */
@@ -39,7 +39,7 @@ public class CloudConnectorException extends VCertException {
 	}
 	
 	/**
-	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.UnexpectedStatusException}.
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CloudPingException}.
 	 *
 	 */
 	public static class UnexpectedStatusException extends CloudConnectorException {
@@ -138,7 +138,7 @@ public class CloudConnectorException extends VCertException {
 	}
 	
 	/**
-	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByFingerprintException}.
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByThumbprintException}.
 	 *
 	 */
 	public static class CertificateNotFoundByFingerprintException extends CloudConnectorException {
@@ -257,7 +257,7 @@ public class CloudConnectorException extends VCertException {
 	}
 	
 	/**
-	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrFingerprintWasNotProvidedException}.
+	 * @deprecated It will be removed in next releases being replaced by {@link com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrThumbprintWasNotProvidedException}.
 	 *
 	 */
 	public static class CertificateDNOrFingerprintWasNotProvidedException extends CloudConnectorException {

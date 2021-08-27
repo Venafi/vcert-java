@@ -8,6 +8,10 @@ import com.venafi.vcert.sdk.connectors.LockableValue;
 import com.venafi.vcert.sdk.connectors.LockableValues;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrThumbprintWasNotProvidedException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByThumbprintException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.FailedToRevokeTokenException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.MoreThanOneCertificateWithSameThumbprintException;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.policy.converter.tpp.TPPPolicySpecificationValidator;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
@@ -135,7 +139,7 @@ public class TppTokenConnectorTest {
         final Throwable throwable =
                 assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
 
-        assertThat(throwable.getMessage()).contains("CertificateDN or Thumbprint required");
+        assertThat(throwable instanceof CertificateDNOrThumbprintWasNotProvidedException);
     }
 
     @Test
@@ -150,7 +154,7 @@ public class TppTokenConnectorTest {
 
         final Throwable throwable =
                 assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
-        assertThat(throwable.getMessage()).contains("No certificate found using fingerprint");
+        assertThat(throwable instanceof CertificateNotFoundByThumbprintException);
     }
 
     @Test
@@ -167,7 +171,8 @@ public class TppTokenConnectorTest {
 
         final Throwable throwable =
                 assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
-        assertThat(throwable.getMessage()).contains("More than one certificate was found");
+        //assertThat(throwable.getMessage()).contains("More than one certificate was found");
+        assertThat(throwable instanceof MoreThanOneCertificateWithSameThumbprintException);
     }
 
     @Test
@@ -270,7 +275,7 @@ public class TppTokenConnectorTest {
         when(tpp.revokeToken(eq(HEADER_AUTHORIZATION))).thenReturn(response);
 
         Throwable throwable = assertThrows(VCertException.class, () ->classUnderTest.revokeAccessToken());
-        assertThat(throwable.getMessage()).contains("202");
+        assertThat(throwable instanceof FailedToRevokeTokenException);
     }
 
     @Test
