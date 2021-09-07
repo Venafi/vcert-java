@@ -2,6 +2,7 @@ package com.venafi.vcert.sdk.connectors.tpp;
 
 import static java.time.Duration.ZERO;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -467,7 +468,7 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         final CertificateRenewalRequest renewalRequest = new CertificateRenewalRequest();
         renewalRequest.certificateDN(certificateDN);
 
-        if (Objects.nonNull(request.request()) && request.request().csr().length > 0) {
+        if (nonNull(request.request()) && nonNull(request.request().csr()) && request.request().csr().length > 0) {
             String pkcs10 = org.bouncycastle.util.Strings.fromByteArray(request.request().csr());
             renewalRequest.PKCS10(pkcs10);
         }

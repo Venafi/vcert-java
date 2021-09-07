@@ -4,11 +4,16 @@ import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.policy.api.domain.CloudPolicy;
 import com.venafi.vcert.sdk.policy.domain.Policy;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
+
 import com.venafi.vcert.sdk.policy.converter.ToPolicyConverterAbstract;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CloudPolicyToPolicyConverter extends ToPolicyConverterAbstract<CloudPolicy> {
+	
+	private static final String REGEX = "[a-z]{1}[a-z0-9.-]*\\.";
+	private static final String REGEX_WITH_WILCARD = "[*a-z]{1}[a-z0-9.-]*\\.";
 
     public static CloudPolicyToPolicyConverter INSTANCE = new CloudPolicyToPolicyConverter();
 
@@ -49,26 +54,48 @@ public class CloudPolicyToPolicyConverter extends ToPolicyConverterAbstract<Clou
         if ( subjectCNRegexes != null && subjectCNRegexes.size() > 0 && !subjectCNRegexes.get(0).equals(".*") ) {
 
             Policy policy = getPolicyFromPolicySpecification( policySpecification );
-            policy.domains( subjectCNRegexes.toArray(new String[0]) );
+            
+            processDomains(policy, subjectCNRegexes);
 
-            boolean wildcardFound = false;
-            boolean wildcardNotFound = false;
-            for ( String subjectCNRegex : subjectCNRegexes) {
-                if ( subjectCNRegex.startsWith("[*"))
-                    wildcardFound = true;
-                else
-                    wildcardNotFound = true;
-            }
-
-            if ( wildcardFound && !wildcardNotFound )
-                policy.wildcardAllowed(true);
-            else
-            if ( !wildcardFound && wildcardNotFound )
-                policy.wildcardAllowed(false);
+            processWildcard(policy, subjectCNRegexes);
 
         } else {
             //domains will not set
         }
+    }
+    
+    private void processDomains( Policy policy, List<String> subjectCNRegexes) {
+    	//converting the subjectCNRegexes to domains
+        List<String> domains = new ArrayList<String>();
+        for (String domain : subjectCNRegexes) {
+        	if(domain.startsWith(REGEX_WITH_WILCARD))
+        		domain = domain.substring(REGEX_WITH_WILCARD.length());
+        	else
+        		if(domain.startsWith(REGEX))
+            		domain = domain.substring(REGEX.length());
+        	
+			domain = domain.replace("\\.", ".");
+			
+			domains.add(domain);
+		}
+        policy.domains( domains.toArray(new String[0]) );
+    }
+    
+    private void processWildcard( Policy policy, List<String> subjectCNRegexes ) {
+    	boolean wildcardFound = false;
+        boolean wildcardNotFound = false;
+        for ( String subjectCNRegex : subjectCNRegexes) {
+            if ( subjectCNRegex.startsWith("[*"))
+                wildcardFound = true;
+            else
+                wildcardNotFound = true;
+        }
+
+        if ( wildcardFound && !wildcardNotFound )
+            policy.wildcardAllowed(true);
+        else
+        if ( !wildcardFound && wildcardNotFound )
+            policy.wildcardAllowed(false);
     }
 
     private void processMaxValidDays( PolicySpecification policySpecification,CertificateIssuingTemplate cit ) throws Exception {

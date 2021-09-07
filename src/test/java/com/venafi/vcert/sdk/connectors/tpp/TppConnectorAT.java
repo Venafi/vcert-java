@@ -69,6 +69,15 @@ class TppConnectorAT {
             throw VCertException.fromFeignException(fe);
         }
     }
+    
+    @Test
+    void readZoneConfigurationInLongFormat() throws VCertException {
+        try {
+            classUnderTest.readZoneConfiguration("\\VED\\Policy\\"+System.getenv("TPPZONE"));
+        } catch (FeignException fe) {
+            throw VCertException.fromFeignException(fe);
+        }
+    }
 
     @Test
     void ping() throws VCertException {
