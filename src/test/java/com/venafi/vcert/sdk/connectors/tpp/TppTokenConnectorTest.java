@@ -90,7 +90,7 @@ public class TppTokenConnectorTest {
         Security.addProvider(new BouncyCastleProvider());
 
         TppTokenConnector.ReadZoneConfigurationRequest expectedRZCRequest =
-                new TppTokenConnector.ReadZoneConfigurationRequest("\\VED\\Policy\\\\VED\\Policy\\myZone");
+                new TppTokenConnector.ReadZoneConfigurationRequest("\\VED\\Policy\\myZone");
         when(
                 tpp.readZoneConfigurationToken(eq(expectedRZCRequest), eq(HEADER_AUTHORIZATION)))
                 .thenReturn(

@@ -73,7 +73,7 @@ class TppConnectorTest {
     Security.addProvider(new BouncyCastleProvider());
 
     TppConnector.ReadZoneConfigurationRequest expectedRZCRequest =
-        new TppConnector.ReadZoneConfigurationRequest("\\VED\\Policy\\\\VED\\Policy\\myZone");
+        new TppConnector.ReadZoneConfigurationRequest("\\VED\\Policy\\myZone");
     when(
         tpp.readZoneConfiguration(eq(expectedRZCRequest), eq(API_KEY)))
             .thenReturn(
