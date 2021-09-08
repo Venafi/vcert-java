@@ -287,10 +287,6 @@ class CloudConnectorAT {
 
         PolicySpecification policySpecificationReturned = classUnderTest.getPolicy(policyName);
 
-        //The original domain values will be converted to regex values when the PolicySpecification is set
-        // so therefore the domain values are updated in order to match with the expected ones
-        policySpecification.policy().domains(new String[]{"[*A-Za-z]{1}[A-Za-z0-9.-]*\\.venafi\\.com", "[*A-Za-z]{1}[A-Za-z0-9.-]*\\.kwan\\.com"});
-
         //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
         //due it doesn't contain it
         policySpecification.name(policySpecificationReturned.name());
@@ -314,10 +310,6 @@ class CloudConnectorAT {
 
         PolicySpecification policySpecificationReturned = classUnderTest.getPolicy(policyName);
 
-        //The original domain values will be converted to regex values when the PolicySpecification is set
-        // so therefore the domain values are updated in order to match with the expected ones
-        policySpecification.policy().domains(new String[]{"[*A-Za-z]{1}[A-Za-z0-9.-]*\\.venafi\\.com", "[*A-Za-z]{1}[A-Za-z0-9.-]*\\.kwan\\.com"});
-
         //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
         //due it doesn't contain it
         policySpecification.name(policySpecificationReturned.name());
@@ -337,11 +329,7 @@ class CloudConnectorAT {
         classUnderTest.setPolicy(policyName, policySpecification);
 
         PolicySpecification policySpecificationReturned = classUnderTest.getPolicy(policyName);
-
-        //The original domain values will be converted to regex values when the PolicySpecification is set
-        // so therefore the domain values are updated in order to match with the expected ones
-        policySpecification.policy().domains(new String[]{"[*A-Za-z]{1}[A-Za-z0-9.-]*\\.venafi\\.com", "[*A-Za-z]{1}[A-Za-z0-9.-]*\\.kwan\\.com"});
-
+        
         //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
         //due it doesn't contain it
         policySpecification.name(policySpecificationReturned.name());
