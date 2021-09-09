@@ -165,7 +165,7 @@ public class PolicyToCloudPolicyConverter implements FromPolicyConverter<CloudPo
         for (String current : values ) {
             String currentRegex = StringUtils.replace(current, ".", "\\.");//current.replaceAll( "\\.", "\\.");
             String wildCard = wildcardAllowed ? "*" : "";
-            regexValues.add( String.format("[%sA-Za-z]{1}[A-Za-z0-9.-]*\\.", wildCard) + currentRegex );
+            regexValues.add( String.format("[%sa-z]{1}[a-z0-9.-]*\\.", wildCard) + currentRegex );
         }
 
         return regexValues;

@@ -49,7 +49,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class TppTokenConnectorTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(TppConnectorTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(TppTokenConnectorTest.class);
     private static final String ACCESS_TOKEN = "12345678-1234-1234-1234-123456789012";
     private static final String HEADER_AUTHORIZATION = "Bearer " + ACCESS_TOKEN;
     private static final String REFRESH_TOKEN = "abcdefgh-abcd-abcd-abcd-abcdefghijkl";
@@ -90,7 +90,7 @@ public class TppTokenConnectorTest {
         Security.addProvider(new BouncyCastleProvider());
 
         TppTokenConnector.ReadZoneConfigurationRequest expectedRZCRequest =
-                new TppTokenConnector.ReadZoneConfigurationRequest("\\VED\\Policy\\\\VED\\Policy\\myZone");
+                new TppTokenConnector.ReadZoneConfigurationRequest("\\VED\\Policy\\myZone");
         when(
                 tpp.readZoneConfigurationToken(eq(expectedRZCRequest), eq(HEADER_AUTHORIZATION)))
                 .thenReturn(

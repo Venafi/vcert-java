@@ -5,8 +5,6 @@ import static java.time.Duration.ZERO;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -27,7 +25,6 @@ import lombok.Data;
 import lombok.Getter;
 
 public abstract class AbstractTppConnector {
-    protected static final Pattern POLICY_REGEX = Pattern.compile("^\\\\VED\\\\Policy");
     protected static final String HEADER_VALUE_AUTHORIZATION = "Bearer %s";
 
     protected static final String FAILED_TO_AUTHENTICATE_MESSAGE = "failed to authenticate: ";
@@ -70,13 +67,10 @@ public abstract class AbstractTppConnector {
     @VisibleForTesting
     String getPolicyDN(final String zone) {
         String result = zone;
-        Matcher candidate = POLICY_REGEX.matcher(zone);
-        if (!candidate.matches()) {
-            if (!POLICY_REGEX.matcher(zone).matches()) {
-                result = "\\" + result;
-            }
-            result = "\\VED\\Policy" + result;
-        }
+        
+        result = result.startsWith("\\") ? result : "\\"+result;//Ensuring that the zone starts with a "\"
+        result = result.startsWith("\\VED\\Policy") ? result : "\\VED\\Policy"+result; //Ensuring that the zone starts with "\VED\Policy"
+        
         return result;
     }
 

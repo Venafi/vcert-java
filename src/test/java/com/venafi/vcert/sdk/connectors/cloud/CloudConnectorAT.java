@@ -29,7 +29,10 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.Strings;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.TestUtils;
@@ -42,6 +45,7 @@ import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.cloud.CloudConnectorException.CertificateNotFoundByFingerprintException;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.VCertUtils;
@@ -49,6 +53,8 @@ import com.venafi.vcert.sdk.utils.VCertUtils;
 import feign.FeignException;
 
 class CloudConnectorAT {
+	
+	private static final Logger logger = LoggerFactory.getLogger(CloudConnectorAT.class);
 
     private CloudConnector classUnderTest;
 
@@ -163,7 +169,7 @@ class CloudConnectorAT {
             classUnderTest.revokeCertificate(new RevocationRequest());
         });
     }
-
+    
     @Test
     void renewCertificate() throws VCertException, UnknownHostException,
             CertificateException {
@@ -200,8 +206,21 @@ class CloudConnectorAT {
                 .keyType(KeyType.RSA);
         classUnderTest.generateRequest(zoneConfiguration, certificateRequestToRenew);
 
-        String renewRequestId = classUnderTest.renewCertificate(
-                new RenewalRequest().request(certificateRequestToRenew).thumbprint(thumbprint));
+        String renewRequestId = null;
+        try {
+        	renewRequestId = classUnderTest.renewCertificate(
+                    new RenewalRequest().request(certificateRequestToRenew).thumbprint(thumbprint));
+        } catch (CertificateNotFoundByFingerprintException e) {
+			//wait for 5 sec, it's very probably that the Certificate is not ready at this point
+        	logger.warn("Failed to renewCertificate, because it's very probably that the Certificate is not ready yet. Waiting 5 sec to attempt one more time...");
+        	try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+        	renewRequestId = classUnderTest.renewCertificate(
+                    new RenewalRequest().request(certificateRequestToRenew).thumbprint(thumbprint));
+		} 
 
         assertThat(renewRequestId).isNotNull();
     }
@@ -287,10 +306,6 @@ class CloudConnectorAT {
 
         PolicySpecification policySpecificationReturned = classUnderTest.getPolicy(policyName);
 
-        //The original domain values will be converted to regex values when the PolicySpecification is set
-        // so therefore the domain values are updated in order to match with the expected ones
-        policySpecification.policy().domains(new String[]{"[*A-Za-z]{1}[A-Za-z0-9.-]*\\.venafi\\.com", "[*A-Za-z]{1}[A-Za-z0-9.-]*\\.kwan\\.com"});
-
         //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
         //due it doesn't contain it
         policySpecification.name(policySpecificationReturned.name());
@@ -314,10 +329,6 @@ class CloudConnectorAT {
 
         PolicySpecification policySpecificationReturned = classUnderTest.getPolicy(policyName);
 
-        //The original domain values will be converted to regex values when the PolicySpecification is set
-        // so therefore the domain values are updated in order to match with the expected ones
-        policySpecification.policy().domains(new String[]{"[*A-Za-z]{1}[A-Za-z0-9.-]*\\.venafi\\.com", "[*A-Za-z]{1}[A-Za-z0-9.-]*\\.kwan\\.com"});
-
         //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
         //due it doesn't contain it
         policySpecification.name(policySpecificationReturned.name());
@@ -337,11 +348,7 @@ class CloudConnectorAT {
         classUnderTest.setPolicy(policyName, policySpecification);
 
         PolicySpecification policySpecificationReturned = classUnderTest.getPolicy(policyName);
-
-        //The original domain values will be converted to regex values when the PolicySpecification is set
-        // so therefore the domain values are updated in order to match with the expected ones
-        policySpecification.policy().domains(new String[]{"[*A-Za-z]{1}[A-Za-z0-9.-]*\\.venafi\\.com", "[*A-Za-z]{1}[A-Za-z0-9.-]*\\.kwan\\.com"});
-
+        
         //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
         //due it doesn't contain it
         policySpecification.name(policySpecificationReturned.name());
