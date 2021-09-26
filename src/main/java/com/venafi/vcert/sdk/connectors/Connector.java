@@ -7,8 +7,10 @@ import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.certificate.SshCaTemplateRequest;
 import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
 import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
+import com.venafi.vcert.sdk.certificate.SshConfig;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
@@ -195,4 +197,6 @@ public interface Connector {
    * @throws VCertException
    */
   SshCertRetrieveDetails retrieveSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException;
+  
+  SshConfig retrieveSshConfig(SshCaTemplateRequest sshCaTemplateRequest) throws VCertException;
 }

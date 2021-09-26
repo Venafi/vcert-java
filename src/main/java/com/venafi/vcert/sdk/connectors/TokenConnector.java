@@ -231,4 +231,6 @@ public interface TokenConnector {
      * @throws VCertException
      */
     SshCertRetrieveDetails retrieveSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException;
+    
+    SshConfig retrieveSshConfig(SshCaTemplateRequest sshCaTemplateRequest) throws VCertException;
 }

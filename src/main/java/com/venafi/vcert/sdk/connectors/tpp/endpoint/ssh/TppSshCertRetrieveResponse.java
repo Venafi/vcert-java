@@ -7,8 +7,8 @@ import lombok.Data;
 
 @Data
 public class TppSshCertRetrieveResponse {
-	@SerializedName("Status")
-	private String status;
+	@SerializedName("ProcessingDetails")
+	private ProcessingDetails processingDetails;
 	@SerializedName("Guid")
 	private String guid;
 	@SerializedName("DN")

@@ -10,10 +10,8 @@ public class TppSshCertRequestResponse {
 	private String dn;
 	@SerializedName("Guid")
 	private String guid;
-	@SerializedName("Status")
-	private String status;//TODO Ask why it's not being used in VCert-go implementation
-	@SerializedName("Permissions")
-	private String permissions;
+	@SerializedName("ProcessingDetails")
+	private ProcessingDetails processingDetails;//TODO Ask why it's not being used in VCert-go implementation
 	@SerializedName("Response")
 	private TppSshCertResponseInfo response;
 }

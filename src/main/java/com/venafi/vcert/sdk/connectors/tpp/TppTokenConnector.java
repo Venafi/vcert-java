@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.io.CharStreams;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ChainOption;
@@ -33,8 +34,10 @@ import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.PublicKeyAlgorithm;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.certificate.SshCaTemplateRequest;
 import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
 import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
+import com.venafi.vcert.sdk.certificate.SshConfig;
 import com.venafi.vcert.sdk.connectors.ConnectorException.AttemptToRetryException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.CSRNotProvidedByUserException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrThumbprintWasNotProvidedException;
@@ -57,6 +60,8 @@ import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.connectors.TokenConnector;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCaTemplateRequest;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCaTemplateResponse;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequest;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequestResponse;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveRequest;
@@ -539,6 +544,10 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
 		return super.retrieveTppSshCertificate(sshCertificateRequest);
 	}
 	
+	@Override
+	public SshConfig retrieveSshConfig(SshCaTemplateRequest sshCaTemplateRequest) throws VCertException {
+		return super.retrieveTppSshConfig(sshCaTemplateRequest);
+	}
 
     private boolean isEmptyCredentials(Authentication credentials){
         if(credentials == null){
@@ -614,6 +623,24 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         		TppSshCertRetrieveResponse retrieveSshCertificate(TppSshCertRetrieveRequest request) throws VCertException {
         			return tpp.retrieveSshCertificateToken(request, getAuthKey());
         		}
+
+				@Override
+				String retrieveSshCAPublicKeyData(Map<String, String> params) throws VCertException {
+					String publicKeyData = null;
+
+					try {
+						publicKeyData = CharStreams.toString(tpp.retrieveSshCAPublicKeyData(params).body().asReader());
+					} catch (Exception e) {
+						throw new VCertException(e);
+					}
+
+					return publicKeyData;
+				}
+
+				@Override
+				TppSshCaTemplateResponse retrieveSshCATemplate(TppSshCaTemplateRequest request) throws VCertException {
+					return tpp.retrieveSshCATemplateToken(request, getAuthKey());
+				}
             };
         }
 

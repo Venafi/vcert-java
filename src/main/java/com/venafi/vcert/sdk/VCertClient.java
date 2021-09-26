@@ -12,8 +12,10 @@ import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.certificate.SshCaTemplateRequest;
 import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
 import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
+import com.venafi.vcert.sdk.certificate.SshConfig;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
@@ -267,6 +269,15 @@ public class VCertClient implements Connector {
   		throws VCertException {
   	try {
   		return connector.retrieveSshCertificate(sshCertificateRequest);
+  	} catch (FeignException e) {
+  		throw VCertException.fromFeignException(e);
+  	}
+  }
+  
+  @Override
+  public SshConfig retrieveSshConfig(SshCaTemplateRequest sshCaTemplateRequest) throws VCertException {
+  	try {
+  		return connector.retrieveSshConfig(sshCaTemplateRequest);
   	} catch (FeignException e) {
   		throw VCertException.fromFeignException(e);
   	}

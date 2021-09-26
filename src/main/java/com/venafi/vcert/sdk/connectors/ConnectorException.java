@@ -256,11 +256,20 @@ public class ConnectorException extends VCertException {
 		
 		private static final long serialVersionUID = 1L;
 		
+		private static final String message = "Issuance is pending. You may try retrieving the certificate later using Pickup ID: %s";
+		
 		String pickupId;
+		String status;
 		
 		public CertificatePendingException(String pickupId) {
-			super(format("Issuance is pending. You may try retrieving the certificate later using Pickup ID: %s", pickupId));
+			super(format(message, pickupId));
 			this.pickupId = pickupId;
+		}
+		
+		public CertificatePendingException(String pickupId, String status) {
+			super(format(message+"\n\tStatus: %s", pickupId, status));
+			this.pickupId = pickupId;
+			this.status = status;
 		}
 	}
 	
@@ -280,11 +289,20 @@ public class ConnectorException extends VCertException {
 		
 		private static final long serialVersionUID = 1L;
 		
+		private static final String message = "Certificate request was rejected. You may need to verify the certificate using Pickup ID: %s";
+		
 		String pickupId;
+		String status;
 		
 		public CertificateRejectedException(String pickupId) {
-			super(format("Certificate request was rejected. You may need to verify the certificate using Pickup ID: %s", pickupId));
+			super(format(message, pickupId));
 			this.pickupId = pickupId;
+		}
+		
+		public CertificateRejectedException(String pickupId, String status) {
+			super(format(message+"\n\tStatus: %s", pickupId, status));
+			this.pickupId = pickupId;
+			this.status = status;
 		}
 	}
 	
@@ -355,6 +373,15 @@ public class ConnectorException extends VCertException {
 		public RenewFailureException(String error) {
 			super(format("Certificate renewal error: %", error));
 			this.error = error;
+		}
+	}
+	
+	public static class CAOrGUIDNotProvidedException extends ConnectorException {
+		
+		private static final long serialVersionUID = 1L;
+		
+		public CAOrGUIDNotProvidedException() {
+			super("CA template or GUID are not specified");
 		}
 	}
 
