@@ -115,7 +115,7 @@ public interface Connector {
       throws VCertException;
 
   /**
-   * Retrives the certificate for the specific ID
+   * Retrieves the certificate for the specific ID
    * 
    * @param request
    * @return A collection of PEM files including certificate, chain and potentially a private key.
@@ -198,5 +198,12 @@ public interface Connector {
    */
   SshCertRetrieveDetails retrieveSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException;
   
+  /**
+   * Retrieve the {@link com.venafi.vcert.sdk.certificate.SshConfig SshConfig} of the CA specified in the 
+   * {@link com.venafi.vcert.sdk.certificate.SshCaTemplateRequest SshCaTemplateRequest}.
+   * @param sshCaTemplateRequest
+   * @return A {@link com.venafi.vcert.sdk.certificate.SshConfig SshConfig}.
+   * @throws VCertException
+   */
   SshConfig retrieveSshConfig(SshCaTemplateRequest sshCaTemplateRequest) throws VCertException;
 }

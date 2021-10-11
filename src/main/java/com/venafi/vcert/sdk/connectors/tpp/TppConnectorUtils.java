@@ -338,7 +338,7 @@ public class TppConnectorUtils {
 	public static TppSshCertRequest convertToTppSshCertReq(SshCertificateRequest sshCertificateRequest) throws VCertException {
 		TppSshCertRequest tppSshCertRequest = new TppSshCertRequest();
 
-		tppSshCertRequest.cadn( isNotBlank(sshCertificateRequest.cadn()) ? getSshCADN(sshCertificateRequest.cadn()): null );
+		tppSshCertRequest.cadn( isNotBlank(sshCertificateRequest.template()) ? getSshCADN(sshCertificateRequest.template()): null );
 		tppSshCertRequest.policyDN( isNotBlank(sshCertificateRequest.policyDN()) ? sshCertificateRequest.policyDN() : null );
 		tppSshCertRequest.objectName( isNotBlank(sshCertificateRequest.objectName()) ? sshCertificateRequest.objectName() : null );
 		tppSshCertRequest.destinationAddresses( sshCertificateRequest.destinationAddresses() != null && sshCertificateRequest.destinationAddresses().length > 0 ? sshCertificateRequest.destinationAddresses() : null );

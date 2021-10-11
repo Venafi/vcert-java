@@ -74,7 +74,7 @@ class TppTokenConnectorATForSSH {
 		SshCertificateRequest req = new SshCertificateRequest()
 				.keyId( keyId )
 				.validityPeriod("4h")
-				.cadn(System.getenv("TPP_SSH_CA"))
+				.template(System.getenv("TPP_SSH_CA"))
 				.publicKeyData(publicKeyData)
 				.sourceAddresses(new String[]{"test.com"});
 		
@@ -102,7 +102,7 @@ class TppTokenConnectorATForSSH {
 		SshCertificateRequest req = new SshCertificateRequest()
 				.keyId(TppTestUtils.getRandSshKeyId())
 				.validityPeriod("4h")
-				.cadn(System.getenv("TPP_SSH_CA"))
+				.template(System.getenv("TPP_SSH_CA"))
 				.sourceAddresses(new String[]{"test.com"});
 
 		//requesting the SSH Certificate
@@ -125,22 +125,22 @@ class TppTokenConnectorATForSSH {
 	}
 	
 	@Test
-	@DisplayName("TPP - Testing the retrieveSshConfig() method with DN in short format")
-	public void retrieveSshConfigDNShortFormat() throws VCertException, Exception {
+	@DisplayName("TPP - Testing the retrieveSshConfig() method using CA name")
+	public void retrieveSshConfigFromCAName() throws VCertException, Exception {
 		
 		SshCaTemplateRequest req = new SshCaTemplateRequest()
-				.dn(System.getenv("TPP_SSH_CA"));
+				.template(System.getenv("TPP_SSH_CA"));
 
 		//getting the sshConfig of the SSH Cert CA
 		retrieveSshConfig(req);
 	}
 	
 	@Test
-	@DisplayName("TPP - Testing the retrieveSshConfig() method with DN in long format")
-	public void retrieveSshConfigDNLongFormat() throws VCertException, Exception {
+	@DisplayName("TPP - Testing the retrieveSshConfig() method using CADN")
+	public void retrieveSshConfigFromCADN() throws VCertException, Exception {
 		
 		SshCaTemplateRequest req = new SshCaTemplateRequest()
-				.dn(System.getenv("TPP_SSH_CADN"));
+				.template(System.getenv("TPP_SSH_CADN"));
 
 		//getting the sshConfig of the SSH Cert CA
 		retrieveSshConfig(req);
@@ -160,12 +160,12 @@ class TppTokenConnectorATForSSH {
 	
 	@Test
 	@Tag("AuthenticationUnneeded")
-	@DisplayName("TPP - Testing the retrieveSshConfig() method without authentication with DN in short format")
-	public void retrieveSshConfigWithoutCredentialsDNShortFormat() throws VCertException, Exception {
+	@DisplayName("TPP - Testing the retrieveSshConfig() method without authentication using CA name")
+	public void retrieveSshConfigWithoutCredentialsFromCAName() throws VCertException, Exception {
 
 		//Given this test is tagged as AuthenticationUnneeded, then the Authentication will not be performed
 		SshCaTemplateRequest req = new SshCaTemplateRequest()
-				.dn(System.getenv("TPP_SSH_CA"));
+				.template(System.getenv("TPP_SSH_CA"));
 
 		//getting the sshConfig of the SSH Cert CA
 		retrieveSshConfigWithoutCredentials(req);
@@ -173,12 +173,12 @@ class TppTokenConnectorATForSSH {
 	
 	@Test
 	@Tag("AuthenticationUnneeded")
-	@DisplayName("TPP - Testing the retrieveSshConfig() method without authentication with DN in long format")
-	public void retrieveSshConfigWithoutCredentialsDNLongFormat() throws VCertException, Exception {
+	@DisplayName("TPP - Testing the retrieveSshConfig() method without authentication using CADN")
+	public void retrieveSshConfigWithoutCredentialsFromCADN() throws VCertException, Exception {
 
 		//Given this test is tagged as AuthenticationUnneeded, then the Authentication will not be performed
 		SshCaTemplateRequest req = new SshCaTemplateRequest()
-				.dn(System.getenv("TPP_SSH_CADN"));
+				.template(System.getenv("TPP_SSH_CADN"));
 
 		//getting the sshConfig of the SSH Cert CA
 		retrieveSshConfigWithoutCredentials(req);

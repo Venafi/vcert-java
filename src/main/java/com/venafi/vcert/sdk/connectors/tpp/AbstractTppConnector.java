@@ -183,8 +183,8 @@ public abstract class AbstractTppConnector {
     	
     	Map<String, String> params = new HashMap<String, String>();
     	
-    	if(StringUtils.isNotBlank(sshCaTemplateRequest.dn()))
-    		params.put("DN", TppConnectorUtils.getSshCADN(sshCaTemplateRequest.dn()));
+    	if(StringUtils.isNotBlank(sshCaTemplateRequest.template()))
+    		params.put("DN", TppConnectorUtils.getSshCADN(sshCaTemplateRequest.template()));
     	else 
     		if(StringUtils.isNotBlank(sshCaTemplateRequest.guid()))
     			params.put("Guid", sshCaTemplateRequest.guid());
@@ -211,8 +211,8 @@ public abstract class AbstractTppConnector {
     	
     	TppSshCaTemplateRequest request = new TppSshCaTemplateRequest();
     	
-    	if(StringUtils.isNotBlank(sshCaTemplateRequest.dn()))
-    		request.dn( TppConnectorUtils.getSshCADN(sshCaTemplateRequest.dn()) );
+    	if(StringUtils.isNotBlank(sshCaTemplateRequest.template()))
+    		request.dn( TppConnectorUtils.getSshCADN(sshCaTemplateRequest.template()) );
     	else 
     		if(StringUtils.isNotBlank(sshCaTemplateRequest.guid()))
     			request.guid( sshCaTemplateRequest.guid() );
