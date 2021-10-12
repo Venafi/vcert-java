@@ -13,7 +13,7 @@ import lombok.Data;
  */
 
 /**
- * This class represents the Request Object to use to "request" a new SSH Certificate and also to "retrieve" the requested SSH Certificate.
+ * This class represents the request Object needed to "request" a new SSH Certificate and also to "retrieve" the requested SSH Certificate.
  * <br>
  * This dual purpose is because the "request SSH Certificate" action returns the DN of the created SSH certificate
  * which will be used as the PickUp ID for the Request Object to "retrieve the generated Certificate", so in order to avoid the creation of a 
@@ -22,7 +22,7 @@ import lombok.Data;
  * <br><br>
  * For request a new SSH Certificate the attributes to use are:
  * <ul>
- * <li>{@link #cadn} <i>(Mandatory)</i>
+ * <li>{@link #template} <i>(Mandatory)</i>
  * <li>{@link #policyDN} <i>(Optional)</i>
  * <li>{@link #objectName} <i>(Optional)</i>
  * <li>{@link #destinationAddresses} <i>(Optional)</i>
@@ -54,9 +54,9 @@ public class SshCertificateRequest {
 	
 	/**
 	 * <i>To be used to request the ssh certificate</i>.
-	 * <br> Mandatory. The DN of the issuing certificate template which will be used for signing.
+	 * <br> Mandatory. The CADN or the CA name of the issuing certificate template which will be used for signing.
 	 */
-	private String cadn;
+	private String template;
 	/**
 	 * <i>To be used to request the ssh certificate</i>.
 	 * <br> Optional. The DN of the policy folder where the certificate object will be created. 

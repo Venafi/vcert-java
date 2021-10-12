@@ -7,8 +7,10 @@ import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
+import com.venafi.vcert.sdk.certificate.SshCaTemplateRequest;
 import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
 import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
+import com.venafi.vcert.sdk.certificate.SshConfig;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
@@ -113,7 +115,7 @@ public interface Connector {
       throws VCertException;
 
   /**
-   * Retrives the certificate for the specific ID
+   * Retrieves the certificate for the specific ID
    * 
    * @param request
    * @return A collection of PEM files including certificate, chain and potentially a private key.
@@ -195,4 +197,13 @@ public interface Connector {
    * @throws VCertException
    */
   SshCertRetrieveDetails retrieveSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException;
+  
+  /**
+   * Retrieve the {@link com.venafi.vcert.sdk.certificate.SshConfig SshConfig} of the CA specified in the 
+   * {@link com.venafi.vcert.sdk.certificate.SshCaTemplateRequest SshCaTemplateRequest}.
+   * @param sshCaTemplateRequest
+   * @return A {@link com.venafi.vcert.sdk.certificate.SshConfig SshConfig}.
+   * @throws VCertException
+   */
+  SshConfig retrieveSshConfig(SshCaTemplateRequest sshCaTemplateRequest) throws VCertException;
 }

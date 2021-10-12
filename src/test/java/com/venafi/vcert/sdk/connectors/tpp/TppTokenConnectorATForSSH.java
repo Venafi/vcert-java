@@ -3,20 +3,26 @@ package com.venafi.vcert.sdk.connectors.tpp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import com.sshtools.common.publickey.SshKeyPairGenerator;
 import com.sshtools.common.publickey.SshKeyUtils;
 import com.sshtools.common.ssh.components.SshKeyPair;
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.certificate.SshCaTemplateRequest;
 import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
 import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
+import com.venafi.vcert.sdk.certificate.SshConfig;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 
 class TppTokenConnectorATForSSH {
@@ -25,25 +31,29 @@ class TppTokenConnectorATForSSH {
 	private static TokenInfo info;
 
 	@BeforeEach
-	void authenticate() throws VCertException {
-		Security.addProvider(new BouncyCastleProvider());
-		//Executes only once to ensure the same token is used across the tests
-		if(TppTokenConnectorATForSSH.info == null){
-			Authentication authentication = Authentication.builder()
-					.user(System.getenv("TPPUSER"))
-					.password(System.getenv("TPPPASSWORD"))
-					.scope("ssh:manage")
-					.build();
+	void authenticate(TestInfo testInfo) throws VCertException {
 
-			TokenInfo info = classUnderTest.getAccessToken(authentication);
+		if(testInfo.getTags()!=null && !testInfo.getTags().contains("AuthenticationUnneeded")) {
 
-			assertThat(info).isNotNull();
-			assertThat(info.authorized()).isTrue();
-			assertThat(info.errorMessage()).isNull();
-			assertThat(info.accessToken()).isNotNull();
-			assertThat(info.refreshToken()).isNotNull();
+			Security.addProvider(new BouncyCastleProvider());
+			//Executes only once to ensure the same token is used across the tests
+			if(TppTokenConnectorATForSSH.info == null){
+				Authentication authentication = Authentication.builder()
+						.user(System.getenv("TPPUSER"))
+						.password(System.getenv("TPPPASSWORD"))
+						.scope("ssh:manage")
+						.build();
 
-			TppTokenConnectorATForSSH.info = info;
+				TokenInfo info = classUnderTest.getAccessToken(authentication);
+
+				assertThat(info).isNotNull();
+				assertThat(info.authorized()).isTrue();
+				assertThat(info.errorMessage()).isNull();
+				assertThat(info.accessToken()).isNotNull();
+				assertThat(info.refreshToken()).isNotNull();
+
+				TppTokenConnectorATForSSH.info = info;
+			}
 		}
 	}
 
@@ -64,7 +74,7 @@ class TppTokenConnectorATForSSH {
 		SshCertificateRequest req = new SshCertificateRequest()
 				.keyId( keyId )
 				.validityPeriod("4h")
-				.cadn(System.getenv("TPP_SSH_CA"))
+				.template(System.getenv("TPP_SSH_CA"))
 				.publicKeyData(publicKeyData)
 				.sourceAddresses(new String[]{"test.com"});
 		
@@ -92,7 +102,7 @@ class TppTokenConnectorATForSSH {
 		SshCertificateRequest req = new SshCertificateRequest()
 				.keyId(TppTestUtils.getRandSshKeyId())
 				.validityPeriod("4h")
-				.cadn(System.getenv("TPP_SSH_CA"))
+				.template(System.getenv("TPP_SSH_CA"))
 				.sourceAddresses(new String[]{"test.com"});
 
 		//requesting the SSH Certificate
@@ -112,5 +122,77 @@ class TppTokenConnectorATForSSH {
 		SshKeyPair sshKeyPair = SshKeyUtils.getPrivateKey(sshCertRetrieveDetails.privateKeyData(), "my-passphrase");
 		
 		assertNotNull(sshKeyPair);
+	}
+	
+	@Test
+	@DisplayName("TPP - Testing the retrieveSshConfig() method using CA name")
+	public void retrieveSshConfigFromCAName() throws VCertException, Exception {
+		
+		SshCaTemplateRequest req = new SshCaTemplateRequest()
+				.template(System.getenv("TPP_SSH_CA"));
+
+		//getting the sshConfig of the SSH Cert CA
+		retrieveSshConfig(req);
+	}
+	
+	@Test
+	@DisplayName("TPP - Testing the retrieveSshConfig() method using CADN")
+	public void retrieveSshConfigFromCADN() throws VCertException, Exception {
+		
+		SshCaTemplateRequest req = new SshCaTemplateRequest()
+				.template(System.getenv("TPP_SSH_CADN"));
+
+		//getting the sshConfig of the SSH Cert CA
+		retrieveSshConfig(req);
+	}
+	
+	private void retrieveSshConfig(SshCaTemplateRequest req) throws VCertException, Exception {
+		
+		//getting the sshConfig of the SSH Cert CA
+		SshConfig sshConfig = classUnderTest.retrieveSshConfig(req);
+
+		assertNotNull(sshConfig);
+		assertNotNull(sshConfig.caPublicKey());
+		assertTrue(!sshConfig.caPublicKey().isEmpty());
+		assertNotNull(sshConfig.principals());
+		assertTrue(sshConfig.principals().length>0);
+	}
+	
+	@Test
+	@Tag("AuthenticationUnneeded")
+	@DisplayName("TPP - Testing the retrieveSshConfig() method without authentication using CA name")
+	public void retrieveSshConfigWithoutCredentialsFromCAName() throws VCertException, Exception {
+
+		//Given this test is tagged as AuthenticationUnneeded, then the Authentication will not be performed
+		SshCaTemplateRequest req = new SshCaTemplateRequest()
+				.template(System.getenv("TPP_SSH_CA"));
+
+		//getting the sshConfig of the SSH Cert CA
+		retrieveSshConfigWithoutCredentials(req);
+	}
+	
+	@Test
+	@Tag("AuthenticationUnneeded")
+	@DisplayName("TPP - Testing the retrieveSshConfig() method without authentication using CADN")
+	public void retrieveSshConfigWithoutCredentialsFromCADN() throws VCertException, Exception {
+
+		//Given this test is tagged as AuthenticationUnneeded, then the Authentication will not be performed
+		SshCaTemplateRequest req = new SshCaTemplateRequest()
+				.template(System.getenv("TPP_SSH_CADN"));
+
+		//getting the sshConfig of the SSH Cert CA
+		retrieveSshConfigWithoutCredentials(req);
+	}
+	
+	private void retrieveSshConfigWithoutCredentials(SshCaTemplateRequest req) throws VCertException, Exception {
+
+		//getting the sshConfig of the SSH Cert CA
+		SshConfig sshConfig = classUnderTest.retrieveSshConfig(req);
+
+		assertNotNull(sshConfig);
+		assertNotNull(sshConfig.caPublicKey());
+		assertTrue(!sshConfig.caPublicKey().isEmpty());
+		//When the authentication is not provided, then the principals are not retrieved
+		assertNull(sshConfig.principals());
 	}
 }

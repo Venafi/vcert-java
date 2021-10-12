@@ -1,7 +1,11 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
+import java.util.Map;
+
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCaTemplateRequest;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCaTemplateResponse;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequest;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequestResponse;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveRequest;
@@ -26,4 +30,6 @@ public abstract class TppAPI {
     abstract Response clearPolicyAttribute(ClearPolicyAttributeRequest request) throws VCertException;
     abstract TppSshCertRequestResponse requestSshCertificate(TppSshCertRequest request) throws VCertException;
     abstract TppSshCertRetrieveResponse retrieveSshCertificate(TppSshCertRetrieveRequest request) throws VCertException;
+    abstract String retrieveSshCAPublicKeyData(Map<String, String> params) throws VCertException;
+    abstract TppSshCaTemplateResponse retrieveSshCATemplate(TppSshCaTemplateRequest request) throws VCertException;
 }

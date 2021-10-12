@@ -231,4 +231,13 @@ public interface TokenConnector {
      * @throws VCertException
      */
     SshCertRetrieveDetails retrieveSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException;
+    
+    /**
+     * Retrieve the {@link com.venafi.vcert.sdk.certificate.SshConfig SshConfig} of the CA specified in the 
+     * {@link com.venafi.vcert.sdk.certificate.SshCaTemplateRequest SshCaTemplateRequest}.
+     * @param sshCaTemplateRequest
+     * @return A {@link com.venafi.vcert.sdk.certificate.SshConfig SshConfig}.
+     * @throws VCertException
+     */
+    SshConfig retrieveSshConfig(SshCaTemplateRequest sshCaTemplateRequest) throws VCertException;
 }
