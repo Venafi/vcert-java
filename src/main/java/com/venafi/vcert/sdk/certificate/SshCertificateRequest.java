@@ -13,7 +13,7 @@ import lombok.Data;
  */
 
 /**
- * This class represents the Request Object of "request" a new SSH Certificate and also of "retrieve" the requested SSH Certificate.
+ * This class represents the request Object needed to "request" a new SSH Certificate and also to "retrieve" the requested SSH Certificate.
  * <br>
  * This dual purpose is because the "request SSH Certificate" action returns the DN of the created SSH certificate
  * which will be used as the PickUp ID for the Request Object to "retrieve the generated Certificate", so in order to avoid the creation of a 
