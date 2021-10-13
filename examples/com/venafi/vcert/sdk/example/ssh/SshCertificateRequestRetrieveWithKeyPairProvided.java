@@ -66,8 +66,8 @@ public class SshCertificateRequestRetrieveWithKeyPairProvided {
     				.keyId(keyId)
     				.validityPeriod("4h")// if you omit it, then the validity period of the CIT will be used
     				.publicKeyData(publicKeyData)
-    				.template(template)
-    				.sourceAddresses(new String[]{"test.com"});
+    				.template(template);
+    				//.sourceAddresses(new String[]{"test.com"});
 
             //5. Use the VCertClient method requestSshCertificate() to request the creation of a new 
             // SSH Certificate on TPP. This will return the DN of the created SSH Certificate which 
