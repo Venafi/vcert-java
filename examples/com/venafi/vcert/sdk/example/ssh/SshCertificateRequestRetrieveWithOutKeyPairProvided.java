@@ -11,9 +11,9 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 
 /**
- * /**
- * The following test is to show how to use the SSH Certificate feature
+ * The following example is to show how to use the SSH Certificate feature
  * in order to create and retrieve a SSH Certificate from TPP.
+ * 
  * @author Marcos E. Albornoz Abud
  *
  */
@@ -24,11 +24,11 @@ public class SshCertificateRequestRetrieveWithOutKeyPairProvided {
 	 */
 	public static void main(String[] args) {
         try {
-        	String keyId = "<KEY_ID>";
-            String cadn = "<TPP_SSH_CA>";
-            String user = "<TPPUSER>";
-            String password = "<TPPPASSWORD>";
-            String baseUri = "<TPP_URL>";
+        	String keyId = "<KEY_ID>";//replace it by the key id value
+            String template = "<TPP_SSH_CA>";//replace it by the CADN or the CA Name
+            String user = "<TPPUSER>";//replace it by the TPP User
+            String password = "<TPPPASSWORD>";//replace it by the TPP Password
+            String baseUri = "<TPP_URL>";//replace it by the TPP URL
     		
             //1. Get a VCertClient for TPP setting the scope to "ssh:manage"
             Authentication auth = Authentication.builder()
@@ -47,11 +47,11 @@ public class SshCertificateRequestRetrieveWithOutKeyPairProvided {
             client.getAccessToken(auth);
             
             //2. Get an instance of com.venafi.vcert.sdk.certificate.SshCertificateRequest class.
-            //That can be done using the builder provided by the PolicySpecification
+            //That can be done using the builder provided by the SshCertificateRequest
     		SshCertificateRequest req = new SshCertificateRequest()
     				.keyId(keyId)
     				.validityPeriod("4h")// if you omit it, then the validity period of the CIT will be used
-    				.cadn(cadn);
+    				.template(template);
 
             //3. Use the VCertClient method requestSshCertificate() to request the creation of a new 
             // SSH Certificate on TPP. This will return the DN of the created SSH Certificate which 

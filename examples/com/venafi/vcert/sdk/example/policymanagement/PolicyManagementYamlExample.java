@@ -1,4 +1,4 @@
-package com.venafi.vcert.sdk.policy;
+package com.venafi.vcert.sdk.example.policymanagement;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -14,7 +14,7 @@ import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 import java.io.File;
 
 /**
- * The following test is to show how to use the policy management feature
+ * The following example is to show how to use the policy management feature
  * in order to create/update and get a policy for both TPP and Cloud (OutagePredict)
  */
 public class PolicyManagementYamlExample {
