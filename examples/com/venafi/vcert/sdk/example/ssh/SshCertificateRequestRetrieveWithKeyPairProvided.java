@@ -14,10 +14,10 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 
 /**
- * /**
- * The following test is to show how to use the SSH Certificate feature
+ * The following example is to show how to use the SSH Certificate feature
  * in order to create and retrieve a SSH Certificate from TPP passing a KeyPair
  *  generated locally.
+ *  
  * @author Marcos E. Albornoz Abud
  *
  */
@@ -28,11 +28,11 @@ public class SshCertificateRequestRetrieveWithKeyPairProvided {
 	 */
 	public static void main(String[] args) {
         try {
-        	String keyId = "<KEY_ID>";
-            String cadn = "<TPP_SSH_CA>";
-            String user = "<TPPUSER>";
-            String password = "<TPPPASSWORD>";
-            String baseUri = "<TPP_URL>";
+        	String keyId = "<KEY_ID>";//replace it by the key id value
+        	String template = "<TPP_SSH_CA>";//replace it by the CADN or the CA Name
+            String user = "<TPPUSER>";//replace it by the TPP User
+            String password = "<TPPPASSWORD>";//replace it by the TPP Password
+            String baseUri = "<TPP_URL>";//replace it by the TPP URL
     		
             //1. Get a VCertClient for TPP setting the scope to "ssh:manage"
             Authentication auth = Authentication.builder()
@@ -61,12 +61,12 @@ public class SshCertificateRequestRetrieveWithKeyPairProvided {
     		String publicKeyData = SshKeyUtils.getFormattedKey(pair.getPublicKey(), keyId);
             
             //4. Get an instance of com.venafi.vcert.sdk.certificate.SshCertificateRequest class.
-            //That can be done using the builder provided by the PolicySpecification
+            //That can be done using the builder provided by the SshCertificateRequest
     		SshCertificateRequest req = new SshCertificateRequest()
     				.keyId(keyId)
     				.validityPeriod("4h")// if you omit it, then the validity period of the CIT will be used
     				.publicKeyData(publicKeyData)
-    				.cadn(cadn);
+    				.template(template);
     				//.sourceAddresses(new String[]{"test.com"});
 
             //5. Use the VCertClient method requestSshCertificate() to request the creation of a new 
