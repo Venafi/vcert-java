@@ -93,11 +93,11 @@ public interface Tpp {
   @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
   TppSshCertRetrieveResponse retrieveSshCertificate(TppSshCertRetrieveRequest request, @Param("apiKey") String apiKey);
   
-  @RequestLine("GET /vedsdk/SSHCertificates/Template/Retrieve/PublicKeyData")
+  @RequestLine("GET SSHCertificates/Template/Retrieve/PublicKeyData")
   @Headers({"Content-Type: text/plain"})
   Response retrieveSshCAPublicKeyData(@QueryMap Map<String, String> params);
   
-  @RequestLine("POST vedsdk/SSHCertificates/Template/Retrieve")
+  @RequestLine("POST SSHCertificates/Template/Retrieve")
   @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
   TppSshCaTemplateResponse retrieveSshCATemplate(TppSshCaTemplateRequest request, @Param("apiKey") String apiKey);
 
@@ -182,6 +182,10 @@ public interface Tpp {
   @RequestLine("POST /vedsdk/SSHCertificates/retrieve")
   @Headers({"Content-Type: application/json", "Authorization: {token}"})
   TppSshCertRetrieveResponse retrieveSshCertificateToken(TppSshCertRetrieveRequest request, @Param("token") String token);
+  
+  @RequestLine("GET /vedsdk/SSHCertificates/Template/Retrieve/PublicKeyData")
+  @Headers({"Content-Type: text/plain"})
+  Response retrieveSshCAPublicKeyDataToken(@QueryMap Map<String, String> params);
   
   @RequestLine("POST vedsdk/SSHCertificates/Template/Retrieve")
   @Headers({"Content-Type: application/json", "Authorization: {token}"})

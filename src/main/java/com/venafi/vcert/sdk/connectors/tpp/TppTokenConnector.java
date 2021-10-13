@@ -629,7 +629,7 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
 					String publicKeyData = null;
 
 					try {
-						publicKeyData = CharStreams.toString(tpp.retrieveSshCAPublicKeyData(params).body().asReader());
+						publicKeyData = CharStreams.toString(tpp.retrieveSshCAPublicKeyDataToken(params).body().asReader());
 					} catch (Exception e) {
 						throw new VCertException(e);
 					}
