@@ -47,7 +47,6 @@ public class SshCertificateRequestRetrieveWithOutKeyPairProvided {
             client.getAccessToken(auth);
             
             //2. Get an instance of com.venafi.vcert.sdk.certificate.SshCertificateRequest class.
-            //That can be done using the builder provided by the SshCertificateRequest
     		SshCertificateRequest req = new SshCertificateRequest()
     				.keyId(keyId)
     				.validityPeriod("4h")// if you omit it, then the validity period of the CIT will be used
