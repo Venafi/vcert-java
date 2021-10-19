@@ -119,8 +119,13 @@ public class FeignUtils {
       String dateString = json.getAsString();
       Matcher input = msDate.matcher(dateString);
       if (!input.matches()) {
-        return OffsetDateTime.parse(dateString, formatter);
+    	  try {
+    		  return OffsetDateTime.parse(dateString, formatter);
+    	  } catch (Exception e) {
+    		  return OffsetDateTime.parse(dateString, DateTimeFormatter.ISO_DATE_TIME);
+		}
       }
+      
       // There is apocryphal, anecdotal evidence that the format can have an offset,
       // although the original blog post doesn't seem to mention it - and it would, indeed, be
       // counterproductive, as the JavaScript Date() constructor doesn't accept epoch with offset as
