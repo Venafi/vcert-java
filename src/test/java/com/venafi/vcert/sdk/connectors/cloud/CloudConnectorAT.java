@@ -335,8 +335,7 @@ class CloudConnectorAT {
 
         assertEquals(policySpecification, policySpecificationReturned);
     }
-
-    @Disabled("Ignoring it given that the Digicert CA for testing expired.")
+    
     @Test
     @DisplayName("Cloud - Testing the setPolicy() and getPolicy() methods for Digicert CA")
     public void createAndGetPolicyForDigicert() throws VCertException {
