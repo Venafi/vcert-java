@@ -29,7 +29,6 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.Strings;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +44,7 @@ import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
-import com.venafi.vcert.sdk.connectors.cloud.CloudConnectorException.CertificateNotFoundByFingerprintException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByThumbprintException;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.VCertUtils;
@@ -210,7 +209,7 @@ class CloudConnectorAT {
         try {
         	renewRequestId = classUnderTest.renewCertificate(
                     new RenewalRequest().request(certificateRequestToRenew).thumbprint(thumbprint));
-        } catch (CertificateNotFoundByFingerprintException e) {
+        } catch (CertificateNotFoundByThumbprintException e) {
 			//wait for 5 sec, it's very probably that the Certificate is not ready at this point
         	logger.warn("Failed to renewCertificate, because it's very probably that the Certificate is not ready yet. Waiting 5 sec to attempt one more time...");
         	try {

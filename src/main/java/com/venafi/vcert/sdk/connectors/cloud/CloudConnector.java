@@ -1,6 +1,6 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
-import static com.venafi.vcert.sdk.connectors.cloud.CloudConnectorException.*;
+import static com.venafi.vcert.sdk.connectors.ConnectorException.*;
 import static java.lang.String.format;
 import static java.time.Duration.ZERO;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -97,7 +97,7 @@ public class CloudConnector implements Connector {
   public void ping() throws VCertException {
     Response response = doPing();
     if (response.status() != 200) {
-      throw new UnexpectedStatusException( response.status(), response.reason());
+      throw new CloudPingException( response.status(), response.reason());
     }
   }
 
@@ -230,7 +230,7 @@ public class CloudConnector implements Connector {
       Cloud.CertificateSearchResponse certificateSearchResponse =
           searchCertificatesByFingerprint(request.thumbprint());
       if (certificateSearchResponse.certificates().size() == 0) {
-        throw new CertificateNotFoundByFingerprintException(request.thumbprint());
+        throw new CertificateNotFoundByThumbprintException(request.thumbprint());
       }
 
       List<String> reqIds = new ArrayList<>();
@@ -428,7 +428,7 @@ public class CloudConnector implements Connector {
       if (requestIds.size() > 1) {
         throw new MoreThanOneCertificateRequestIdException(request.thumbprint());
       } else if (requestIds.size() == 0) {
-        throw new CertificateNotFoundByFingerprintException(request.thumbprint());
+        throw new CertificateNotFoundByThumbprintException(request.thumbprint());
       }
 
       certificateRequestId = requestIds.iterator().next();
@@ -436,7 +436,7 @@ public class CloudConnector implements Connector {
     } else if (isNotBlank(request.certificateDN())) {
       certificateRequestId = request.certificateDN();
     } else {
-      throw new CertificateDNOrFingerprintWasNotProvidedException();
+      throw new CertificateDNOrThumbprintWasNotProvidedException();
     }
 
     final CertificateStatus status = cloud.certificateStatus(certificateRequestId, auth.apiKey());
