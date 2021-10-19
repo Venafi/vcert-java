@@ -27,7 +27,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.Strings;
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -335,6 +337,7 @@ class CloudConnectorAT {
         assertEquals(policySpecification, policySpecificationReturned);
     }
 
+    @Disabled("Ignoring it given that the Digicert CA for testing expired.")
     @Test
     @DisplayName("Cloud - Testing the setPolicy() and getPolicy() methods for Digicert CA")
     public void createAndGetPolicyForDigicert() throws VCertException {
