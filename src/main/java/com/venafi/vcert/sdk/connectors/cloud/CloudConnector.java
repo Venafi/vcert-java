@@ -139,7 +139,6 @@ public class CloudConnector implements Connector {
 
 	    ZoneConfiguration zoneConfig = cit.toZoneConfig();
 	    zoneConfig.policy(cit.toPolicy());
-	    //zoneConfig.zoneId(zoneId);
 	    zoneConfig.zoneId(zone);
 	    zoneConfig.applicationId(appId);
 	    zoneConfig.certificateIssuingTemplateId(cit.id());
@@ -205,7 +204,6 @@ public class CloudConnector implements Connector {
   private CertificateRequestsPayload buildRequestCertificatePayload(CertificateRequest request, ZoneConfiguration zoneConfiguration) throws VCertException {
 
 	  CertificateRequestsPayload payload = new CertificateRequestsPayload();
-			  //.zoneId(zoneConfiguration.zoneId());
 
 	  if (CsrOriginOption.ServiceGeneratedCSR == request.csrOrigin()) {
 		  payload.isVaaSGenerated(true);
