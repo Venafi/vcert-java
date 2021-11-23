@@ -41,12 +41,15 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.bc.BcPEMDecryptorProvider;
 import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMEncryptorBuilder;
+import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.pkcs.PKCS12PfxPdu;
 import org.bouncycastle.pkcs.PKCS12PfxPduBuilder;
 import org.bouncycastle.pkcs.PKCS12SafeBag;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCSException;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
@@ -328,6 +331,14 @@ public class PEMCollection {
     SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(SECRET_KEY_FACTORY_ALGORITHM);
     byte[] key = keyFactory.generateSecret(spec).getEncoded();
     return new SecretKeySpec(key, SECRET_KEY_ALGORITHM);
+  }
+  
+  public static PrivateKey decryptPKCS8PrivateKey(PEMParser pemParser, String keyPassword) throws IOException, OperatorCreationException, PKCSException{
+	  PKCS8EncryptedPrivateKeyInfo encryptedPrivateKeyInfo = (PKCS8EncryptedPrivateKeyInfo) pemParser.readObject();
+	  InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(keyPassword.toCharArray());
+	  JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+	  PrivateKeyInfo decryptedPrivateKeyInfo = encryptedPrivateKeyInfo.decryptPrivateKeyInfo(pkcs8Prov);
+	  return converter.getPrivateKey(decryptedPrivateKeyInfo);
   }
 
   @Data

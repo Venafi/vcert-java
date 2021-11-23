@@ -173,7 +173,7 @@ class CloudConnectorTest {
 
         when(cloud.certificateStatus(eq("jackpot"), eq(apiKey)))
                 .thenReturn(status);
-        when(cloud.certificateViaCSR(eq("jackpot"), eq(apiKey), eq("ROOT_FIRST")))
+        when(cloud.retrieveCertificate(eq("jackpot"), eq(apiKey), eq("ROOT_FIRST")))
                 .thenReturn(Response.builder()
                         .request(Request.create(Request.HttpMethod.GET, "http://localhost",
                                 new HashMap<String, Collection<String>>(), null, null))

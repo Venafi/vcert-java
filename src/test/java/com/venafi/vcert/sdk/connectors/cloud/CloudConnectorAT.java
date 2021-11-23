@@ -38,6 +38,7 @@ import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertClient;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
+import com.venafi.vcert.sdk.certificate.CsrOriginOption;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
@@ -138,11 +139,12 @@ class CloudConnectorAT {
     }
 
     @Test
-    void retrieveCertificate() throws VCertException, UnknownHostException {
+    void retrieveCertificateCSRProvided() throws VCertException, UnknownHostException {
         String zoneName = System.getenv("CLOUDZONE");
         ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
+        String cn = TestUtils.randomCN().toLowerCase();
         CertificateRequest certificateRequest = new CertificateRequest()
-                .subject(new CertificateRequest.PKIXName().commonName(TestUtils.randomCN())
+                .subject(new CertificateRequest.PKIXName().commonName(cn)
                         .organization(Collections.singletonList("Venafi, Inc."))
                         .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
                         .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
@@ -155,6 +157,35 @@ class CloudConnectorAT {
         assertThat(certificateId).isNotNull();
 
         certificateRequest.pickupId(certificateId);
+        //certificateRequest.certId("b7a38570-48aa-11ec-9c4e-b91163bb1407");
+        PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest);
+
+        assertThat(pemCollection.certificate()).isNotNull();
+        assertThat(pemCollection.chain()).hasSize(2);
+        assertThat(pemCollection.privateKey()).isNotNull();
+    }
+    
+    @Test
+    void retrieveCertificateServiceGeneratedCSR() throws VCertException, UnknownHostException {
+        String zoneName = System.getenv("CLOUDZONE");
+        ZoneConfiguration zoneConfiguration = classUnderTest.readZoneConfiguration(zoneName);
+        String cn = TestUtils.randomCN().toLowerCase();
+        CertificateRequest certificateRequest = new CertificateRequest()
+                .subject(new CertificateRequest.PKIXName().commonName(cn)
+                        .organization(Collections.singletonList("Venafi, Inc."))
+                        .organizationalUnit(Arrays.asList("Engineering", "Automated Tests"))
+                        .country(Collections.singletonList("US")).locality(Collections.singletonList("SLC"))
+                        .province(Collections.singletonList("Utah")))
+                .dnsNames( Arrays.asList(new String[] {cn}))
+                .csrOrigin(CsrOriginOption.ServiceGeneratedCSR)
+                .keyPassword("tirano");
+
+        //For CSR Service Generated Request is not needed to call to generateRequest() method
+        //certificateRequest = classUnderTest.generateRequest(zoneConfiguration, certificateRequest);
+        String pickupId = classUnderTest.requestCertificate(certificateRequest, zoneConfiguration);
+        assertThat(pickupId).isNotNull();
+
+        certificateRequest.pickupId(pickupId);
         PEMCollection pemCollection = classUnderTest.retrieveCertificate(certificateRequest);
 
         assertThat(pemCollection.certificate()).isNotNull();
