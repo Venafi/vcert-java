@@ -414,7 +414,7 @@ public class CloudConnector implements Connector {
 
 	  String encodedMessage = null;
 	  try {
-		  byte[] cipherText = SealedBoxUtility.crypto_box_seal(serverPublicKey, request.keyPassword().getBytes());
+		  byte[] cipherText = SealedBoxUtility.cryptoBoxSeal(serverPublicKey, request.keyPassword().getBytes());
 		  encodedMessage = Base64.getEncoder().encodeToString(cipherText);
 	  } catch (Exception e) {
 		  throw new VCertException(e);

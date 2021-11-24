@@ -29,7 +29,7 @@ import com.iwebpp.crypto.TweetNaclFast;
 public class SealedBoxUtility {
 
 
-	public static final int crypto_box_NONCEBYTES = 24;
+	public static final int CRYPTO_BOX_NONCEBYTES = 24;
 	//public static final int crypto_box_PUBLICKEYBYTES = 32;
 	//public static final int crypto_box_MACBYTES = 16;
 	//public static final int crypto_box_SEALBYTES = (crypto_box_PUBLICKEYBYTES + crypto_box_MACBYTES);
@@ -45,12 +45,12 @@ public class SealedBoxUtility {
 	 * @return encrypted message
 	 * @throws GeneralSecurityException 
 	 */
-	public static byte[] crypto_box_seal(byte[] receiverPubKey, byte[] clearText) throws GeneralSecurityException {
+	public static byte[] cryptoBoxSeal(byte[] receiverPubKey, byte[] clearText) throws GeneralSecurityException {
 
 		// create ephemeral keypair for sender
 		TweetNaclFast.Box.KeyPair ephkeypair = TweetNaclFast.Box.keyPair();
 		// create nonce
-		byte[] nonce = crypto_box_seal_nonce(ephkeypair.getPublicKey(), receiverPubKey);
+		byte[] nonce = cryptoBoxSealNonce(ephkeypair.getPublicKey(), receiverPubKey);
 		TweetNaclFast.Box box = new TweetNaclFast.Box(receiverPubKey, ephkeypair.getSecretKey());
 		byte[] ciphertext = box.box(clearText, nonce);
 		if (ciphertext == null) 
@@ -73,23 +73,22 @@ public class SealedBoxUtility {
 	 * @param mypk my own public key
 	 * @return the nonce computed using Blake2b generic hash
 	 */
-	public static byte[] crypto_box_seal_nonce(byte[] senderpk, byte[] mypk){
+	public static byte[] cryptoBoxSealNonce(byte[] senderpk, byte[] mypk){
 		// C source ported from libsodium
 		//      crypto_generichash_state st;
 		//
-		//      crypto_generichash_init(&st, NULL, 0U, crypto_box_NONCEBYTES);
+		//      crypto_generichash_init(&st, NULL, 0U, CRYPTO_BOX_NONCEBYTES);
 		//      crypto_generichash_update(&st, pk1, crypto_box_PUBLICKEYBYTES);
 		//      crypto_generichash_update(&st, pk2, crypto_box_PUBLICKEYBYTES);
-		//      crypto_generichash_final(&st, nonce, crypto_box_NONCEBYTES);
+		//      crypto_generichash_final(&st, nonce, CRYPTO_BOX_NONCEBYTES);
 		//
 		//      return 0;
-		//final org.bouncycastle.jcajce.provider.digest.Blake2b blake2b = Blake2b.Digest.newInstance( crypto_box_NONCEBYTES ); 
-		final Blake2bDigest blake2b = new Blake2bDigest( crypto_box_NONCEBYTES*8 ); 
+		final Blake2bDigest blake2b = new Blake2bDigest( CRYPTO_BOX_NONCEBYTES*8 ); 
 		blake2b.update(senderpk, 0, senderpk.length);
 		blake2b.update(mypk, 0, mypk.length);
-		byte[] nonce = new byte[crypto_box_NONCEBYTES];
+		byte[] nonce = new byte[CRYPTO_BOX_NONCEBYTES];
 		blake2b.doFinal(nonce, 0);
-		if (nonce == null || nonce.length!=crypto_box_NONCEBYTES) throw new IllegalArgumentException("Blake2b hashing failed");
+		if (nonce == null || nonce.length!=CRYPTO_BOX_NONCEBYTES) throw new IllegalArgumentException("Blake2b hashing failed");
 		return nonce;
 	}
 
