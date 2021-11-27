@@ -48,6 +48,7 @@ import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateDetails;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate.AllowedKeyType;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Company;
+import com.venafi.vcert.sdk.connectors.cloud.domain.EdgeEncryptionKey;
 import com.venafi.vcert.sdk.connectors.cloud.domain.User;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.endpoint.Authentication;
@@ -170,6 +171,11 @@ class CloudConnectorTest {
         list.add("jackpot");
         CertificateStatus status = new CertificateStatus().status("ISSUED")
                 .certificateIds(list);
+        
+        CertificateDetails certificateDetails = new CertificateDetails().dekHash("12345");
+        EdgeEncryptionKey edgeEncryptionKey = new EdgeEncryptionKey();
+        
+        cloud.certificateDetails(eq("jackpot"), eq(apiKey));
 
         when(cloud.certificateStatus(eq("jackpot"), eq(apiKey)))
                 .thenReturn(status);
@@ -180,6 +186,8 @@ class CloudConnectorTest {
                         .status(200)
                         .body(body, Charset.forName("UTF-8"))
                         .build());
+        when(cloud.certificateDetails(eq("jackpot"), eq(apiKey))).thenReturn(certificateDetails);
+        when(cloud.retrieveEdgeEncryptionKey(eq("12345"), eq(apiKey))).thenReturn(edgeEncryptionKey);
 
         PEMCollection pemCollection2 = classUnderTest.retrieveCertificate(request);
         assertThat(pemCollection2).isNotNull();
