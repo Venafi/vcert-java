@@ -16,11 +16,11 @@ import com.iwebpp.crypto.TweetNaclFast;
  * The following utility is based on the SealBoxUtility code shared in the stackoverflow question
  * <a href="https://stackoverflow.com/questions/42456624/how-can-i-create-or-open-a-libsodium-compatible-sealed-box-in-pure-java">
  * How can I create or open a libsodium compatible sealed box in pure Java</a>.
- * <br/>
+ * <br></br>
  * The main difference is on this version is being used the <a href="https://github.com/bcgit/bc-java/blob/master/core/src/main/java/org/bouncycastle/crypto/digests/Blake2bDigest.java">
  *  org.bouncycastle.crypto.digests.Blake2bDigest</a> from <a href="https://github.com/bcgit/bc-java">The Bouncy Castle Crypto Package For Java</a> 
  *  instead of <a href="https://github.com/alphazero/Blake2b">Blake2b</a> to get the Blake2b hash.
- * <br/><br/>
+ * <br></br>
  * 
  * Has also a dependency on TweetNaclFast from <a href="https://github.com/InstantWebP2P/tweetnacl-java">https://github.com/InstantWebP2P/tweetnacl-java</a>.
  * 
