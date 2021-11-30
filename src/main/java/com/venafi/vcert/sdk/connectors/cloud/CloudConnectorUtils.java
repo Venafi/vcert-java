@@ -1,17 +1,35 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.certificate.CertificateRequest;
+import com.venafi.vcert.sdk.certificate.ChainOption;
+import com.venafi.vcert.sdk.certificate.PEMCollection;
+import com.venafi.vcert.sdk.connectors.ConnectorException.PolicyMatchException;
+import com.venafi.vcert.sdk.connectors.cloud.CloudConnector.CsrAttributes;
+import com.venafi.vcert.sdk.connectors.cloud.CloudConnector.SubjectAlternativeNamesByType;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Application;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CloudZone;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.connectors.cloud.endpoint.*;
 import com.venafi.vcert.sdk.policy.api.domain.CloudPolicy;
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
+
 import feign.FeignException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.security.PrivateKey;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import org.bouncycastle.openssl.PEMParser;
 
 public class CloudConnectorUtils {
 
@@ -203,6 +221,207 @@ public class CloudConnectorUtils {
                 .findFirst()
                 .get()
                 .productName();
+    }
+    
+    public static CsrAttributes buildCsrAttributes(CertificateRequest request, PolicySpecification policySpecification) throws VCertException {
+  	  CsrAttributes csrAttributes = new CsrAttributes();
+
+  	  //computing the commonName
+  	  String reqCN = request.subject()!=null && isNotBlank(request.subject().commonName()) ? request.subject().commonName() : null;
+
+  	  if( reqCN!=null ) {
+  		  //validating that the request.subject.cn matches with the policy domains
+  		  String[] policyDomains = Optional.ofNullable(policySpecification).map(ps -> ps.policy()).map(p -> p.domains()).orElse(null);
+
+  		  if (policyDomains!=null && !matchRegexes(reqCN, policyDomains)) 
+  			  throw new PolicyMatchException("CN", reqCN, "domains", policyDomains);
+
+  		  csrAttributes.commonName(reqCN);
+  	  }
+
+  	  //computing the organization
+  	  List<String> reqOrganizations = Optional.ofNullable(request).map(req -> req.subject()).map(s -> s.organization()).orElse(null);
+
+  	  if( reqOrganizations!=null && reqOrganizations.size() > 0) {
+  		  String[] reqOrgsArray = reqOrganizations.toArray(new String[0]);
+
+  		  //validating that the req.subject.organization matches with the policy orgs
+  		  String[] policyOrgs = Optional.ofNullable(policySpecification).map(ps -> ps.policy()).map(p -> p.subject()).map(s -> s.orgs()).orElse(null);
+
+  		  if (policyOrgs!=null && !matchRegexes(reqOrgsArray, policyOrgs)) 
+  			  throw new PolicyMatchException("organization", reqOrgsArray, "organization", policyOrgs);
+
+  		  csrAttributes.organization(reqOrgsArray[0]);
+  	  } else {
+  		  String defaultOrg = Optional.ofNullable(policySpecification).map(ps -> ps.defaults()).map(d -> d.subject()).map(s -> s.org()).orElse(null);
+
+  		  if(isNotBlank(defaultOrg))
+  			  csrAttributes.organization(defaultOrg);
+  	  }
+  	  
+  	  //computing the organizational Units
+  	  List<String> reqOrgUnits = Optional.ofNullable(request).map(req -> req.subject()).map(s -> s.organizationalUnit()).orElse(null);
+
+  	  if( reqOrgUnits!=null && reqOrgUnits.size() > 0) {
+  		  String[] reqOrgUnitsArray = reqOrgUnits.toArray(new String[0]);
+
+  		  //validating that the req.subject.organizationalUnit matches with the policy orgUnits
+  		  String[] policyOrgUnits = Optional.ofNullable(policySpecification).map(ps -> ps.policy()).map(p -> p.subject()).map(s -> s.orgUnits()).orElse(null);
+
+  		  if (policyOrgUnits!=null && !matchRegexes(reqOrgUnitsArray, policyOrgUnits)) 
+  			  throw new PolicyMatchException("org unit", reqOrgUnitsArray, "org unit", policyOrgUnits);
+
+  		  csrAttributes.organizationalUnits(reqOrgUnitsArray);
+  	  } else {
+  		  String[] defaultOrgUnits = Optional.ofNullable(policySpecification).map(ps -> ps.defaults()).map(d -> d.subject()).map(s -> s.orgUnits()).orElse(null);
+
+  		  if(defaultOrgUnits!=null && defaultOrgUnits.length>0)
+  			  csrAttributes.organizationalUnits(defaultOrgUnits);
+  	  }
+  	  
+  	  //computing the localities
+  	  List<String> reqLocalities = Optional.ofNullable(request).map(req -> req.subject()).map(s -> s.locality()).orElse(null);
+
+  	  if( reqLocalities!=null && reqLocalities.size() > 0) {
+  		  String[] reqLocalitiesArray = reqLocalities.toArray(new String[0]);
+
+  		  //validating that the req.subject.locality matches with the policy localities
+  		  String[] policyLocalities = Optional.ofNullable(policySpecification).map(ps -> ps.policy()).map(p -> p.subject()).map(s -> s.localities()).orElse(null);
+
+  		  if (policyLocalities!=null && !matchRegexes(reqLocalitiesArray, policyLocalities)) 
+  			  throw new PolicyMatchException("locality", reqLocalitiesArray, "localities", policyLocalities);
+
+  		  csrAttributes.locality(reqLocalitiesArray[0]);
+  	  } else {
+  		  String defaultLocality = Optional.ofNullable(policySpecification).map(ps -> ps.defaults()).map(d -> d.subject()).map(s -> s.locality()).orElse(null);
+
+  		  if(isNotBlank(defaultLocality))
+  			  csrAttributes.locality(defaultLocality);
+  	  }
+  	  
+  	  //computing the province
+  	  List<String> reqProvince = Optional.ofNullable(request).map(req -> req.subject()).map(s -> s.province()).orElse(null);
+
+  	  if( reqProvince!=null && reqProvince.size() > 0) {
+  		  String[] reqProvinceArray = reqProvince.toArray(new String[0]);
+
+  		  //validating that the req.subject.province matches with the policy states
+  		  String[] policyStates = Optional.ofNullable(policySpecification).map(ps -> ps.policy()).map(p -> p.subject()).map(s -> s.states()).orElse(null);
+
+  		  if (policyStates!=null && !matchRegexes(reqProvinceArray, policyStates)) 
+  			  throw new PolicyMatchException("state", reqProvinceArray, "states", policyStates);
+
+  		  csrAttributes.state(reqProvinceArray[0]);
+  	  } else {
+  		  String defaultState = Optional.ofNullable(policySpecification).map(ps -> ps.defaults()).map(d -> d.subject()).map(s -> s.state()).orElse(null);
+
+  		  if(isNotBlank(defaultState))
+  			  csrAttributes.state(defaultState);
+  	  }
+  	  
+  	  //computing the country
+  	  List<String> reqCountries = Optional.ofNullable(request).map(req -> req.subject()).map(s -> s.country()).orElse(null);
+
+  	  if( reqCountries!=null && reqCountries.size() > 0) {
+  		  String[] reqCountriesArray = reqCountries.toArray(new String[0]);
+
+  		  //validating that the req.subject.country matches with the policy countries
+  		  String[] policyCountries = Optional.ofNullable(policySpecification).map(ps -> ps.policy()).map(p -> p.subject()).map(s -> s.countries()).orElse(null);
+
+  		  if (policyCountries!=null && !matchRegexes(reqCountriesArray, policyCountries)) 
+  			  throw new PolicyMatchException("state", reqCountriesArray, "states", policyCountries);
+
+  		  csrAttributes.country(reqCountriesArray[0]);
+  	  } else {
+  		  String defaultCountry = Optional.ofNullable(policySpecification).map(ps -> ps.defaults()).map(d -> d.subject()).map(s -> s.country()).orElse(null);
+
+  		  if(isNotBlank(defaultCountry))
+  			  csrAttributes.country(defaultCountry);
+  	  }
+  	  
+  	  if(request.dnsNames()!=null && request.dnsNames().size()>0) {
+  		  SubjectAlternativeNamesByType subjectAlternativeNamesByType = new SubjectAlternativeNamesByType().dnsNames(request.dnsNames().toArray(new String[0]));
+  		  csrAttributes.subjectAlternativeNamesByType(subjectAlternativeNamesByType);
+  	  }
+
+  	  return csrAttributes;
+    }
+    
+    public static boolean matchRegexes(String subject, String[] regexes) {
+    	return matchRegexes(new String[] {subject}, regexes);
+    }
+    
+    public static boolean matchRegexes(String[] subjects, String[] regexes) {
+    	boolean allSubjectsMatched = true;
+    	
+    	List<Pattern> patterns = new ArrayList<Pattern>();
+    	
+    	for (String regex : regexes) {
+			patterns.add(Pattern.compile(regex));
+		}
+    	
+    	for (String subject : subjects) {
+    		boolean subjectMatched = false;
+			for (Pattern pattern : patterns) {
+				if(pattern.matcher(subject).matches()) {
+					subjectMatched = true;
+					break;
+				}	
+			}
+			
+			if(!subjectMatched) {
+				allSubjectsMatched = false;
+				break;
+			}
+		}
+    	
+    	return allSubjectsMatched;
+    }
+    
+    public static String getVaaSChainOption(ChainOption chainOption) {
+    	switch (chainOption) {
+    	case ChainOptionRootFirst:
+    		return "ROOT_FIRST";
+    	case ChainOptionRootLast:
+    	case ChainOptionIgnore:
+    	default:
+    		return "EE_FIRST";
+    	}
+    }
+    
+    public static PEMCollection getPEMCollectionFromKeyStoreAsStream(InputStream keyStoreAsInputStream, ChainOption chainOption, String keyPassword) throws VCertException {
+    	String certificateAsPem = null;
+    	
+    	String pemFileSuffix = null;
+    	if(chainOption == ChainOption.ChainOptionRootFirst)
+    		pemFileSuffix = "_root-first.pem";
+    	else
+    		pemFileSuffix = "_root-last.pem";
+
+    	PrivateKey privateKey = null;
+
+    	try (ZipInputStream zis = new ZipInputStream(keyStoreAsInputStream)) {
+
+    		ZipEntry zipEntry;
+    		while ((zipEntry = zis.getNextEntry())!= null) {
+    			String fileName = zipEntry.getName();
+    			if(fileName.endsWith(".key")) {
+    				PEMParser pemParser = new PEMParser(new InputStreamReader(zis));
+    				privateKey = PEMCollection.decryptPKCS8PrivateKey(pemParser, keyPassword);
+    			} else {
+    				if(fileName.endsWith(pemFileSuffix)) 
+    					certificateAsPem = new String(zis.readAllBytes());
+    			}
+    		}
+    	} catch (Exception e) {
+    		throw new VCertException(e);
+    	}
+
+    	return PEMCollection.fromResponse(
+    			certificateAsPem, 
+    			chainOption, 
+    			privateKey,
+    			keyPassword);
     }
 
     @Data

@@ -12,6 +12,7 @@ import com.venafi.vcert.sdk.certificate.CertificateStatus;
 import com.venafi.vcert.sdk.connectors.cloud.domain.Application;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateDetails;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
+import com.venafi.vcert.sdk.connectors.cloud.domain.EdgeEncryptionKey;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.connectors.cloud.endpoint.*;
 import com.venafi.vcert.sdk.utils.FeignUtils;
@@ -58,7 +59,7 @@ public interface Cloud {
 
   @Headers("tppl-api-key: {apiKey}")
   @RequestLine("GET /outagedetection/v1/certificates/{id}/contents?chainOrder={chainOrder}&format=PEM")
-  Response certificateViaCSR(@Param("id") String id, @Param("apiKey") String apiKey,
+  Response retrieveCertificate(@Param("id") String id, @Param("apiKey") String apiKey,
       @Param("chainOrder") String chainOrder);
 
   @Headers({"tppl-api-key: {apiKey}"})
@@ -100,6 +101,14 @@ public interface Cloud {
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
   @RequestLine("PUT /outagedetection/v1/applications/{id}")
   Application updateApplication(Application application, @Param("id") String id, @Param("apiKey") String apiKey);
+  
+  @Headers({"tppl-api-key: {apiKey}"})
+  @RequestLine("GET /v1/edgeencryptionkeys/{id}")
+  EdgeEncryptionKey retrieveEdgeEncryptionKey(@Param("id") String id, @Param("apiKey") String apiKey);
+  
+  @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+  @RequestLine("POST /outagedetection/v1/certificates/{id}/keystore")
+  Response retrieveKeystore(@Param("id") String id, KeystoreRequest keystoreRequest, @Param("apiKey") String apiKey);
 
   static Cloud connect(String baseUrl) {
     return FeignUtils.client(Cloud.class, 

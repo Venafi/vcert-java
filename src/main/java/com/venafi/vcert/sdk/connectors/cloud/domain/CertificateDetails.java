@@ -40,6 +40,7 @@ public class CertificateDetails {
 	private String versionType;
 	private int totalInstanceCount;
 	private int totalActiveInstanceCount;
+	private String dekHash;
 	
 
 	

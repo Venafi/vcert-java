@@ -6,6 +6,8 @@ package com.venafi.vcert.sdk.connectors;
 import static java.lang.String.format;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CsrOriginOption;
@@ -382,6 +384,58 @@ public class ConnectorException extends VCertException {
 		
 		public CAOrGUIDNotProvidedException() {
 			super("CA template or GUID are not specified");
+		}
+	}
+	
+	public static class PolicyMatchException extends ConnectorException {
+		
+		private static final long serialVersionUID = 1L;
+		
+		private static String formatArrayToString(String[] arrayOfStrings) {
+			return Stream.of(arrayOfStrings).collect(Collectors.joining(",","[","]"));
+		}
+		
+		String policySpecificationAttribute;
+		String[] policySpecificationAttributeValues;
+		String policyAttribute;
+		String[] policyAttributeValues;
+		
+		public PolicyMatchException(String policySpecificationAttribute, String policySpecificationAttributeValues
+				, String policyAttribute, String[] policyAttributeValues) {
+			this(policySpecificationAttribute, new String[] {policySpecificationAttributeValues}, policyAttribute, policyAttributeValues);
+		}
+		
+		public PolicyMatchException(String policySpecificationAttribute, String[] policySpecificationAttributeValues
+				, String policyAttribute, String[] policyAttributeValues) {
+			
+			super(format("Specified %s %s, doesn't match with policy's specified %s %s"
+					, policySpecificationAttribute, formatArrayToString(policySpecificationAttributeValues)
+					, policyAttribute, formatArrayToString(policyAttributeValues)));
+			
+			this.policySpecificationAttribute = policySpecificationAttribute;
+			this.policySpecificationAttributeValues = policySpecificationAttributeValues;
+			this.policyAttribute = policyAttribute;
+			this.policyAttributeValues = policyAttributeValues;
+		}
+	}
+	
+	public static class UndeterminedCertIdException extends ConnectorException {
+		
+		private static final long serialVersionUID = 1L;
+		
+		public UndeterminedCertIdException() {
+			super("It wasn't possible to determine the certificate Id using the pickupId "
+					+ "or the thumbprint from the CertificateRequest.");
+		}
+	}
+	
+	public static class PickupIdOrThumbprintNotSetToGetCertIdException extends ConnectorException {
+		
+		private static final long serialVersionUID = 1L;
+		
+		public PickupIdOrThumbprintNotSetToGetCertIdException() {
+			super("It's not being provided neither the pickupId or thumbprint "
+					+ "in the CertificateRequest to determine the certificate Id.");
 		}
 	}
 

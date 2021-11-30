@@ -37,7 +37,7 @@ public class CloudPolicyToPolicyConverter extends ToPolicyConverterAbstract<Clou
 
         CertificateIssuingTemplate cit = cloudPolicy.certificateIssuingTemplate();
 
-        processDomainsAndWildcard( policySpecification, cit);
+        processDomainsAndWildcard( policySpecification, cit, cloudPolicy.removeRegexesFromSubjectCN());
         processMaxValidDays( policySpecification, cit);
         processCertificateAuthority( policySpecification, cloudPolicy.caInfo());
 
@@ -48,23 +48,24 @@ public class CloudPolicyToPolicyConverter extends ToPolicyConverterAbstract<Clou
         processSubjectAltNames( policySpecification, cloudPolicy);
     }
 
-    private void processDomainsAndWildcard( PolicySpecification policySpecification, CertificateIssuingTemplate cit ) throws Exception{
+    private void processDomainsAndWildcard( PolicySpecification policySpecification, CertificateIssuingTemplate cit, boolean removeRegexesFromDomains ) throws Exception{
 
         List<String> subjectCNRegexes = cit.subjectCNRegexes;
         if ( subjectCNRegexes != null && subjectCNRegexes.size() > 0 && !subjectCNRegexes.get(0).equals(".*") ) {
 
             Policy policy = getPolicyFromPolicySpecification( policySpecification );
             
-            processDomains(policy, subjectCNRegexes);
-
             processWildcard(policy, subjectCNRegexes);
+            
+            if(removeRegexesFromDomains)
+            	removeRegexesFromDomains(policy, subjectCNRegexes);
 
         } else {
             //domains will not set
         }
     }
     
-    private void processDomains( Policy policy, List<String> subjectCNRegexes) {
+    private void removeRegexesFromDomains( Policy policy, List<String> subjectCNRegexes) {
     	//converting the subjectCNRegexes to domains
         List<String> domains = new ArrayList<String>();
         for (String domain : subjectCNRegexes) {

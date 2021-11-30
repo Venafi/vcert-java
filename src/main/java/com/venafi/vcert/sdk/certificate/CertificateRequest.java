@@ -64,6 +64,7 @@ public class CertificateRequest {
   private KeyPair keyPair;
   private CsrOriginOption csrOrigin = CsrOriginOption.defaultCsrOrigin();
   private String pickupId;
+  private String certId;
   private ChainOption chainOption;
   private String keyPassword;
   private boolean fetchPrivateKey;
