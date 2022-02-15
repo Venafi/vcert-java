@@ -89,7 +89,7 @@ class PEMCollectionTest {
     PrivateKey privateKey = pemCollection.privateKey();
 
     PEMCollection pemCollection2 = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, privateKey,
-      KEY_PASSWORD);
+      KEY_PASSWORD, DataFormat.LEGACY);
     String pemPrivateKey = pemCollection2.pemPrivateKey();
     assertThat(pemPrivateKey).contains("BEGIN RSA PRIVATE KEY");
     assertThat(pemPrivateKey).contains("ENCRYPTED");
@@ -102,7 +102,7 @@ class PEMCollectionTest {
     PrivateKey privateKey = pemCollection.privateKey();
 
     PEMCollection pemCollection2 = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, privateKey,
-      KEY_PASSWORD);
+      KEY_PASSWORD, DataFormat.LEGACY);
     String pemPrivateKey = pemCollection2.pemPrivateKey();
     assertThat(pemPrivateKey).contains("BEGIN EC PRIVATE KEY");
     assertThat(pemPrivateKey).contains("ENCRYPTED");
