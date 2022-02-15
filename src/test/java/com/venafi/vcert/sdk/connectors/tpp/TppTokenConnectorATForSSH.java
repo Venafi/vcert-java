@@ -18,6 +18,7 @@ import org.junit.jupiter.api.TestInfo;
 import com.sshtools.common.publickey.SshKeyPairGenerator;
 import com.sshtools.common.publickey.SshKeyUtils;
 import com.sshtools.common.ssh.components.SshKeyPair;
+import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.SshCaTemplateRequest;
 import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
@@ -27,7 +28,7 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 
 class TppTokenConnectorATForSSH {
 
-	private static TppTokenConnector classUnderTest = new TppTokenConnector(Tpp.connect(System.getenv("TPP_TOKEN_URL")));
+	private static TppTokenConnector classUnderTest = new TppTokenConnector(Tpp.connect(TestUtils.TPP_TOKEN_URL));
 	private static TokenInfo info;
 
 	@BeforeEach
@@ -39,8 +40,8 @@ class TppTokenConnectorATForSSH {
 			//Executes only once to ensure the same token is used across the tests
 			if(TppTokenConnectorATForSSH.info == null){
 				Authentication authentication = Authentication.builder()
-						.user(System.getenv("TPPUSER"))
-						.password(System.getenv("TPPPASSWORD"))
+						.user(TestUtils.TPP_USER)
+						.password(TestUtils.TPP_PASSWORD)
 						.scope("ssh:manage")
 						.build();
 

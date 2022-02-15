@@ -34,10 +34,12 @@ import org.bouncycastle.pkcs.PKCS12PfxPdu;
 import org.bouncycastle.pkcs.PKCSException;
 import org.bouncycastle.pkcs.bc.BcPKCS12MacCalculatorBuilderProvider;
 import org.junit.jupiter.api.Test;
+
+import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertException;
 
 class PEMCollectionTest {
-  private static final String KEY_PASSWORD = "newPassw0rd!";
+  private static final String KEY_PASSWORD = TestUtils.KEY_PASSWORD;
   private static final String PKCS12_PASSWORD = "abcd";
 
   static {
@@ -57,7 +59,7 @@ class PEMCollectionTest {
   @Test
   void fromResponseRSA() throws VCertException, IOException {
     String body = readResourceAsString("certificates/certWithKey.pem");
-    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null, null);
+    PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, null, null);
     assertThat(pemCollection.certificate()).isNotNull();
     assertThat(pemCollection.chain()).hasSize(0);
     assertThat(pemCollection.privateKey()).isNotNull();
@@ -66,7 +68,7 @@ class PEMCollectionTest {
   @Test
   void fromResponseECDSA() throws VCertException, IOException {
     String body = readResourceAsString("certificates/certWithKeyECDSA.pem");
-    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null, null);
+    PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, null, null);
     assertThat(pemCollection.certificate()).isNotNull();
     assertThat(pemCollection.chain()).hasSize(0);
     assertThat(pemCollection.privateKey()).isNotNull();
@@ -75,7 +77,7 @@ class PEMCollectionTest {
   @Test
   void fromResponseEncryptedKey() throws VCertException, IOException {
     String body = readResourceAsString("certificates/certWithEncryptedKey.pem");
-    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore,
+    PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore,
       null, KEY_PASSWORD);
     assertThat(pemCollection.privateKey()).isNotNull();
   }
@@ -83,10 +85,10 @@ class PEMCollectionTest {
   @Test
   void keyPasswordRSA() throws VCertException, IOException {
     String body = readResourceAsString("certificates/certWithKey.pem");
-    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null, null);
+    PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, null, null);
     PrivateKey privateKey = pemCollection.privateKey();
 
-    PEMCollection pemCollection2 = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, privateKey,
+    PEMCollection pemCollection2 = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, privateKey,
       KEY_PASSWORD);
     String pemPrivateKey = pemCollection2.pemPrivateKey();
     assertThat(pemPrivateKey).contains("BEGIN RSA PRIVATE KEY");
@@ -96,10 +98,10 @@ class PEMCollectionTest {
   @Test
   void keyPasswordECDSA() throws VCertException, IOException {
     String body = readResourceAsString("certificates/certWithKeyECDSA.pem");
-    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null, null);
+    PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, null, null);
     PrivateKey privateKey = pemCollection.privateKey();
 
-    PEMCollection pemCollection2 = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, privateKey,
+    PEMCollection pemCollection2 = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, privateKey,
       KEY_PASSWORD);
     String pemPrivateKey = pemCollection2.pemPrivateKey();
     assertThat(pemPrivateKey).contains("BEGIN EC PRIVATE KEY");
@@ -109,7 +111,7 @@ class PEMCollectionTest {
   @Test
   void derCertificate() throws VCertException, IOException, CertificateException {
     String body = readResourceAsString("certificates/certWithKey.pem");
-    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null, null);
+    PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, null, null);
 
     byte[] derData = pemCollection.derCertificate();
     CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -120,7 +122,7 @@ class PEMCollectionTest {
   @Test
   void derCertificateChain() throws VCertException, IOException, CertificateException {
     String body = readResourceAsString("certificates/certWithChainAndKey.pem");
-    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionRootLast, null, null);
+    PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionRootLast, null, null);
 
     List<byte[]> derChain = pemCollection.derCertificateChain();
     assertThat(derChain.size()).isEqualTo(2);
@@ -133,7 +135,7 @@ class PEMCollectionTest {
   @Test
   void derPrivateKeyWithoutPassword() throws VCertException, IOException, GeneralSecurityException {
     String body = readResourceAsString("certificates/certWithKey.pem");
-    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null, null);
+    PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, null, null);
 
     PEMCollection.RawPrivateKey privKey = pemCollection.derPrivateKey();
     assertThat(privKey.isEncrypted()).isFalse();
@@ -147,7 +149,7 @@ class PEMCollectionTest {
   @Test
   void derPrivateKeyWithPassword() throws VCertException, IOException, GeneralSecurityException {
     String body = readResourceAsString("certificates/certWithKey.pem");
-    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null,
+    PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, null,
       KEY_PASSWORD);
 
     PEMCollection.RawPrivateKey privKey = pemCollection.derPrivateKey();
@@ -175,7 +177,7 @@ class PEMCollectionTest {
   @Test
   void toPkcs12() throws VCertException, IOException, GeneralSecurityException, PKCSException {
     String body = readResourceAsString("certificates/certWithKey.pem");
-    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null, null);
+    PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, null, null);
 
     byte[] pkcs12Data = pemCollection.toPkcs12(PKCS12_PASSWORD);
 
@@ -195,7 +197,7 @@ class PEMCollectionTest {
   @Test
   void toJks() throws VCertException, IOException, GeneralSecurityException {
     String body = readResourceAsString("certificates/certWithChainAndKey.pem");
-    PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionRootLast, null, null);
+    PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionRootLast, null, null);
 
     byte[] jksData = pemCollection.toJks(KEY_PASSWORD);
 

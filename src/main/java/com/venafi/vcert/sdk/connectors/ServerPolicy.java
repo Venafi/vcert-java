@@ -120,7 +120,7 @@ public class ServerPolicy {
     if (keyPair.keyAlgorithm().locked()) {
       KeyType keyType = KeyType.from(keyPair.keyAlgorithm().value());
       AllowedKeyConfiguration key =
-          new AllowedKeyConfiguration().keyType(keyType).keySizes(new ArrayList<>());
+          new AllowedKeyConfiguration().keyType(keyType).keySizes(new ArrayList<Integer>()).keyCurves(new ArrayList<EllipticCurve>());
       if (KeyType.RSA.equals(keyType)) {
         if (keyPair.keySize().locked()) {
           for (Integer keySize : KeyType.allSupportedKeySizes()) {

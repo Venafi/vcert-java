@@ -36,6 +36,8 @@ public abstract class AbstractTppConnector {
     protected static final String MISSING_ACCESS_TOKEN_MESSAGE = FAILED_TO_AUTHENTICATE_MESSAGE + "missing access token";
     protected static final String TPP_ATTRIBUTE_MANAGEMENT_TYPE = "Management Type";
     protected static final String TPP_ATTRIBUTE_MANUAL_CSR = "Manual Csr";
+    protected static final String LEGACY_DATA_FORMAT = "base64";
+    protected static final String PKCS8_DATA_FORMAT = "base64 (PKCS #8)";
 
     // TODO can be enum
     @SuppressWarnings("serial")

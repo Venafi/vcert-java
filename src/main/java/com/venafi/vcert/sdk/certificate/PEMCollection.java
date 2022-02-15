@@ -34,14 +34,18 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMEncryptor;
+import org.bouncycastle.openssl.PEMException;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.bc.BcPEMDecryptorProvider;
 import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcaPKCS8Generator;
 import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
+import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8EncryptorBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMEncryptorBuilder;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -55,6 +59,7 @@ import org.bouncycastle.pkcs.jcajce.JcaPKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemObjectGenerator;
 import org.bouncycastle.util.io.pem.PemWriter;
 import lombok.Data;
 import com.venafi.vcert.sdk.VCertException;
@@ -79,14 +84,34 @@ public class PEMCollection {
   private PrivateKey privateKey;
   private String privateKeyPassword;
   private List<X509Certificate> chain = new ArrayList<>();
-
+  private DataFormat dataFormat;
+  
+  /**
+   * @deprecated Use {@link #fromStringPEMCollection(String, ChainOption, PrivateKey, String) } instead of it.
+   * @param body
+   * @param chainOption
+   * @param privateKey
+   * @param privateKeyPassword
+   * @return
+   * @throws VCertException
+   */
   public static PEMCollection fromResponse(String body, ChainOption chainOption,
-      PrivateKey privateKey, String privateKeyPassword) throws VCertException {
+	      PrivateKey privateKey, String privateKeyPassword) throws VCertException {
+	  return fromStringPEMCollection(body, chainOption, privateKey, privateKeyPassword);
+  }
+  
+  public static PEMCollection fromStringPEMCollection(String stringPemCollection, ChainOption chainOption,
+	      PrivateKey privateKey, String privateKeyPassword) throws VCertException {
+	  return fromStringPEMCollection(stringPemCollection, chainOption, privateKey, privateKeyPassword, DataFormat.PKCS8);
+  }
+
+  public static PEMCollection fromStringPEMCollection(String stringPemCollection, ChainOption chainOption,
+      PrivateKey privateKey, String privateKeyPassword, DataFormat dataFormat) throws VCertException {
     List<X509Certificate> chain = new ArrayList<>();
 
-    PEMParser pemParser = new PEMParser(new StringReader(body));
+    //1. Extracting the Certificates and PrivateKey
+    PEMParser pemParser = new PEMParser(new StringReader(stringPemCollection));
     JcaX509CertificateConverter certificateConverter = new JcaX509CertificateConverter();
-    JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter();
     try {
       Object object = pemParser.readObject();
       while (object != null) {
@@ -94,20 +119,17 @@ public class PEMCollection {
           Certificate certificate =
               certificateConverter.getCertificate((X509CertificateHolder) object);
           chain.add((X509Certificate) certificate);
-        } else if (object instanceof PEMKeyPair) {
-          privateKey = keyConverter.getPrivateKey(((PEMKeyPair) object).getPrivateKeyInfo());
-        } else if (object instanceof PEMEncryptedKeyPair) {
-          PEMKeyPair keyPair = ((PEMEncryptedKeyPair) object).decryptKeyPair(
-            new BcPEMDecryptorProvider(privateKeyPassword.toCharArray()));
-          privateKey = keyConverter.getPrivateKey(keyPair.getPrivateKeyInfo());
+        } else {
+        	privateKey = parsePrivateKey(object, privateKeyPassword);
         }
 
         object = pemParser.readObject();
       }
-    } catch (IOException | CertificateException e) {
+    } catch (IOException | CertificateException | PKCSException | OperatorCreationException e) {
       throw new VCertException("Unable to parse certificate from response", e);
     }
 
+    //2. Ordering the Certificates chain
     PEMCollection pemCollection;
     if (chain.size() > 0) {
       switch (chainOption) {
@@ -135,6 +157,7 @@ public class PEMCollection {
     }
     pemCollection.privateKey(privateKey);
     pemCollection.privateKeyPassword(privateKeyPassword);
+    pemCollection.dataFormat(dataFormat);
 
     return pemCollection;
   }
@@ -162,19 +185,37 @@ public class PEMCollection {
 
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     try (PemWriter pemWriter = new PemWriter(new OutputStreamWriter(outputStream))) {
-      PEMEncryptor encryptor = null;
-
-      if (privateKeyPassword != null) {
-        encryptor = new JcePEMEncryptorBuilder(BOUNCY_CASTLE_ENCRYPTION_ALGORITHM)
-          .build(privateKeyPassword.toCharArray());
-      }
-
-      JcaMiscPEMGenerator gen = new JcaMiscPEMGenerator(this.privateKey, encryptor);
-      pemWriter.writeObject(gen.generate());
-    } catch (IOException e) {
+    	pemWriter.writeObject(getPemObjectGenerator(privateKey, privateKeyPassword));
+    } catch (IOException | OperatorCreationException e) {
       throw new RuntimeException(e);
     }
     return new String(outputStream.toByteArray());
+  }
+  
+  private PemObjectGenerator getPemObjectGenerator(PrivateKey privateKey, String password) throws OperatorCreationException, IOException {
+	  
+	  boolean toEncrypt = (privateKeyPassword != null && privateKeyPassword.length() > 0);
+
+	  if (dataFormat == DataFormat.PKCS8) {
+		  OutputEncryptor encryptor = null;
+		  if (toEncrypt) {
+			  encryptor = new JceOpenSSLPKCS8EncryptorBuilder(PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC)
+					  .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+					  .setRandom(new SecureRandom())
+					  .setPassword(privateKeyPassword.toCharArray())
+					  .build();
+		  }
+
+		  return new JcaPKCS8Generator(privateKey, encryptor);
+	  } else {
+		  PEMEncryptor encryptor = null;
+		  if (toEncrypt) {
+			  encryptor = new JcePEMEncryptorBuilder(BOUNCY_CASTLE_ENCRYPTION_ALGORITHM)
+					  .build(privateKeyPassword.toCharArray());
+		  }
+
+		  return new JcaMiscPEMGenerator(this.privateKey, encryptor);
+	  }
   }
 
   public String pemCertificateChain() {
@@ -335,10 +376,52 @@ public class PEMCollection {
   
   public static PrivateKey decryptPKCS8PrivateKey(PEMParser pemParser, String keyPassword) throws IOException, OperatorCreationException, PKCSException{
 	  PKCS8EncryptedPrivateKeyInfo encryptedPrivateKeyInfo = (PKCS8EncryptedPrivateKeyInfo) pemParser.readObject();
+	  return decryptPKCS8PrivateKey(encryptedPrivateKeyInfo, keyPassword);
+  }
+  
+  public static PrivateKey decryptPKCS8PrivateKey(PKCS8EncryptedPrivateKeyInfo encryptedPrivateKeyInfo, String keyPassword) throws PEMException, OperatorCreationException, PKCSException{
 	  InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(keyPassword.toCharArray());
 	  JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
 	  PrivateKeyInfo decryptedPrivateKeyInfo = encryptedPrivateKeyInfo.decryptPrivateKeyInfo(pkcs8Prov);
 	  return converter.getPrivateKey(decryptedPrivateKeyInfo);
+  }
+  
+  /**
+   * This method returns the PrivateKey from the Object passed as argument. which was read by {@link PEMParser#readObject()}
+   * @param object The managed types are {@link org.bouncycastle.openssl.PEMKeyPair PEMKeyPair}
+   * , {@link org.bouncycastle.openssl.PEMEncryptedKeyPair PEMEncryptedKeyPair} 
+   * and {@link org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo PKCS8EncryptedPrivateKeyInfo}. These kind of objects are returned 
+   * by {@link PEMParser#readObject()} when it reads a PEM PrivateKey.
+   * @param privateKeyPassword Only required if the object is a wrapper of an encrypted private key
+   * ({@link org.bouncycastle.openssl.PEMEncryptedKeyPair PEMEncryptedKeyPair} or {@link org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo PKCS8EncryptedPrivateKeyInfo})
+   * @return returns the PrivateKey decrypted. Null if the object argument was not one of the expected types.
+   * @throws IOException
+   * @throws OperatorCreationException
+   * @throws PKCSException
+   */
+  private static PrivateKey parsePrivateKey(Object object, String privateKeyPassword) throws IOException, OperatorCreationException, PKCSException {
+	  PrivateKey privateKey = null;
+	  //If it's an RSA Private Key instance
+	  if (object instanceof PEMKeyPair) {
+		  privateKey = getPrivateKey((PEMKeyPair)object);
+	  } else {
+		  //If it's an Encrypted RSA/EC Private Key instance
+		  if (object instanceof PEMEncryptedKeyPair) {
+			  PEMKeyPair keyPair = ((PEMEncryptedKeyPair) object).decryptKeyPair(
+					  new BcPEMDecryptorProvider(privateKeyPassword.toCharArray()));
+			  privateKey = getPrivateKey(keyPair);
+		  } else {
+			  //If it's an Encrypted PKCS#8 Private Key instance
+			  if (object instanceof PKCS8EncryptedPrivateKeyInfo) {
+				  privateKey = decryptPKCS8PrivateKey((PKCS8EncryptedPrivateKeyInfo)object, privateKeyPassword);
+			  }
+		  }
+	  }
+	  return privateKey;
+  }
+  
+  private static PrivateKey getPrivateKey(PEMKeyPair keyPair) throws PEMException {
+	  return new JcaPEMKeyConverter().getPrivateKey(keyPair.getPrivateKeyInfo());
   }
 
   @Data

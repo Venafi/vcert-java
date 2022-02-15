@@ -110,17 +110,22 @@ public interface Cloud {
   @RequestLine("POST /outagedetection/v1/certificates/{id}/keystore")
   Response retrieveKeystore(@Param("id") String id, KeystoreRequest keystoreRequest, @Param("apiKey") String apiKey);
 
+  static Cloud connect() {
+	  return connect((Config)null);
+  }
+
   static Cloud connect(String baseUrl) {
-    return FeignUtils.client(Cloud.class, 
-        Config.builder().baseUrl(
-          normalizeUrl(isNotBlank(baseUrl) ? baseUrl : "https://api.venafi.cloud")).build());
+	  return connect(Config.builder().baseUrl(baseUrl).build());
   }
 
   static Cloud connect(Config config) {
-    config.baseUrl(
-        normalizeUrl(isNotBlank(config.baseUrl()) ? config.baseUrl() : "https://api.venafi.cloud"));
 
-    return FeignUtils.client(Cloud.class, config);
+	  if(config == null)
+		  config =  Config.builder().build();
+
+	  config.baseUrl(isNotBlank(config.baseUrl()) ? normalizeUrl(config.baseUrl()) : "https://api.venafi.cloud/");
+
+	  return FeignUtils.client(Cloud.class, config);
   }
 
   static String normalizeUrl(String url) {
