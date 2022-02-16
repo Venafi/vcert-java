@@ -3,6 +3,7 @@ package com.venafi.vcert.sdk.connectors.cloud;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ChainOption;
+import com.venafi.vcert.sdk.certificate.DataFormat;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
 import com.venafi.vcert.sdk.connectors.ConnectorException.PolicyMatchException;
 import com.venafi.vcert.sdk.connectors.cloud.CloudConnector.CsrAttributes;
@@ -389,7 +390,7 @@ public class CloudConnectorUtils {
     	}
     }
     
-    public static PEMCollection getPEMCollectionFromKeyStoreAsStream(InputStream keyStoreAsInputStream, ChainOption chainOption, String keyPassword) throws VCertException {
+    public static PEMCollection getPEMCollectionFromKeyStoreAsStream(InputStream keyStoreAsInputStream, ChainOption chainOption, String keyPassword, DataFormat dataFormat) throws VCertException {
     	String certificateAsPem = null;
     	
     	String pemFileSuffix = null;
@@ -406,22 +407,25 @@ public class CloudConnectorUtils {
     		while ((zipEntry = zis.getNextEntry())!= null) {
     			String fileName = zipEntry.getName();
     			if(fileName.endsWith(".key")) {
+    				//Getting the PrivateKey in PKCS8 and decrypting it
     				PEMParser pemParser = new PEMParser(new InputStreamReader(zis));
     				privateKey = PEMCollection.decryptPKCS8PrivateKey(pemParser, keyPassword);
     			} else {
-    				if(fileName.endsWith(pemFileSuffix)) 
+    				if(fileName.endsWith(pemFileSuffix)) {
     					certificateAsPem = new String(zis.readAllBytes());
+    				}
     			}
     		}
     	} catch (Exception e) {
     		throw new VCertException(e);
     	}
 
-    	return PEMCollection.fromResponse(
+    	return PEMCollection.fromStringPEMCollection(
     			certificateAsPem, 
     			chainOption, 
     			privateKey,
-    			keyPassword);
+    			keyPassword,
+    			dataFormat);
     }
 
     @Data

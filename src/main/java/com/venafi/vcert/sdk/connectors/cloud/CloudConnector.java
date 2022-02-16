@@ -330,13 +330,12 @@ public class CloudConnector implements Connector {
 		  try {
 			  TimeUnit.SECONDS.sleep(2);
 		  } catch (InterruptedException e) {
-			  e.printStackTrace();
 			  throw new AttemptToRetryException(e);
 		  }
 	  }
 
 	  if (user == null || user.company() == null) {
-		  throw new UserNotAuthenticatedException("Must be authenticated to retieve certificate");
+		  throw new UserNotAuthenticatedException("Must be authenticated to retrieve certificate");
 	  }
 
 	  if(certificateStatus == null) {
@@ -403,7 +402,7 @@ public class CloudConnector implements Connector {
 		  }
 	  }
 	  
-	  return PEMCollection.fromResponse(
+	  return PEMCollection.fromStringPEMCollection(
 			  certificateAsPemString, 
 			  request.chainOption(), 
 			  request.privateKey(),
@@ -434,7 +433,7 @@ public class CloudConnector implements Connector {
 		  throw new VCertException(e);
 	  }
 	  
-	  return CloudConnectorUtils.getPEMCollectionFromKeyStoreAsStream(keyStoreAsStream, request.chainOption(), request.keyPassword());
+	  return CloudConnectorUtils.getPEMCollectionFromKeyStoreAsStream(keyStoreAsStream, request.chainOption(), request.keyPassword(), request.dataFormat());
   }
   
   /**

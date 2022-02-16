@@ -73,6 +73,7 @@ public class CertificateRequest {
   private int validityHours;
   private String issuerHint;
   private Collection<CustomField> customFields;
+  private DataFormat dataFormat;
 
   public CertificateRequest() {
     this.dnsNames = emptyList();
@@ -91,6 +92,10 @@ public class CertificateRequest {
 
   public PrivateKey privateKey() {
     return (!Objects.isNull(keyPair)) ? keyPair.getPrivate() : null;
+  }
+  
+  public DataFormat dataFormat() {
+	  return (!Objects.isNull(dataFormat)) ? dataFormat : DataFormat.PKCS8;
   }
 
   public void generatePrivateKey() throws VCertException {

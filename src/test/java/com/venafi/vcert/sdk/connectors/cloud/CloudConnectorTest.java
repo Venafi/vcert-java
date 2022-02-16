@@ -154,7 +154,7 @@ class CloudConnectorTest {
         classUnderTest.authenticate(auth);
 
         String body = readResourceAsString("certificates/certWithKey.pem");
-        PEMCollection pemCollection = PEMCollection.fromResponse(body, ChainOption.ChainOptionIgnore, null, null);
+        PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(body, ChainOption.ChainOptionIgnore, null, null);
 
         CertificateRequest request = new CertificateRequest().subject(
                 new CertificateRequest.PKIXName()

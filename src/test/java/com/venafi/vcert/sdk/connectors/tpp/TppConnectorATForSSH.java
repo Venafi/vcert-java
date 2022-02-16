@@ -17,6 +17,7 @@ import org.junit.jupiter.api.TestInfo;
 import com.sshtools.common.publickey.SshKeyPairGenerator;
 import com.sshtools.common.publickey.SshKeyUtils;
 import com.sshtools.common.ssh.components.SshKeyPair;
+import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.SshCaTemplateRequest;
 import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
@@ -26,15 +27,15 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 
 class TppConnectorATForSSH {
 
-    private TppConnector classUnderTest = new TppConnector(Tpp.connect(System.getenv("TPPURL")));
+    private TppConnector classUnderTest = new TppConnector(Tpp.connect(TestUtils.TPP_URL));
 
     @BeforeEach
     void authenticate(TestInfo testInfo) throws VCertException {
     	if(testInfo.getTags()!=null && !testInfo.getTags().contains("AuthenticationUnneeded")) {
     		Security.addProvider(new BouncyCastleProvider());
     		Authentication authentication = new Authentication()
-    				.user(System.getenv("TPPUSER"))
-    				.password(System.getenv("TPPPASSWORD"))
+    				.user(TestUtils.TPP_USER)
+    				.password(TestUtils.TPP_PASSWORD)
     				.scope("ssh:manage");
     		classUnderTest.authenticate(authentication);
     	}

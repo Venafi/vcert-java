@@ -31,6 +31,7 @@ import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
+import com.venafi.vcert.sdk.certificate.DataFormat;
 import com.venafi.vcert.sdk.certificate.PublicKeyAlgorithm;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
 import com.venafi.vcert.sdk.certificate.RevocationRequest;
@@ -376,9 +377,11 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
             request.pickupId(searchResult.certificates().get(0).certificateRequestId());
         }
 
-        CertificateRetrieveRequest certReq =
-                new CertificateRetrieveRequest().certificateDN(request.pickupId()).format("base64")
-                        .rootFirstOrder(rootFirstOrder).includeChain(includeChain);
+        CertificateRetrieveRequest certReq = new CertificateRetrieveRequest()
+                .certificateDN(request.pickupId())
+                .format( request.dataFormat() == DataFormat.PKCS8 ? PKCS8_DATA_FORMAT : LEGACY_DATA_FORMAT)
+                .rootFirstOrder(rootFirstOrder)
+                .includeChain(includeChain);
 
         if (request.csrOrigin() == CsrOriginOption.ServiceGeneratedCSR || request.fetchPrivateKey()) {
             certReq.includePrivateKey(true);
@@ -390,10 +393,10 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
         while (true) {
             Tpp.CertificateRetrieveResponse retrieveResponse = retrieveCertificateOnce(certReq);
             if (isNotBlank(retrieveResponse.certificateData())) {
-                PEMCollection pemCollection = PEMCollection.fromResponse(
+                PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(
                         org.bouncycastle.util.Strings
                                 .fromByteArray(Base64.getDecoder().decode(retrieveResponse.certificateData())),
-                        request.chainOption(), request.privateKey(), request.keyPassword());
+                        request.chainOption(), request.privateKey(), request.keyPassword(), request.dataFormat());
                 request.checkCertificate(pemCollection.certificate());
                 return pemCollection;
             }

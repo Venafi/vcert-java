@@ -41,19 +41,30 @@ import com.venafi.vcert.sdk.endpoint.ConnectorType;
 public class TestUtils {
 
 	public static final int VALID_HOURS = 120;
-	public static final String TPP_USER = "TPPUSER";
-	public static final String TPP_PASSWORD = "TPPPASSWORD";
-	public static final String TPP_TOKEN_URL = "TPP_TOKEN_URL";
-	public static final String TPP_ZONE = "TPPZONE";
+	public static final String TPP_USER = System.getenv("TPPUSER");
+	public static final String TPP_PASSWORD = System.getenv("TPPPASSWORD");
+	public static final String TPP_TOKEN_URL = System.getenv("TPP_TOKEN_URL");
+	public static final String TPP_ZONE = System.getenv("TPPZONE");
+	public static final String TPP_URL = System.getenv("TPPURL");
 	public static final String TPP_PM_ROOT = System.getenv("TPP_PM_ROOT");
 	public static final String TPP_CA_NAME = System.getenv("TPP_CA_NAME");
 	public static final String CLIENT_ID = "vcert-sdk";
-	public static final String CLOUD_ZONE = "CLOUDZONE";
-	public static final String API_KEY = "APIKEY";
+	public static final String CLOUD_ZONE = System.getenv("CLOUDZONE");
+	public static final String API_KEY = System.getenv("APIKEY");
 	public static final String CLOUD_ENTRUST_CA_NAME = System.getenv("CLOUD_ENTRUST_CA_NAME");
 	public static final String CLOUD_DIGICERT_CA_NAME = System.getenv("CLOUD_DIGICERT_CA_NAME");
-
-
+	
+	public static final String PEM_RSA_PRIVATE_KEY = "RSA PRIVATE KEY";
+	public static final String PEM_RSA_PRIVATE_KEY_ENCRYPTED = "RSA PRIVATE KEY";
+	public static final String PEM_RSA_PRIVATE_KEY_ENCRYPTED_HEADER_VALUE = "4,ENCRYPTED";
+	public static final String PEM_EC_PRIVATE_KEY = "EC PRIVATE KEY";
+	public static final String PEM_EC_PRIVATE_KEY_ENCRYPTED = "EC PRIVATE KEY";
+	public static final String PEM_EC_PRIVATE_KEY_ENCRYPTED_HEADER_VALUE = "4,ENCRYPTED";
+	public static final String PEM_HEADER_PKCS8 = "PRIVATE KEY";
+	public static final String PEM_HEADER_PKCS8_ENCRYPTED = "ENCRYPTED PRIVATE KEY";
+	//This password complains the TPP and VaaS requirements.
+	public static final String KEY_PASSWORD = "newPassw0rd!";
+	
 	private static String loadFileContents(String name) throws IOException {
 		ClassLoader classLoader = TestUtils.class.getClassLoader();
 		return new String(Files.readAllBytes(Paths.get(classLoader.getResource(name).getPath())));
@@ -138,9 +149,9 @@ public class TestUtils {
 	
 	public static String getAccessToken() throws VCertException {
 		String accesToken = "";
-		String userName = System.getenv(TPP_USER);
-		String pass = System.getenv(TPP_PASSWORD);
-		String url = System.getenv(TPP_TOKEN_URL);
+		String userName = TPP_USER;
+		String pass = TPP_PASSWORD;
+		String url = TPP_TOKEN_URL;
 
 
 		Authentication auth = Authentication.builder()
