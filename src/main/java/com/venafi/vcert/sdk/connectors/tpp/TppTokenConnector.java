@@ -410,7 +410,6 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
             try {
                 TimeUnit.SECONDS.sleep(2);
             } catch (InterruptedException e) {
-                e.printStackTrace();
                 throw new AttemptToRetryException(e);
             }
         }
