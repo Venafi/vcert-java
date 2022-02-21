@@ -397,7 +397,6 @@ public class CloudConnector implements Connector {
 		  try {
 			  TimeUnit.SECONDS.sleep(2);
 		  } catch (InterruptedException e) {
-			  e.printStackTrace();
 			  throw new AttemptToRetryException(e);
 		  }
 	  }

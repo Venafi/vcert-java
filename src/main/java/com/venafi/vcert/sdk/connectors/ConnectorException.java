@@ -438,5 +438,14 @@ public class ConnectorException extends VCertException {
 					+ "in the CertificateRequest to determine the certificate Id.");
 		}
 	}
+	
+	public static class ClientIdentifierException extends ConnectorException {
+		
+		private static final long serialVersionUID = 1L;
+		
+		public ClientIdentifierException(Exception e) {
+			super("It wasn't possible to determine the Client Identifier", e);
+		}
+	}
 
 }

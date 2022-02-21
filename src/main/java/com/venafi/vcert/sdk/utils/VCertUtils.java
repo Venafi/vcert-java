@@ -12,6 +12,7 @@ import java.util.List;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.connectors.tpp.AbstractTppConnector.CertificateRequestsPayload;
 import com.venafi.vcert.sdk.connectors.tpp.AbstractTppConnector.NameValuePair;
+import com.venafi.vcert.sdk.connectors.ConnectorException.ClientIdentifierException;
 import com.venafi.vcert.sdk.connectors.cloud.CloudConnector.ApiClientInformation;
 import com.venafi.vcert.sdk.connectors.tpp.CustomFieldRequest;
 
@@ -125,7 +126,7 @@ public class VCertUtils {
 		
 	}
 
-	public static void addApiClientInformation(com.venafi.vcert.sdk.connectors.cloud.CloudConnector.CertificateRequestsPayload payload ) {
+	public static void addApiClientInformation(com.venafi.vcert.sdk.connectors.cloud.CloudConnector.CertificateRequestsPayload payload ) throws ClientIdentifierException {
 		//add client information
 		ApiClientInformation clientInfo = new ApiClientInformation();
 		clientInfo.type(VCertConstants.DEFAULT_VENDOR_AND_PRODUCT_NAME );
@@ -133,7 +134,7 @@ public class VCertUtils {
 		try {
 			clientInfo.identifier(VCertUtils.getIpAddress());
 		} catch (UnknownHostException e) {
-			e.printStackTrace();
+			throw new ClientIdentifierException( e);
 		}
 
 		payload.apiClientInformation(clientInfo);
