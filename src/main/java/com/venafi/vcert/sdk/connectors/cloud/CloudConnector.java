@@ -118,32 +118,30 @@ public class CloudConnector implements Connector {
 
   @Override
   public ZoneConfiguration readZoneConfiguration(String zone) throws VCertException {
-	  
+
 	  String valies[] = StringUtils.split(zone, "\\");
 	  String appName = valies[0];
 	  String citAlias = valies[1];
-	  
+
 	  CertificateIssuingTemplate cit = null;
-	    String zoneId = null;
-	    if((appName != null && appName != "") && (citAlias != null && citAlias != "")) {
-	    	
-	    	 cit = cloud.certificateIssuingTemplateByAppNameAndCitAlias(appName, citAlias, auth.apiKey());
-	    	
-	    }else {
-	    	  throw new ZoneFormatException("The parameters: appName, citAlias or both are empty");
-	    }
-	    
-	    //get application id.
-	    Application app = cloud.applicationByName(appName, auth.apiKey());
-	    String appId = app.id();
 
-	    ZoneConfiguration zoneConfig = cit.toZoneConfig();
-	    zoneConfig.policy(cit.toPolicy());
-	    zoneConfig.zoneId(zone);
-	    zoneConfig.applicationId(appId);
-	    zoneConfig.certificateIssuingTemplateId(cit.id());
+	  if((appName != null && !appName.equals("")) && (citAlias != null && !citAlias.equals(""))) {
+		  cit = cloud.certificateIssuingTemplateByAppNameAndCitAlias(appName, citAlias, auth.apiKey());
+	  } else {
+		  throw new ZoneFormatException("The parameters: appName, citAlias or both are empty");
+	  }
 
-	    return zoneConfig;
+	  //get application id.
+	  Application app = cloud.applicationByName(appName, auth.apiKey());
+	  String appId = app.id();
+
+	  ZoneConfiguration zoneConfig = cit.toZoneConfig();
+	  zoneConfig.policy(cit.toPolicy());
+	  zoneConfig.zoneId(zone);
+	  zoneConfig.applicationId(appId);
+	  zoneConfig.certificateIssuingTemplateId(cit.id());
+
+	  return zoneConfig;
   }
 
   @Override
@@ -307,11 +305,20 @@ public class CloudConnector implements Connector {
 
   private String getCertificateIdFromPickupId(CertificateRequest request) throws VCertException {
 	  CertificateStatus certificateStatus = null;
+	  
+	  if (user == null || user.company() == null) {
+		  throw new UserNotAuthenticatedException("Must be authenticated to retrieve certificate");
+	  }
 
 	  Instant startTime = Instant.now();
 	  while (true) {
 
 		  certificateStatus = getCertificateStatus(request.pickupId());
+		  
+		  if(certificateStatus == null) {
+			  throw new FailedToRetrieveCertificateStatusException(request.pickupId());
+		  }
+		  
 		  if ("ISSUED".equals(certificateStatus.status())) {
 			  break;
 		  } else if ("FAILED".equals(certificateStatus.status())) {
@@ -330,18 +337,12 @@ public class CloudConnector implements Connector {
 		  try {
 			  TimeUnit.SECONDS.sleep(2);
 		  } catch (InterruptedException e) {
+			  // Restore interrupted state...
+			  Thread.currentThread().interrupt();
 			  throw new AttemptToRetryException(e);
 		  }
 	  }
-
-	  if (user == null || user.company() == null) {
-		  throw new UserNotAuthenticatedException("Must be authenticated to retrieve certificate");
-	  }
-
-	  if(certificateStatus == null) {
-		  throw new FailedToRetrieveCertificateStatusException(request.pickupId());
-	  }
-
+	  
 	  return certificateStatus.certificateIds().get(0);
   }
 
@@ -397,6 +398,8 @@ public class CloudConnector implements Connector {
 		  try {
 			  TimeUnit.SECONDS.sleep(2);
 		  } catch (InterruptedException e) {
+			  // Restore interrupted state...
+			  Thread.currentThread().interrupt();
 			  throw new AttemptToRetryException(e);
 		  }
 	  }
