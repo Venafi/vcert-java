@@ -361,58 +361,60 @@ public class TppTokenConnector extends AbstractTppConnector implements TokenConn
 
     @Override
     public PEMCollection retrieveCertificate(CertificateRequest request) throws VCertException {
-        boolean includeChain = request.chainOption() != ChainOption.ChainOptionIgnore;
-        boolean rootFirstOrder =
-                includeChain && request.chainOption() == ChainOption.ChainOptionRootFirst;
+    	boolean includeChain = request.chainOption() != ChainOption.ChainOptionIgnore;
+    	boolean rootFirstOrder =
+    			includeChain && request.chainOption() == ChainOption.ChainOptionRootFirst;
 
-        if (isNotBlank(request.pickupId()) && isNotBlank(request.thumbprint())) {
-            Tpp.CertificateSearchResponse searchResult =
-                    searchCertificatesByFingerprint(request.thumbprint());
-            if (searchResult.certificates().size() == 0)
-            	throw new CertificateNotFoundByThumbprintException(request.thumbprint());
-            
-            if (searchResult.certificates().size() > 1) 
-                throw new MoreThanOneCertificateWithSameThumbprintException(request.thumbprint());
-            
-            request.pickupId(searchResult.certificates().get(0).certificateRequestId());
-        }
+    	if (isNotBlank(request.pickupId()) && isNotBlank(request.thumbprint())) {
+    		Tpp.CertificateSearchResponse searchResult =
+    				searchCertificatesByFingerprint(request.thumbprint());
+    		if (searchResult.certificates().size() == 0)
+    			throw new CertificateNotFoundByThumbprintException(request.thumbprint());
 
-        CertificateRetrieveRequest certReq = new CertificateRetrieveRequest()
-                .certificateDN(request.pickupId())
-                .format( request.dataFormat() == DataFormat.PKCS8 ? PKCS8_DATA_FORMAT : LEGACY_DATA_FORMAT)
-                .rootFirstOrder(rootFirstOrder)
-                .includeChain(includeChain);
+    		if (searchResult.certificates().size() > 1) 
+    			throw new MoreThanOneCertificateWithSameThumbprintException(request.thumbprint());
 
-        if (request.csrOrigin() == CsrOriginOption.ServiceGeneratedCSR || request.fetchPrivateKey()) {
-            certReq.includePrivateKey(true);
-            certReq.password(request.keyPassword());
-        }
+    		request.pickupId(searchResult.certificates().get(0).certificateRequestId());
+    	}
 
-        // TODO move this retry logic to feign client
-        Instant startTime = Instant.now();
-        while (true) {
-            Tpp.CertificateRetrieveResponse retrieveResponse = retrieveCertificateOnce(certReq);
-            if (isNotBlank(retrieveResponse.certificateData())) {
-                PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(
-                        org.bouncycastle.util.Strings
-                                .fromByteArray(Base64.getDecoder().decode(retrieveResponse.certificateData())),
-                        request.chainOption(), request.privateKey(), request.keyPassword(), request.dataFormat());
-                request.checkCertificate(pemCollection.certificate());
-                return pemCollection;
-            }
+    	CertificateRetrieveRequest certReq = new CertificateRetrieveRequest()
+    			.certificateDN(request.pickupId())
+    			.format( request.dataFormat() == DataFormat.PKCS8 ? PKCS8_DATA_FORMAT : LEGACY_DATA_FORMAT)
+    			.rootFirstOrder(rootFirstOrder)
+    			.includeChain(includeChain);
 
-            if (ZERO.equals(request.timeout()))
-                throw new CertificatePendingException(request.pickupId());
+    	if (request.csrOrigin() == CsrOriginOption.ServiceGeneratedCSR || request.fetchPrivateKey()) {
+    		certReq.includePrivateKey(true);
+    		certReq.password(request.keyPassword());
+    	}
 
-            if (Instant.now().isAfter(startTime.plus(request.timeout())))
-                throw new RetrieveCertificateTimeoutException(request.pickupId());
+    	// TODO move this retry logic to feign client
+    	Instant startTime = Instant.now();
+    	while (true) {
+    		Tpp.CertificateRetrieveResponse retrieveResponse = retrieveCertificateOnce(certReq);
+    		if (isNotBlank(retrieveResponse.certificateData())) {
+    			PEMCollection pemCollection = PEMCollection.fromStringPEMCollection(
+    					org.bouncycastle.util.Strings
+    					.fromByteArray(Base64.getDecoder().decode(retrieveResponse.certificateData())),
+    					request.chainOption(), request.privateKey(), request.keyPassword(), request.dataFormat());
+    			request.checkCertificate(pemCollection.certificate());
+    			return pemCollection;
+    		}
 
-            try {
-                TimeUnit.SECONDS.sleep(2);
-            } catch (InterruptedException e) {
-                throw new AttemptToRetryException(e);
-            }
-        }
+    		if (ZERO.equals(request.timeout()))
+    			throw new CertificatePendingException(request.pickupId());
+
+    		if (Instant.now().isAfter(startTime.plus(request.timeout())))
+    			throw new RetrieveCertificateTimeoutException(request.pickupId());
+
+    		try {
+    			TimeUnit.SECONDS.sleep(2);
+    		} catch (InterruptedException e) {
+    			// Restore interrupted state...
+    			Thread.currentThread().interrupt();
+    			throw new AttemptToRetryException(e);
+    		}
+    	}
     }
 
     private Tpp.CertificateRetrieveResponse retrieveCertificateOnce(

@@ -343,9 +343,11 @@ public class TppConnector extends AbstractTppConnector implements Connector {
           throw new RetrieveCertificateTimeoutException(request.pickupId());
 
       try {
-        TimeUnit.SECONDS.sleep(2);
+    	  TimeUnit.SECONDS.sleep(2);
       } catch (InterruptedException e) {
-        throw new AttemptToRetryException(e);
+    	  // Restore interrupted state...
+    	  Thread.currentThread().interrupt();
+    	  throw new AttemptToRetryException(e);
       }
     }
   }

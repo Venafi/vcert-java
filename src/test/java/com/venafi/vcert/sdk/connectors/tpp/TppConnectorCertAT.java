@@ -220,8 +220,8 @@ public class TppConnectorCertAT {
 	    ImportResponse response = connectorResource.connector().importCertificate(importRequest);
 	    assertThat(response).isNotNull();
 	    assertThat(response.certificateDN()).isNotNull();
-	    assertThat(response.certificateVaultId()).isNotNull();
-	    assertThat(response.privateKeyVaultId()).isNotNull();
+	    assertThat(response.certificateVaultId()).isGreaterThan(0);
+	    assertThat(response.privateKeyVaultId()).isGreaterThan(0);
 	}
 	
 	@Test

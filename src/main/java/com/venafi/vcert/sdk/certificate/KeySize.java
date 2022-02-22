@@ -24,7 +24,7 @@ public enum KeySize {
         }
     }
 
-    public static KeySize from(String key) {
+    public static KeySize from(Integer key) {
         return LOOKUP.get(key);
     }
 
