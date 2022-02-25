@@ -5,6 +5,9 @@ import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ChainOption;
 import com.venafi.vcert.sdk.certificate.DataFormat;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
+import com.venafi.vcert.sdk.connectors.ConnectorException.KeyStoreUnzipedFilesBytesSizeExceeded;
+import com.venafi.vcert.sdk.connectors.ConnectorException.KeyStoreZipCompressionRatioExceeded;
+import com.venafi.vcert.sdk.connectors.ConnectorException.KeyStoreZipEntriesExceeded;
 import com.venafi.vcert.sdk.connectors.ConnectorException.PolicyMatchException;
 import com.venafi.vcert.sdk.connectors.cloud.CloudConnector.CsrAttributes;
 import com.venafi.vcert.sdk.connectors.cloud.CloudConnector.SubjectAlternativeNamesByType;
@@ -22,8 +25,9 @@ import lombok.Data;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.security.PrivateKey;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -390,7 +394,7 @@ public class CloudConnectorUtils {
     	}
     }
     
-    public static PEMCollection getPEMCollectionFromKeyStoreAsStream(InputStream keyStoreAsInputStream, ChainOption chainOption, String keyPassword, DataFormat dataFormat) throws VCertException {
+    public static PEMCollection getPEMCollectionFromKeyStoreAsStream(InputStream keyStoreAsInputStream, String certId, ChainOption chainOption, String keyPassword, DataFormat dataFormat) throws VCertException {
     	String certificateAsPem = null;
     	
     	String pemFileSuffix = null;
@@ -402,19 +406,44 @@ public class CloudConnectorUtils {
     	PrivateKey privateKey = null;
 
     	try (ZipInputStream zis = new ZipInputStream(keyStoreAsInputStream)) {
-
+    		//The next constants are in order to be on safe about of the zip bomb attacks
+    		final int MAX_ENTRIES = 6;//The expected number of files in the zip returned by the call to 
+    							//the API "POST /outagedetection/v1/certificates/{id}/keystore"
+    		final int MAX_UNZIPED_FILES_SIZE = 1000000; //1 MB
+        	
+        	int entriesCount = 0;
+        	int unzipedAcumulatedSize = 0;
+        	
     		ZipEntry zipEntry;
     		while ((zipEntry = zis.getNextEntry())!= null) {
+    			
+    			entriesCount++;
+    			
+    			//ZIP Bomb Attack validation
+    			//If the number of entries is major that the expected max number of entries 
+    			if(entriesCount > MAX_ENTRIES)
+    				throw new KeyStoreZipEntriesExceeded(certId, MAX_ENTRIES);
+    			
+    			String zipEntryContent = readZipEntry(zipEntry, zis, certId);
+    			
     			String fileName = zipEntry.getName();
     			if(fileName.endsWith(".key")) {
     				//Getting the PrivateKey in PKCS8 and decrypting it
-    				PEMParser pemParser = new PEMParser(new InputStreamReader(zis));
+    				PEMParser pemParser = new PEMParser(new StringReader(zipEntryContent));
     				privateKey = PEMCollection.decryptPKCS8PrivateKey(pemParser, keyPassword);
     			} else {
     				if(fileName.endsWith(pemFileSuffix)) {
-    					certificateAsPem = new String(zis.readAllBytes());
+    					certificateAsPem = zipEntryContent;
     				}
     			}
+    			
+    			unzipedAcumulatedSize += zipEntryContent.getBytes().length;
+    			
+    			//ZIP Bomb Attack validation
+    			//If the sum of the number of bytes of the unzipped files is major that the expected 
+    			//maximum number of bytes.
+    			if (unzipedAcumulatedSize > MAX_UNZIPED_FILES_SIZE)
+    				throw new KeyStoreUnzipedFilesBytesSizeExceeded(certId, MAX_UNZIPED_FILES_SIZE);
     		}
     	} catch (Exception e) {
     		throw new VCertException(e);
@@ -426,6 +455,32 @@ public class CloudConnectorUtils {
     			privateKey,
     			keyPassword,
     			dataFormat);
+    }
+    
+    private static String readZipEntry(ZipEntry zipEntry, ZipInputStream zis, String certId) throws VCertException, IOException {
+    	
+    	int totalSizeEntry = 0;
+
+    	final int MAX_RATIO = 3;//It's expected that the compression ratio should't be more than 3
+
+    	StringBuilder s = new StringBuilder();
+    	byte[] buffer = new byte[1024];
+    	int nBytes = 0;
+    	while ((nBytes = zis.read(buffer, 0, 1024)) >= 0) {
+    		s.append(new String(buffer, 0, nBytes));
+    		
+    		//ZIP Bomb Attack validation
+    		//If the compression ratio of the current unzipped file is major that the expected 
+    		// max ratio
+    		totalSizeEntry += nBytes;
+    		double compressionRatio = totalSizeEntry / zipEntry.getCompressedSize();
+    		if(compressionRatio > MAX_RATIO) {
+    			// ratio between compressed and uncompressed data is highly suspicious, looks like a Zip Bomb Attack
+    			throw new KeyStoreZipCompressionRatioExceeded(certId, zipEntry.getName(), MAX_RATIO);
+    		}
+    	}
+
+		return s.toString();
     }
 
     @Data
