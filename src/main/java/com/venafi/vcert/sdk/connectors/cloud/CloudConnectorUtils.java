@@ -459,7 +459,7 @@ public class CloudConnectorUtils {
     
     private static String readZipEntry(ZipEntry zipEntry, ZipInputStream zis, String certId) throws VCertException, IOException {
     	
-    	int totalSizeEntry = 0;
+    	long totalSizeEntry = 0;
 
     	final int MAX_RATIO = 3;//It's expected that the compression ratio should't be more than 3
 
@@ -473,7 +473,7 @@ public class CloudConnectorUtils {
     		//If the compression ratio of the current unzipped file is major that the expected 
     		// max ratio
     		totalSizeEntry += nBytes;
-    		double compressionRatio = totalSizeEntry / zipEntry.getCompressedSize();
+    		long compressionRatio = totalSizeEntry / zipEntry.getCompressedSize();
     		if(compressionRatio > MAX_RATIO) {
     			// ratio between compressed and uncompressed data is highly suspicious, looks like a Zip Bomb Attack
     			throw new KeyStoreZipCompressionRatioExceeded(certId, zipEntry.getName(), MAX_RATIO);
