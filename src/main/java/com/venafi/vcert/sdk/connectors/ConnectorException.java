@@ -447,5 +447,49 @@ public class ConnectorException extends VCertException {
 			super("It wasn't possible to determine the Client Identifier", e);
 		}
 	}
+	
+	public static class KeyStoreZipEntriesExceeded extends ConnectorException {
+		
+		private static final long serialVersionUID = 1L;
+
+		int maxEntriesExpected;
+		String certificateId;
+
+		public KeyStoreZipEntriesExceeded(String certificateId, int maxEntriesExpected) {
+			super(format("The Keystore Zip from certificate Id %s exceeded the maximum of %d expected compressed files.", certificateId, maxEntriesExpected));
+			this.maxEntriesExpected = maxEntriesExpected;
+			this.certificateId = certificateId;
+		}
+	}
+	
+	public static class KeyStoreUnzipedFilesBytesSizeExceeded extends ConnectorException {
+		
+		private static final long serialVersionUID = 1L;
+
+		int maxBytesSizeExpected;
+		String certificateId;
+
+		public KeyStoreUnzipedFilesBytesSizeExceeded(String certificateId, int maxBytesSizeExpected) {
+			super(format("The Keystore Zip from certificate Id %s exceeded the maximum of total %d expected bytes for uncompressed files.", certificateId, maxBytesSizeExpected));
+			this.maxBytesSizeExpected = maxBytesSizeExpected;
+			this.certificateId = certificateId;
+		}
+	}
+	
+	public static class KeyStoreZipCompressionRatioExceeded extends ConnectorException {
+		
+		private static final long serialVersionUID = 1L;
+
+		int maxCompressionRatioExpected;
+		String certificateId;
+		String fileName;
+
+		public KeyStoreZipCompressionRatioExceeded(String certificateId, String fileName, int maxCompressionRatioExpected) {
+			super(format("The file %s in the Keystore Zip from certificate Id %s exceeded the maximum of %d expected compression ratio.", fileName, certificateId, maxCompressionRatioExpected));
+			this.maxCompressionRatioExpected = maxCompressionRatioExpected;
+			this.certificateId = certificateId;
+			this.fileName = fileName;
+		}
+	}
 
 }

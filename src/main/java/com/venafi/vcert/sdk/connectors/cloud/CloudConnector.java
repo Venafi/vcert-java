@@ -435,7 +435,7 @@ public class CloudConnector implements Connector {
 		  throw new VCertException(e);
 	  }
 	  
-	  return CloudConnectorUtils.getPEMCollectionFromKeyStoreAsStream(keyStoreAsStream, request.chainOption(), request.keyPassword(), request.dataFormat());
+	  return CloudConnectorUtils.getPEMCollectionFromKeyStoreAsStream(keyStoreAsStream, request.certId(), request.chainOption(), request.keyPassword(), request.dataFormat());
   }
   
   /**
