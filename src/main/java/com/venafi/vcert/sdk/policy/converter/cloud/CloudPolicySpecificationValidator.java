@@ -1,6 +1,8 @@
 package com.venafi.vcert.sdk.policy.converter.cloud;
 
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.features.SupportedKeyPairs;
+import com.venafi.vcert.sdk.features.SupportedRSAKeySizes;
 import com.venafi.vcert.sdk.policy.domain.*;
 import com.venafi.vcert.sdk.policy.converter.IPolicySpecificationValidator;
 import org.apache.commons.lang3.StringUtils;
@@ -91,13 +93,13 @@ public class CloudPolicySpecificationValidator implements IPolicySpecificationVa
             if(keyPair.keyTypes() != null) {
                 int keyTypesLength = keyPair.keyTypes().length;
 
-                if (keyTypesLength > 0 && !CloudKeyPairEnums.containsKeyTypes(keyPair.keyTypes()))
+                if (keyTypesLength > 0 && !SupportedKeyPairs.VAAS.containsKeyTypes(keyPair.keyTypes()))
                     throw new VCertException(String.format(ATTRIBUTE_DOESNT_MATCH_WITH_ACCEPTED_VALUES_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_POLICY_KEYPAIR_KEY_TYPES));
             }
 
             //validate key bit strength
             if(keyPair.rsaKeySizes() != null) {
-                if (!CloudKeyPairEnums.containsRsaKeySizes(keyPair.rsaKeySizes()))
+                if (!SupportedRSAKeySizes.VAAS.containsRsaKeySizes(keyPair.rsaKeySizes()))
                     throw new VCertException(String.format(ATTRIBUTE_DOESNT_MATCH_WITH_ACCEPTED_VALUES_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_POLICY_KEYPAIR_RSA_KEY_SIZES));
             }
         }
@@ -165,7 +167,7 @@ public class CloudPolicySpecificationValidator implements IPolicySpecificationVa
 
             String defaultKeyType = defaultsKeyPair.keyType();
             if ( defaultKeyType != null && !defaultKeyType.equals("")) {
-                if(!CloudKeyPairEnums.containsKeyType( defaultKeyType ))
+                if(!SupportedKeyPairs.VAAS.containsKeyType( defaultKeyType ))
                     throw new VCertException(String.format(DEFAULT_ATTRIBUTE_DOESNT_MATCH_WITH_ACCEPTED_VALUES_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_DEFAULTS_KEYPAIR_KEY_TYPE));
 
                 if(policyKeyPair != null) {
@@ -177,7 +179,7 @@ public class CloudPolicySpecificationValidator implements IPolicySpecificationVa
 
             Integer defaultRsaKeySize = defaultsKeyPair.rsaKeySize();
             if( defaultRsaKeySize != null ) {
-                if( !CloudKeyPairEnums.containsRsaKeySize( defaultRsaKeySize ))
+                if( !SupportedRSAKeySizes.VAAS.containsRsaKeySize( defaultRsaKeySize ))
                     throw new VCertException(String.format(DEFAULT_ATTRIBUTE_DOESNT_MATCH_WITH_ACCEPTED_VALUES_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_DEFAULTS_KEYPAIR_RSA_KEY_SIZE));
 
                 if(policyKeyPair != null && !Arrays.stream(policyKeyPair.rsaKeySizes()).anyMatch(defaultRsaKeySize::equals))
