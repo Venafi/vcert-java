@@ -1,6 +1,9 @@
 package com.venafi.vcert.sdk.policy.converter.tpp;
 
 import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.features.SupportedKeyPairs;
+import com.venafi.vcert.sdk.features.SupportedRSAKeySizes;
+import com.venafi.vcert.sdk.features.SupportedECCKeys;
 import com.venafi.vcert.sdk.policy.domain.*;
 import com.venafi.vcert.sdk.policy.converter.IPolicySpecificationValidator;
 
@@ -68,7 +71,7 @@ public class TPPPolicySpecificationValidator implements IPolicySpecificationVali
                 if (keyTypesLength > 1)
                     throw new VCertException(String.format(ATTRIBUTE_HAS_MORE_THAN_ONE_VALUE_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_POLICY_KEYPAIR_KEY_TYPES));
 
-                if (keyTypesLength == 1 && !TPPKeyPairEnums.containsKeyTypes(keyPair.keyTypes()))
+                if (keyTypesLength == 1 && !SupportedKeyPairs.TPP.containsKeyTypes(keyPair.keyTypes()))
                     throw new VCertException(String.format(ATTRIBUTE_DOESNT_MATCH_WITH_ACCEPTED_VALUES_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_POLICY_KEYPAIR_KEY_TYPES));
             }
 
@@ -78,7 +81,7 @@ public class TPPPolicySpecificationValidator implements IPolicySpecificationVali
                 if (rsaKeySizesLength > 1)
                     throw new VCertException(String.format(ATTRIBUTE_HAS_MORE_THAN_ONE_VALUE_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_POLICY_KEYPAIR_RSA_KEY_SIZES));
 
-                if (rsaKeySizesLength == 1 && !TPPKeyPairEnums.containsRsaKeySizes(keyPair.rsaKeySizes()))
+                if (rsaKeySizesLength == 1 && !SupportedRSAKeySizes.TPP.containsRsaKeySizes(keyPair.rsaKeySizes()))
                     throw new VCertException(String.format(ATTRIBUTE_DOESNT_MATCH_WITH_ACCEPTED_VALUES_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_POLICY_KEYPAIR_RSA_KEY_SIZES));
             }
 
@@ -88,7 +91,7 @@ public class TPPPolicySpecificationValidator implements IPolicySpecificationVali
                 if (ecLength > 1)
                     throw new VCertException(String.format(ATTRIBUTE_HAS_MORE_THAN_ONE_VALUE_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_POLICY_KEYPAIR_ELLIPTIC_CURVES));
 
-                if (ecLength == 1 && !TPPKeyPairEnums.containsEllipticCurves(keyPair.ellipticCurves()))
+                if (ecLength == 1 && !SupportedECCKeys.TPP.containsEllipticCurves(keyPair.ellipticCurves()))
                     throw new VCertException(String.format(ATTRIBUTE_DOESNT_MATCH_WITH_ACCEPTED_VALUES_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_POLICY_KEYPAIR_ELLIPTIC_CURVES));
             }
         }
@@ -138,7 +141,7 @@ public class TPPPolicySpecificationValidator implements IPolicySpecificationVali
 
             String defaultKeyType = defaultsKeyPair.keyType();
             if ( defaultKeyType != null && !defaultKeyType.equals("")) {
-                if(!TPPKeyPairEnums.containsKeyType( defaultKeyType ))
+                if(!SupportedKeyPairs.TPP.containsKeyType( defaultKeyType ))
                     throw new VCertException(String.format(DEFAULT_ATTRIBUTE_DOESNT_MATCH_WITH_ACCEPTED_VALUES_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_DEFAULTS_KEYPAIR_KEY_TYPE));
 
                 if(policyKeyPair != null) {
@@ -150,7 +153,7 @@ public class TPPPolicySpecificationValidator implements IPolicySpecificationVali
 
             Integer defaultRsaKeySize = defaultsKeyPair.rsaKeySize();
             if( defaultRsaKeySize != null ) {
-                if( !TPPKeyPairEnums.containsRsaKeySize( defaultRsaKeySize ))
+                if( !SupportedRSAKeySizes.TPP.containsRsaKeySize( defaultRsaKeySize ))
                     throw new VCertException(String.format(DEFAULT_ATTRIBUTE_DOESNT_MATCH_WITH_ACCEPTED_VALUES_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_DEFAULTS_KEYPAIR_RSA_KEY_SIZE));
 
                 if(policyKeyPair != null) {
@@ -162,7 +165,7 @@ public class TPPPolicySpecificationValidator implements IPolicySpecificationVali
 
             String defaultEC = defaultsKeyPair.ellipticCurve();
             if ( defaultEC != null && !defaultEC.equals("")){
-                if ( !TPPKeyPairEnums.containsEllipticCurve( defaultEC ) )
+                if ( !SupportedECCKeys.TPP.containsEllipticCurve( defaultEC ) )
                     throw new VCertException(String.format(DEFAULT_ATTRIBUTE_DOESNT_MATCH_WITH_ACCEPTED_VALUES_EXCEPTION_MESSAGE, PolicySpecificationConst.ATT_DEFAULTS_KEYPAIR_ELLIPTIC_CURVE));
 
                 if(policyKeyPair != null) {
