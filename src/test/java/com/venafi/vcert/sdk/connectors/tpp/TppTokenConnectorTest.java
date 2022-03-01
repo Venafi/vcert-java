@@ -65,10 +65,11 @@ public class TppTokenConnectorTest {
     @BeforeEach
     void setUp() throws VCertException {
         this.classUnderTest = new TppTokenConnector(tpp);
-
-        AuthorizeTokenResponse response =
-                new AuthorizeTokenResponse().accessToken(ACCESS_TOKEN).
-                        refreshToken(REFRESH_TOKEN);
+        
+        AuthorizeTokenResponse response = new AuthorizeTokenResponse();
+        
+        response.accessToken(ACCESS_TOKEN).refreshToken(REFRESH_TOKEN);
+        
         when(tpp.authorizeToken(any(TppTokenConnector.AuthorizeTokenRequest.class))).thenReturn(response);
 
         Authentication authentication = Authentication.builder().user("user").password("pass").build();
