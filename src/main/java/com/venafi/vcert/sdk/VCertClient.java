@@ -29,27 +29,35 @@ import com.venafi.vcert.sdk.utils.VCertConstants;
 
 public class VCertClient implements Connector {
 
-  private Connector connector;
+  protected Connector connector;
 
   public VCertClient(Config config) throws VCertException {
     Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-    switch (config.connectorType()) {
-      case TPP:
-        if (isBlank(config.baseUrl()))
-          throw new VCertException("TPP client requires a base url");
-
-        connector = new TppConnector(Tpp.connect(config));
-        break;
-
-      case CLOUD:
-        connector = new CloudConnector(Cloud.connect(config));
-        break;
-      default:
-        throw new VCertException("ConnectorType is not defined");
-    }
+    
+    this.connector = createConnector(config);
 
     connector.setVendorAndProductName(isBlank(config.appInfo()) ? VCertConstants.DEFAULT_VENDOR_AND_PRODUCT_NAME :
         config.appInfo());
+  }
+  
+  protected Connector createConnector(Config config) throws VCertException {
+	  Connector connector;
+	  switch (config.connectorType()) {
+	  case TPP:
+		  if (isBlank(config.baseUrl()))
+			  throw new VCertException("TPP client requires a base url");
+
+		  connector = new TppConnector(Tpp.connect(config));
+		  break;
+
+	  case CLOUD:
+		  connector = new CloudConnector(Cloud.connect(config));
+		  break;
+	  default:
+		  throw new VCertException("ConnectorType is not defined");
+	  }
+	  
+	  return connector;
   }
 
   @VisibleForTesting
