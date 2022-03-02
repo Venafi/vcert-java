@@ -88,8 +88,6 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   @Getter
   private String apiKey;
 
-  private TppAPI tppAPI;
-
   public TppConnector(Tpp tpp) {
     super(tpp);
   }

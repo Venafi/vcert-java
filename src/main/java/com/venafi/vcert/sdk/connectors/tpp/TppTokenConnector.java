@@ -43,8 +43,6 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
     
     private TokenInfo tokenInfo;
 
-    private TppAPI tppAPI;
-
     public TppTokenConnector(Tpp tpp){ super(tpp); }
 
     @Override
