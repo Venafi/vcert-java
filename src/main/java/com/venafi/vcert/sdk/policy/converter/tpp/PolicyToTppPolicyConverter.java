@@ -20,30 +20,32 @@ public class PolicyToTppPolicyConverter implements FromPolicyConverter<TPPPolicy
 
     public TPPPolicy convertFromPolicy(PolicySpecification policySpecification ) throws Exception {
         TPPPolicy tppPolicy = new TPPPolicy();
+        
+        if(policySpecification != null ) {
+        	//copying the policy name
+        	copyStringProperty(policySpecification, tppPolicy, PolicySpecification::name, TPPPolicy::policyName);
+        	//copying the contact
+        	copyArrayStringProperty(policySpecification, tppPolicy, PolicySpecification::users, TPPPolicy::contact);
+        	//copying the approver
+        	copyArrayStringProperty(policySpecification, tppPolicy, PolicySpecification::approvers, TPPPolicy::approver);
 
-        //copying the policy name
-        copyStringProperty(policySpecification, tppPolicy, PolicySpecification::name, TPPPolicy::policyName);
-        //copying the contact
-        copyArrayStringProperty(policySpecification, tppPolicy, PolicySpecification::users, TPPPolicy::contact);
-        //copying the approver
-        copyArrayStringProperty(policySpecification, tppPolicy, PolicySpecification::approvers, TPPPolicy::approver);
+        	//setting policy's attributes
+        	copyArrayStringProperty(policySpecification.policy(), tppPolicy, Policy::domains, TPPPolicy::domainSuffixWhiteList);
+        	copyProhibitWildcard(tppPolicy, policySpecification);
+        	copyStringProperty(policySpecification.policy(), tppPolicy, Policy::certificateAuthority, TPPPolicy::certificateAuthority);
 
-        //setting policy's attributes
-        copyArrayStringProperty(policySpecification.policy(), tppPolicy, Policy::domains, TPPPolicy::domainSuffixWhiteList);
-        copyProhibitWildcard(tppPolicy, policySpecification);
-        copyStringProperty(policySpecification.policy(), tppPolicy, Policy::certificateAuthority, TPPPolicy::certificateAuthority);
+        	//copying management type
+        	setManagementType(tppPolicy, policySpecification);
 
-        //copying management type
-        setManagementType(tppPolicy, policySpecification);
+        	//setting policy subject attributes
+        	copySubjectAttributes( policySpecification, tppPolicy);
 
-        //setting policy subject attributes
-        copySubjectAttributes( policySpecification, tppPolicy);
+        	//setting policy keypair
+        	copyKeyPairAttributes(policySpecification, tppPolicy);
 
-        //setting policy keypair
-        copyKeyPairAttributes(policySpecification, tppPolicy);
-
-        //setting policy alt names
-        setProhibitedSANTypes(tppPolicy, policySpecification);
+        	//setting policy alt names
+        	setProhibitedSANTypes(tppPolicy, policySpecification);
+        }
 
         return tppPolicy;
     }

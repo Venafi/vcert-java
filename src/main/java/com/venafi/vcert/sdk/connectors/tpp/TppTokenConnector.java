@@ -130,7 +130,7 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
             throw new FailedToRevokeTokenException(response.reason());
         }
     }
-
+  
     private boolean isEmptyCredentials(Authentication credentials){
         if(credentials == null){
             return true;

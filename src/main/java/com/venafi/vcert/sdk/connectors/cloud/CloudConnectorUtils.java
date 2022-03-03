@@ -16,6 +16,7 @@ import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CloudZone;
 import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
 import com.venafi.vcert.sdk.connectors.cloud.endpoint.*;
+import com.venafi.vcert.sdk.connectors.cloud.endpoint.CAAccount.ProductOption;
 import com.venafi.vcert.sdk.policy.api.domain.CloudPolicy;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 
@@ -224,7 +225,7 @@ public class CloudConnectorUtils {
         return caAccount.productOptions().stream()
                 .filter(p -> p.id().equals(cit.certificateAuthorityProductOptionId))
                 .findFirst()
-                .get()
+                .orElse(new ProductOption())
                 .productName();
     }
     

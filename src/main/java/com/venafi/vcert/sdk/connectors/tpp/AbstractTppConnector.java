@@ -42,17 +42,16 @@ public abstract class AbstractTppConnector {
 
     // TODO can be enum
     @SuppressWarnings("serial")
-    protected static final Map<String, Integer> revocationReasons = new HashMap<String, Integer>() {
-        {
-            put("", 0); // NoReason
-            put("none", 0); //
-            put("key-compromise", 1); // UserKeyCompromised
-            put("ca-compromise", 2); // CAKeyCompromised
-            put("affiliation-changed", 3); // UserChangedAffiliation
-            put("superseded", 4); // CertificateSuperseded
-            put("cessation-of-operation", 5); // OriginalUseNoLongerValid
-        }
-    };
+    protected static final Map<String, Integer> revocationReasons = new HashMap<String, Integer>();
+    static {
+    	revocationReasons.put("", 0); // NoReason
+    	revocationReasons.put("none", 0); //
+    	revocationReasons.put("key-compromise", 1); // UserKeyCompromised
+    	revocationReasons.put("ca-compromise", 2); // CAKeyCompromised
+    	revocationReasons.put("affiliation-changed", 3); // UserChangedAffiliation
+    	revocationReasons.put("superseded", 4); // CertificateSuperseded
+    	revocationReasons.put("cessation-of-operation", 5); // OriginalUseNoLongerValid
+    }
 
     protected final Tpp tpp;
 
@@ -173,6 +172,8 @@ public abstract class AbstractTppConnector {
             try {
                 TimeUnit.SECONDS.sleep(2);
             } catch (InterruptedException e) {
+            	// Restore interrupted state...
+                Thread.currentThread().interrupt();
                 throw new AttemptToRetryException(e);
             }
         }
