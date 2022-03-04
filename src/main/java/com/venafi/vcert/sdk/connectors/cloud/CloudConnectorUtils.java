@@ -408,7 +408,7 @@ public class CloudConnectorUtils {
 
     	try (ZipInputStream zis = new ZipInputStream(keyStoreAsInputStream)) {
     		//The next constants are in order to be on safe about of the zip bomb attacks
-    		final int MAX_ENTRIES = 6;//The expected number of files in the zip returned by the call to 
+    		final int MAX_ENTRIES = 10;//The expected number of files in the zip returned by the call to 
     							//the API "POST /outagedetection/v1/certificates/{id}/keystore"
     		final int MAX_UNZIPED_FILES_SIZE = 1000000; //1 MB
         	
