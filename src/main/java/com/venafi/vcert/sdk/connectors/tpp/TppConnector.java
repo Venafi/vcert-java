@@ -47,7 +47,6 @@ import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrThumbpr
 import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByThumbprintException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.CertificatePendingException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.CouldNotParseRevokeReasonException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.MissingCredentialsException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MoreThanOneCertificateWithSameThumbprintException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.RenewFailureException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.RetrieveCertificateTimeoutException;
@@ -79,6 +78,8 @@ import com.venafi.vcert.sdk.utils.Is;
 import com.venafi.vcert.sdk.utils.VCertUtils;
 
 import feign.Response;
+import feign.FeignException.BadRequest;
+import feign.FeignException.Unauthorized;
 import lombok.Getter;
 
 
@@ -87,9 +88,16 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   OffsetDateTime bestBeforeEnd;
   @Getter
   private String apiKey;
+  
+  protected Authentication credentials;
 
   public TppConnector(Tpp tpp) {
     super(tpp);
+  }
+  
+  @Override
+  public Authentication getCredentials() {
+	return credentials;
   }
 
   @Override
@@ -123,15 +131,44 @@ public class TppConnector extends AbstractTppConnector implements Connector {
     if (response.status() != 200)
         throw new TppPingException(response.status(), response.reason());
   }
+  
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Note: For this implementation is being invoked the {@link Tpp#authorize(AuthorizeRequest)} to 
+   * get the authorization details.
+   * Also the credentials given replaces the credentials hold by this instance until 
+   * this moment and additionally the {@link #apiKey} and {@link #bestBeforeEnd} attributes are determined.
+   * 
+   * @throws VCertException if the call to {@link Tpp#authorize(AuthorizeRequest)} throws a {@link Unauthorized} or {@link BadRequest}
+   */
+  @Override
+  public void authorize(Authentication credentials) throws VCertException { 
+	  try {
+		  AuthorizeResponse response = tpp.authorize(new AuthorizeRequest(credentials.user(), credentials.password()));
+		  apiKey = response.apiKey();
+		  bestBeforeEnd = response.validUntil();
+		  this.credentials = credentials;
+		  this.credentials.apiKey(apiKey);
+	  }  catch(Unauthorized | BadRequest e){
+		  throw VCertException.fromFeignException(e);
+	  }
+  }
+  
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean isEmptyCredentials(Authentication credentials){
+      if(credentials == null){
+          return true;
+      }
+      
+      if( isBlank(credentials.user()) || isBlank(credentials.password())) {
+      	return true;
+      }
 
-  public void authenticate(Authentication auth) throws VCertException {
-	  
-	if(auth == null) 
-		throw new MissingCredentialsException();
-	
-    AuthorizeResponse response = tpp.authorize(new AuthorizeRequest(auth.user(), auth.password()));
-    apiKey = response.apiKey();
-    bestBeforeEnd = response.validUntil();
+      return false;
   }
 
   @Override

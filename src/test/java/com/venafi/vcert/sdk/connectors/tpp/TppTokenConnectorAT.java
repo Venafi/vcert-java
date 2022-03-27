@@ -4,6 +4,7 @@ import static com.venafi.vcert.sdk.TestUtils.getTestIps;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -24,11 +25,13 @@ import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.KeyType;
+import com.venafi.vcert.sdk.connectors.ConnectorException.FailedToRevokeTokenException;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 
 import feign.FeignException;
+import feign.FeignException.BadRequest;
 
 class TppTokenConnectorAT {
 	
@@ -56,14 +59,10 @@ class TppTokenConnectorAT {
 				.password("password")
 				.scope("certificate:manage,revoke,discover")
 				.build();
-
-		connectorResource.connector().credentials(authentication);
-
-		TokenInfo info = connectorResource.connector().getAccessToken();
-		assertThat(info).isNotNull();
-		assertThat(info.authorized()).isFalse();
-		assertThat(info.errorMessage()).isNotNull();
-
+		
+		assertThatExceptionOfType(VCertException.class)
+		.isThrownBy(() -> connectorResource.connector().getAccessToken(authentication))
+	    .withRootCauseInstanceOf(BadRequest.class);
 
 		// After setting invalid credentials to TPP, setting variable <info> to null
 		// will allow for new token to be authorized
@@ -142,16 +141,17 @@ class TppTokenConnectorAT {
 	@Tag("InvalidAuthentication")
 	void refreshTokenInvalid() throws VCertException{
 		Authentication invalidCredentials = Authentication.builder()
-				.accessToken("abcde==")
+				//.accessToken("abcde==")
 				.refreshToken("1234-1234-12345-123")
 				.build();
-		connectorResource.connector().credentials(invalidCredentials);
-
-		TokenInfo info = connectorResource.connector().refreshAccessToken(TestUtils.CLIENT_ID);
-
-		assertThat(info).isNotNull();
-		assertThat(info.authorized()).isFalse();
-		assertThat(info.errorMessage()).isNotNull();
+		
+		//given that only the refreshToken was provided, then no validation can be performed,
+		//so the credentials are set to the Connector
+		connectorResource.connector().authorize(invalidCredentials);
+		
+		assertThatExceptionOfType(VCertException.class)
+		.isThrownBy(() -> connectorResource.connector().refreshAccessToken(TestUtils.CLIENT_ID))
+	    .withRootCauseInstanceOf(BadRequest.class);
 
 		// After setting invalid credentials to TPP, setting variable <info> to null
 		// will allow for new token to be authorized
@@ -172,17 +172,22 @@ class TppTokenConnectorAT {
 	@Test
 	@Tag("InvalidAuthentication")
 	void revokeTokenInvalid() throws VCertException{
-		Authentication invalidCredentials = Authentication.builder()
+		/*Authentication invalidCredentials = Authentication.builder()
 				.accessToken("abcde==")
 				.refreshToken("1234-1234-12345-123")
 				.build();
-		connectorResource.connector().credentials(invalidCredentials);
+		
+		connectorResource.connector().authorize(invalidCredentials);*/
+		String accessToken = connectorResource.connector().credentials.accessToken();
+		
+		connectorResource.connector().credentials.accessToken("abcde==");
 
-		assertThrows(VCertException.class, () ->connectorResource.connector().revokeAccessToken());
-
+		assertThrows(FailedToRevokeTokenException.class, () ->connectorResource.connector().revokeAccessToken());
 		// After setting invalid credentials to TPP, setting variable <info> to null
 		// will allow for new token to be authorized
 		//connectorResource.info(null);
+		
+		connectorResource.connector().credentials.accessToken(accessToken);
 	}
 
 	@Test

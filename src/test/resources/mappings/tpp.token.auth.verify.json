@@ -1,0 +1,29 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/vedauth/authorize/verify",
+	"headers": {
+	      "Authorization": {
+	        "equalTo": "Bearer 12345678-1234-1234-1234-123456789012"
+	      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "jsonBody":{
+	"access_issued_on": "/Date(1647458820386)/",
+    "access_issued_on_ISO8601": "2022-03-16T19:27:00Z",
+    "access_issued_on_unix_time": 1647458820,
+    "application": "vcert-sdk",
+    "expires": "/Date(1678994820386)/",
+    "expires_ISO8601": "2023-03-16T19:27:00Z",
+    "expires_unix_time": 1678994820,
+    "grant_issued_on": "/Date(1647458820386)/",
+    "grant_issued_on_ISO8601": "2022-03-16T19:27:00Z",
+    "grant_issued_on_unix_time": 1647458820,
+    "identity": "local:{500abcf0-8e70-4103-a97b-5a690d4d00d0}",
+    "scope": "certificate:manage,revoke",
+    "valid_for": 7776000
+    }
+  }
+}

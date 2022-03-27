@@ -52,6 +52,8 @@ import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.utils.VCertUtils;
 
 import feign.Response;
+import feign.FeignException.BadRequest;
+import feign.FeignException.Unauthorized;
 import lombok.Data;
 import lombok.Getter;
 	
@@ -63,13 +65,18 @@ public class CloudConnector implements Connector {
 
   @Getter
   private UserDetails user;
-  private Authentication auth;
+  private Authentication credentials;
   private String zone;
   @Getter
   private String vendorAndProductName;
 
   public CloudConnector(Cloud cloud) {
     this.cloud = cloud;
+  }
+  
+  @Override
+  public Authentication getCredentials() {
+	return credentials;
   }
 
   @Override
@@ -106,14 +113,43 @@ public class CloudConnector implements Connector {
   }
 
   private Response doPing() {
-    return cloud.ping(auth.apiKey());
+    return cloud.ping(credentials.apiKey());
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  public void authenticate(Authentication auth) throws VCertException {
-    VCertException.throwIfNull(auth, "Failed to authenticate: missing credentials");
-    this.auth = auth;
-    this.user = cloud.authorize(auth.apiKey());
+  public boolean isEmptyCredentials(Authentication credentials) {
+      if(credentials == null){
+          return true;
+      }
+      
+      if( isBlank(credentials.apiKey())) {
+      	return true;
+      }
+
+      return false;
+  }
+  
+  /**
+   * 
+   * {@inheritDoc}.
+   * <p>
+   * Note: For this implementation is being invoked the {@link Cloud#authorize(String)} to get the authorization details.
+   * Also the credentials given replaces the credentials hold by this instance 
+   * until this moment and additionally  the {@link UserDetails} are determined.
+   * 
+   * @throws VCertException if the call to {@link Cloud#authorize(String)} throws a {@link Unauthorized} or {@link BadRequest}
+   */
+  @Override
+  public void authorize(Authentication credentials) throws VCertException { 
+	  try {
+		  this.user = cloud.authorize(credentials.apiKey());
+		  this.credentials = credentials;
+	  } catch(Unauthorized | BadRequest e){
+		  throw VCertException.fromFeignException(e);
+	  }
   }
 
   @Override
@@ -126,13 +162,13 @@ public class CloudConnector implements Connector {
 	  CertificateIssuingTemplate cit = null;
 
 	  if((appName != null && !appName.equals("")) && (citAlias != null && !citAlias.equals(""))) {
-		  cit = cloud.certificateIssuingTemplateByAppNameAndCitAlias(appName, citAlias, auth.apiKey());
+		  cit = cloud.certificateIssuingTemplateByAppNameAndCitAlias(appName, citAlias, credentials.apiKey());
 	  } else {
 		  throw new ZoneFormatException("The parameters: appName, citAlias or both are empty");
 	  }
 
 	  //get application id.
-	  Application app = cloud.applicationByName(appName, auth.apiKey());
+	  Application app = cloud.applicationByName(appName, credentials.apiKey());
 	  String appId = app.id();
 
 	  ZoneConfiguration zoneConfig = cit.toZoneConfig();
@@ -192,7 +228,7 @@ public class CloudConnector implements Connector {
 	  CertificateRequestsPayload payload = buildRequestCertificatePayload(request, zoneConfiguration);
 	  
 	  CertificateRequestsResponse response =
-			  cloud.certificateRequest( auth.apiKey(), payload );
+			  cloud.certificateRequest( credentials.apiKey(), payload );
 
 	  String requestId = response.certificateRequests().get(0).id();
 	  request.pickupId(requestId);
@@ -358,9 +394,9 @@ public class CloudConnector implements Connector {
   
   private PEMCollection getCertificateAsPEMCollection(CertificateRequest request, String vaasChainOption) throws VCertException {
 	  
-	  CertificateDetails certificateDetails = cloud.certificateDetails(request.certId(), auth.apiKey());
+	  CertificateDetails certificateDetails = cloud.certificateDetails(request.certId(), credentials.apiKey());
 	  
-	  EdgeEncryptionKey edgeEncryptionKey = cloud.retrieveEdgeEncryptionKey(certificateDetails.dekHash(), auth.apiKey());
+	  EdgeEncryptionKey edgeEncryptionKey = cloud.retrieveEdgeEncryptionKey(certificateDetails.dekHash(), credentials.apiKey());
 	  
 	  if(isNotBlank(edgeEncryptionKey.key())) {
 		  byte[] serverPublicKey = Base64.getDecoder().decode(edgeEncryptionKey.key());
@@ -376,7 +412,7 @@ public class CloudConnector implements Connector {
 	  Instant startTime = Instant.now();
 	  while (true) {
 
-		  Response response = cloud.retrieveCertificate(request.certId(), auth.apiKey(), chainOrder);
+		  Response response = cloud.retrieveCertificate(request.certId(), credentials.apiKey(), chainOrder);
 		  if (response.status() == 200) {
 			  try {
 				  certificateAsPemString = CharStreams.toString(response.body().asReader());
@@ -429,7 +465,7 @@ public class CloudConnector implements Connector {
 	  
 	  InputStream keyStoreAsStream = null;
 	  try {
-		  Response response = cloud.retrieveKeystore(request.certId(), keystoreRequest, auth.apiKey());
+		  Response response = cloud.retrieveKeystore(request.certId(), keystoreRequest, credentials.apiKey());
 		  keyStoreAsStream = response.body().asInputStream();
 	  } catch (IOException e) {
 		  throw new VCertException(e);
@@ -445,7 +481,7 @@ public class CloudConnector implements Connector {
    * @throws VCertException
    */
   public String certificateAsPem(String requestId) throws VCertException{
-	  Response response = cloud.certificateAsPem(requestId, auth.apiKey());
+	  Response response = cloud.certificateAsPem(requestId, credentials.apiKey());
 	  if (response.status() != 200) {
 		  throw new VCertException(String
 				  .format("Invalid response fetching the certificate via CSR: %s", response.reason()));
@@ -458,7 +494,7 @@ public class CloudConnector implements Connector {
   }
 
   private CertificateStatus getCertificateStatus(String requestId) {
-    return cloud.certificateStatus(requestId, auth.apiKey());
+    return cloud.certificateStatus(requestId, credentials.apiKey());
   }
 
   @Override
@@ -491,12 +527,12 @@ public class CloudConnector implements Connector {
       throw new CertificateDNOrThumbprintWasNotProvidedException();
     }
 
-    final CertificateStatus status = cloud.certificateStatus(certificateRequestId, auth.apiKey());
+    final CertificateStatus status = cloud.certificateStatus(certificateRequestId, credentials.apiKey());
     
     String certificateId = status.certificateIds().get(0);
     
     
-    CertificateDetails certDetails = cloud.certificateDetails(certificateId, auth.apiKey());
+    CertificateDetails certDetails = cloud.certificateDetails(certificateId, credentials.apiKey());
     
     if (!certDetails.certificateRequestId().equals(certificateRequestId)) {
       final StringBuilder errorStr = new StringBuilder();
@@ -530,7 +566,7 @@ public class CloudConnector implements Connector {
     }
 
     CertificateRequestsResponse response =
-        cloud.certificateRequest(auth.apiKey(), certificateRequest);
+        cloud.certificateRequest(credentials.apiKey(), certificateRequest);
     return response.certificateRequests().get(0).id();
   }
 
@@ -548,7 +584,7 @@ public class CloudConnector implements Connector {
   public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
     try {
       CloudPolicy cloudPolicy = CloudPolicySpecificationConverter.INSTANCE.convertFromPolicySpecification(policySpecification);
-      CloudConnectorUtils.setCit(policyName, cloudPolicy.certificateIssuingTemplate(), cloudPolicy.caInfo(), auth.apiKey(), cloud);
+      CloudConnectorUtils.setCit(policyName, cloudPolicy.certificateIssuingTemplate(), cloudPolicy.caInfo(), credentials.apiKey(), cloud);
     } catch ( Exception e ) {
       throw new VCertException(e);
     }
@@ -562,7 +598,7 @@ public class CloudConnector implements Connector {
   private PolicySpecification getPolicy(String policyName, boolean removeRegexFromSubjectCN) throws VCertException {
 	  PolicySpecification policySpecification;
 	    try {
-	      CloudPolicy cloudPolicy = CloudConnectorUtils.getCloudPolicy( policyName, auth.apiKey(), cloud );
+	      CloudPolicy cloudPolicy = CloudConnectorUtils.getCloudPolicy( policyName, credentials.apiKey(), cloud );
 	      cloudPolicy.removeRegexesFromSubjectCN(removeRegexFromSubjectCN);
 	      policySpecification = CloudPolicySpecificationConverter.INSTANCE.convertToPolicySpecification( cloudPolicy );
 	    }catch (Exception e){
@@ -589,7 +625,7 @@ public class CloudConnector implements Connector {
   }
 
   private Cloud.CertificateSearchResponse searchCertificates(Cloud.SearchRequest searchRequest) {
-    return cloud.searchCertificates(auth.apiKey(), searchRequest);
+    return cloud.searchCertificates(credentials.apiKey(), searchRequest);
   }
 
   private Cloud.CertificateSearchResponse searchCertificatesByFingerprint(String fingerprint) {
@@ -624,7 +660,7 @@ public class CloudConnector implements Connector {
     }
   }
 
-  @Data
+@Data
   public static class CertificateRequestsPayload {
     // private String companyId;
     // private String downloadFormat;
