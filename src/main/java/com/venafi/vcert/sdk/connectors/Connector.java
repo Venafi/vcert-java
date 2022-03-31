@@ -1,20 +1,10 @@
 package com.venafi.vcert.sdk.connectors;
 
 import com.venafi.vcert.sdk.VCertException;
-import com.venafi.vcert.sdk.certificate.CertificateRequest;
-import com.venafi.vcert.sdk.certificate.ImportRequest;
-import com.venafi.vcert.sdk.certificate.ImportResponse;
-import com.venafi.vcert.sdk.certificate.PEMCollection;
-import com.venafi.vcert.sdk.certificate.RenewalRequest;
-import com.venafi.vcert.sdk.certificate.RevocationRequest;
-import com.venafi.vcert.sdk.certificate.SshCaTemplateRequest;
-import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
-import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
-import com.venafi.vcert.sdk.certificate.SshConfig;
+import com.venafi.vcert.sdk.certificate.*;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingCredentialsException;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
-import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 
 
 /**
@@ -22,7 +12,7 @@ import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
  * This represents the connector to TPP or Cloud 
  *
  */
-public interface Connector {
+public interface Connector extends PolicyManagementInterface, SSHInterface{
 
 	Authentication getCredentials();
 
@@ -66,7 +56,7 @@ public interface Connector {
 	void ping() throws VCertException;
 
 	/**
-	 * This is the default implementation which provides an mechanism to authenticate the credentials
+	 * This is the default implementation which provides a mechanism to authenticate the credentials
 	 *  provided in the {@link Authentication} object.
 	 * Behind the scene, it's validating if the credentials were provided calling the 
 	 * {@link #isEmptyCredentials(Authentication)} method and if that returns true, then a {@link MissingCredentialsException} 
@@ -178,61 +168,5 @@ public interface Connector {
 	 */
 	ImportResponse importCertificate(ImportRequest request) throws VCertException;
 
-	/**
-	 * Reads the policy configuration for a specific zone in Venafi
-	 * 
-	 * @param zone
-	 * @return
-	 * @throws VCertException
-	 */
-	Policy readPolicyConfiguration(String zone) throws VCertException;
 
-	/**
-	 * Create/update a policy based on the policySpecification passed as argument.
-	 * 
-	 * @param policyName
-	 * @param policySpecification
-	 * @throws VCertException
-	 */
-	void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException;
-
-	/**
-	 * Returns the policySpecification from the policy which matches with the policyName argument.
-	 * 
-	 * @param policyName
-	 * @return
-	 * @throws VCertException
-	 */
-	PolicySpecification getPolicy(String policyName) throws VCertException;
-
-	/**
-	 * Request a new SSH Certificate.
-	 * @param sshCertificateRequest The {@link com.venafi.vcert.sdk.certificate.SshCertificateRequest SshCertificateRequest} instance needed to do the request. 
-	 * For more information about of which properties should be filled, please review the documentation of 
-	 * {@link com.venafi.vcert.sdk.certificate.SshCertificateRequest SshCertificateRequest}.
-	 * @return The DN of the created SSH certificate object. It can be used as pickup ID to retrieve the created SSH Certificate. 
-	 * For more details review the {@link #retrieveSshCertificate(SshCertificateRequest) retrieveSshCertificate(SshCertificateRequest)} method.
-	 * @throws VCertException 
-	 */
-	String requestSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException;
-
-	/**
-	 * Retrieve a requested SSH Certificate
-	 * @param sshCertificateRequest The {@link com.venafi.vcert.sdk.certificate.SshCertificateRequest SshCertificateRequest} instance needed to do the request. 
-	 * <br>It's mandatory to set the PickUpID which is the value of the DN returned when the SSH Certificate was requested.
-	 * For more information about of which properties should be filled, please review the documentation of 
-	 * {@link com.venafi.vcert.sdk.certificate.SshCertificateRequest SshCertificateRequest}.
-	 * @return A {@link com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails SshCertRetrieveDetails} containing the Certificate Data of the created Certificate.
-	 * @throws VCertException
-	 */
-	SshCertRetrieveDetails retrieveSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException;
-
-	/**
-	 * Retrieve the {@link com.venafi.vcert.sdk.certificate.SshConfig SshConfig} of the CA specified in the 
-	 * {@link com.venafi.vcert.sdk.certificate.SshCaTemplateRequest SshCaTemplateRequest}.
-	 * @param sshCaTemplateRequest
-	 * @return A {@link com.venafi.vcert.sdk.certificate.SshConfig SshConfig}.
-	 * @throws VCertException
-	 */
-	SshConfig retrieveSshConfig(SshCaTemplateRequest sshCaTemplateRequest) throws VCertException;
 }

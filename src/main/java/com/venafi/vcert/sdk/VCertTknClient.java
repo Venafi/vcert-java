@@ -1,46 +1,42 @@
 package com.venafi.vcert.sdk;
 
 import com.google.common.annotations.VisibleForTesting;
-
-import feign.FeignException;
-
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.TokenConnector;
 import com.venafi.vcert.sdk.connectors.tpp.TokenInfo;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp;
+import com.venafi.vcert.sdk.connectors.tpp.TppToken;
 import com.venafi.vcert.sdk.connectors.tpp.TppTokenConnector;
 import com.venafi.vcert.sdk.endpoint.Authentication;
+import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import feign.FeignException;
 
 public class VCertTknClient extends VCertClient implements TokenConnector {
 
     public VCertTknClient(Config config) throws VCertException {
-       super(config);
+        super(config);
     }
 
     @Override
     protected Connector createConnector(Config config) throws VCertException {
-    	Connector connector;
-    	switch (config.connectorType()) {
-    	case TPP_TOKEN:{
-    		connector = new TppTokenConnector(Tpp.connect(config));
-    		break;
-    	}
-    	default:
-    		throw new VCertException("ConnectorType is not defined");
-    	}
+        Connector connector;
+        if (config.connectorType() == ConnectorType.TPP_TOKEN) {
+            connector = new TppTokenConnector(TppToken.connect(config));
+        } else {
+            throw new VCertException("ConnectorType is not defined");
+        }
 
-    	return connector;
+        return connector;
     }
 
-	@VisibleForTesting
+    @VisibleForTesting
     VCertTknClient(TokenConnector connector) {
         super(connector);
     }
 
-	@Override
-	public TokenInfo getTokenInfo() throws VCertException {
-		return ((TokenConnector)connector).getTokenInfo();
-	}
+    @Override
+    public TokenInfo getTokenInfo() throws VCertException {
+        return ((TokenConnector)connector).getTokenInfo();
+    }
 
     //=========================================================================================\\
     //=============================== VENAFI 20.2 OAUTH METHODS ===============================\\

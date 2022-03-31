@@ -9,7 +9,8 @@ import org.apache.commons.lang3.StringUtils;
 public class CloudPolicy {
     private CertificateIssuingTemplate certificateIssuingTemplate;
     private CAInfo caInfo;
-    
+    private String[] owners;
+
     //this attribute is not corresponding to any VaaS attribute. It only exists to indicate to the
     // CloudPolicyToPolicyConverter class that when the domains of the PolicySpecification which is 
     //being built then they should be cleaned up of regexes or not.

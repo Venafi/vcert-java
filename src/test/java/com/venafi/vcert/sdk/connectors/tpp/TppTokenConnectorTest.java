@@ -4,23 +4,22 @@ import com.venafi.vcert.sdk.TestUtils;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;
-import com.venafi.vcert.sdk.connectors.LockableValue;
-import com.venafi.vcert.sdk.connectors.LockableValues;
-import com.venafi.vcert.sdk.connectors.ServerPolicy;
-import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrThumbprintWasNotProvidedException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByThumbprintException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.FailedToRevokeTokenException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MoreThanOneCertificateWithSameThumbprintException;
+import com.venafi.vcert.sdk.connectors.LockableValue;
+import com.venafi.vcert.sdk.connectors.LockableValues;
+import com.venafi.vcert.sdk.connectors.ServerPolicy;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.policy.converter.tpp.TPPPolicySpecificationValidator;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecificationConst;
 import feign.FeignException;
+import feign.FeignException.BadRequest;
 import feign.Request;
 import feign.Response;
-import feign.FeignException.BadRequest;
-
 import org.apache.commons.lang3.RandomStringUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Assertions;
@@ -37,7 +36,10 @@ import org.slf4j.LoggerFactory;
 
 import java.security.Security;
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -58,7 +60,7 @@ public class TppTokenConnectorTest {
     private static final String REFRESH_TOKEN = "abcdefgh-abcd-abcd-abcd-abcdefghijkl";
 
     @Mock
-    private Tpp tpp;
+    private TppToken tpp;
     private TppTokenConnector classUnderTest;
     private TokenInfo info;
 
@@ -96,7 +98,7 @@ public class TppTokenConnectorTest {
         TppTokenConnector.ReadZoneConfigurationRequest expectedRZCRequest =
                 new TppTokenConnector.ReadZoneConfigurationRequest("\\VED\\Policy\\myZone");
         when(
-                tpp.readZoneConfigurationToken(eq(expectedRZCRequest), eq(HEADER_AUTHORIZATION)))
+                tpp.readZoneConfiguration(eq(expectedRZCRequest), eq(HEADER_AUTHORIZATION)))
                 .thenReturn(
                         new TppTokenConnector.ReadZoneConfigurationResponse()
                                 .policy(
@@ -112,7 +114,7 @@ public class TppTokenConnectorTest {
 
                                                 .keyPair(new ServerPolicy.KeyPair(new LockableValue<>(false, "keyAlgo"),
                                                         new LockableValue<>(false, 1024), null))));
-        when(tpp.requestCertificateToken(any(TppTokenConnector.CertificateRequestsPayload.class), eq(HEADER_AUTHORIZATION)))
+        when(tpp.requestCertificate(any(TppTokenConnector.CertificateRequestsPayload.class), eq(HEADER_AUTHORIZATION)))
                 .thenReturn(new Tpp.CertificateRequestResponse().certificateDN("reqId"));
         String zoneTag = "myZone";
         ZoneConfiguration zoneConfig =
@@ -154,7 +156,7 @@ public class TppTokenConnectorTest {
                 mock(Tpp.CertificateSearchResponse.class);
 
         when(renewalRequest.thumbprint()).thenReturn("1111:1111:1111:1111");
-        when(tpp.searchCertificatesToken(any(), eq(HEADER_AUTHORIZATION))).thenReturn(certificateSearchResponse);
+        when(tpp.searchCertificates(any(), eq(HEADER_AUTHORIZATION))).thenReturn(certificateSearchResponse);
 
         final Throwable throwable =
                 assertThrows(VCertException.class, () -> classUnderTest.renewCertificate(renewalRequest));
@@ -169,7 +171,7 @@ public class TppTokenConnectorTest {
                 mock(Tpp.CertificateSearchResponse.class);
 
         when(renewalRequest.thumbprint()).thenReturn("1111:1111:1111:1111");
-        when(tpp.searchCertificatesToken(any(), eq(HEADER_AUTHORIZATION))).thenReturn(certificateSearchResponse);
+        when(tpp.searchCertificates(any(), eq(HEADER_AUTHORIZATION))).thenReturn(certificateSearchResponse);
         when(certificateSearchResponse.certificates())
                 .thenReturn(Arrays.asList(new Tpp.Certificate(), new Tpp.Certificate()));
 
@@ -190,10 +192,10 @@ public class TppTokenConnectorTest {
                 mock(Tpp.CertificateRenewalResponse.class);
 
         when(renewalRequest.thumbprint()).thenReturn("1111:1111:1111:1111");
-        when(tpp.searchCertificatesToken(any(), eq(HEADER_AUTHORIZATION))).thenReturn(certificateSearchResponse);
+        when(tpp.searchCertificates(any(), eq(HEADER_AUTHORIZATION))).thenReturn(certificateSearchResponse);
         when(certificateSearchResponse.certificates()).thenReturn(Arrays.asList(certificate));
         when(certificate.certificateRequestId()).thenReturn("test_certificate_requestid");
-        when(tpp.renewCertificateToken(certificateRenewalRequestArgumentCaptor.capture(), any()))
+        when(tpp.renewCertificate(certificateRenewalRequestArgumentCaptor.capture(), any()))
                 .thenReturn(certificateRenewalResponse);
         when(certificateRenewalResponse.success()).thenReturn(true);
 
@@ -209,7 +211,7 @@ public class TppTokenConnectorTest {
                 mock(Tpp.CertificateRenewalResponse.class);
 
         when(renewalRequest.certificateDN()).thenReturn("certificateDN");
-        when(tpp.renewCertificateToken(certificateRenewalRequestArgumentCaptor.capture(), any()))
+        when(tpp.renewCertificate(certificateRenewalRequestArgumentCaptor.capture(), any()))
                 .thenReturn(certificateRenewalResponse);
         when(certificateRenewalResponse.success()).thenReturn(true);
 

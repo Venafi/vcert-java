@@ -1,22 +1,10 @@
 package com.venafi.vcert.sdk.connectors.cloud;
 
-import static java.util.Collections.singletonList;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.certificate.CertificateStatus;
-import com.venafi.vcert.sdk.connectors.cloud.domain.Application;
-import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateDetails;
-import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
-import com.venafi.vcert.sdk.connectors.cloud.domain.EdgeEncryptionKey;
-import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
+import com.venafi.vcert.sdk.connectors.cloud.domain.*;
 import com.venafi.vcert.sdk.connectors.cloud.endpoint.*;
 import com.venafi.vcert.sdk.utils.FeignUtils;
-
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
@@ -25,33 +13,40 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public interface Cloud {
   @Headers("tppl-api-key: {apiKey}")
   @RequestLine("GET v1/useraccounts")
   UserDetails authorize(@Param("apiKey") String apiKey);
-  
+
   @Headers("tppl-api-key: {apiKey}")
   @RequestLine("GET /outagedetection/v1/applications/{appName}/certificateissuingtemplates/{citAlias}")
   CertificateIssuingTemplate certificateIssuingTemplateByAppNameAndCitAlias(
-	  @Param("appName") String appName,
-      @Param("citAlias") String citAlias,
-      @Param("apiKey") String apiKey);
-  
+          @Param("appName") String appName,
+          @Param("citAlias") String citAlias,
+          @Param("apiKey") String apiKey);
+
   @Headers("tppl-api-key: {apiKey}")
   @RequestLine("GET /outagedetection/v1/applications/name/{appName}")
   Application applicationByName(
-	  @Param("appName") String appName,
-      @Param("apiKey") String apiKey);
+          @Param("appName") String appName,
+          @Param("apiKey") String apiKey);
 
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json", "Accept: application/json"})
   @RequestLine("POST /outagedetection/v1/certificatesearch")
   CertificateSearchResponse searchCertificates(@Param("apiKey") String apiKey,
-      SearchRequest searchRequest);
+                                               SearchRequest searchRequest);
 
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
   @RequestLine("POST  /outagedetection/v1/certificaterequests")
   CloudConnector.CertificateRequestsResponse certificateRequest(@Param("apiKey") String apiKey,
-      CloudConnector.CertificateRequestsPayload csr);
+                                                                CloudConnector.CertificateRequestsPayload csr);
 
   @Headers("tppl-api-key: {apiKey}")
   @RequestLine("GET  /outagedetection/v1/certificaterequests/{id}")
@@ -60,7 +55,7 @@ public interface Cloud {
   @Headers("tppl-api-key: {apiKey}")
   @RequestLine("GET /outagedetection/v1/certificates/{id}/contents?chainOrder={chainOrder}&format=PEM")
   Response retrieveCertificate(@Param("id") String id, @Param("apiKey") String apiKey,
-      @Param("chainOrder") String chainOrder);
+                               @Param("chainOrder") String chainOrder);
 
   @Headers({"tppl-api-key: {apiKey}"})
   @RequestLine("GET /outagedetection/v1/certificates/{id}/contents")
@@ -101,31 +96,35 @@ public interface Cloud {
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
   @RequestLine("PUT /outagedetection/v1/applications/{id}")
   Application updateApplication(Application application, @Param("id") String id, @Param("apiKey") String apiKey);
-  
+
   @Headers({"tppl-api-key: {apiKey}"})
   @RequestLine("GET /v1/edgeencryptionkeys/{id}")
   EdgeEncryptionKey retrieveEdgeEncryptionKey(@Param("id") String id, @Param("apiKey") String apiKey);
-  
+
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
   @RequestLine("POST /outagedetection/v1/certificates/{id}/keystore")
   Response retrieveKeystore(@Param("id") String id, KeystoreRequest keystoreRequest, @Param("apiKey") String apiKey);
 
+  @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+  @RequestLine("GET /v1/users/username/{username}")
+  User retrieveUser(@Param("username") String username, @Param("apiKey") String apiKey);
+
   static Cloud connect() {
-	  return connect((Config)null);
+    return connect((Config)null);
   }
 
   static Cloud connect(String baseUrl) {
-	  return connect(Config.builder().baseUrl(baseUrl).build());
+    return connect(Config.builder().baseUrl(baseUrl).build());
   }
 
   static Cloud connect(Config config) {
 
-	  if(config == null)
-		  config =  Config.builder().build();
+    if(config == null)
+      config =  Config.builder().build();
 
-	  config.baseUrl(isNotBlank(config.baseUrl()) ? normalizeUrl(config.baseUrl()) : "https://api.venafi.cloud/");
+    config.baseUrl(isNotBlank(config.baseUrl()) ? normalizeUrl(config.baseUrl()) : "https://api.venafi.cloud/");
 
-	  return FeignUtils.client(Cloud.class, config);
+    return FeignUtils.client(Cloud.class, config);
   }
 
   static String normalizeUrl(String url) {
@@ -143,7 +142,7 @@ public interface Cloud {
       url = url + "/";
     }
 
-    
+
     return url;
   }
 
@@ -160,7 +159,7 @@ public interface Cloud {
 
     static SearchRequest findByFingerPrint(String fingerprint) {
       return new SearchRequest(new Cloud.Expression(
-          singletonList(new Cloud.Operand("fingerprint", "MATCH", fingerprint))));
+              singletonList(new Cloud.Operand("fingerprint", "MATCH", fingerprint))));
     }
   }
 

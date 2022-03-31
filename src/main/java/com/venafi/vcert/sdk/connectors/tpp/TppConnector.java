@@ -1,5 +1,33 @@
 package com.venafi.vcert.sdk.connectors.tpp;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.certificate.*;
+import com.venafi.vcert.sdk.connectors.Connector;
+import com.venafi.vcert.sdk.connectors.ConnectorException.*;
+import com.venafi.vcert.sdk.connectors.Policy;
+import com.venafi.vcert.sdk.connectors.ServerPolicy;
+import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequestResponse;
+import com.venafi.vcert.sdk.endpoint.Authentication;
+import com.venafi.vcert.sdk.endpoint.ConnectorType;
+import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
+import com.venafi.vcert.sdk.policy.converter.TPPPolicySpecificationConverter;
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
+import com.venafi.vcert.sdk.utils.Is;
+import com.venafi.vcert.sdk.utils.VCertUtils;
+import feign.FeignException.BadRequest;
+import feign.FeignException.Unauthorized;
+import feign.Response;
+import lombok.Getter;
+
+import java.net.InetAddress;
+import java.text.MessageFormat;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
 import static java.time.Duration.ZERO;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -7,97 +35,22 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import java.net.InetAddress;
-import java.text.MessageFormat;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.io.CharStreams;
-import com.venafi.vcert.sdk.VCertException;
-import com.venafi.vcert.sdk.certificate.CertificateRequest;
-import com.venafi.vcert.sdk.certificate.ChainOption;
-import com.venafi.vcert.sdk.certificate.CsrOriginOption;
-import com.venafi.vcert.sdk.certificate.DataFormat;
-import com.venafi.vcert.sdk.certificate.ImportRequest;
-import com.venafi.vcert.sdk.certificate.ImportResponse;
-import com.venafi.vcert.sdk.certificate.KeyType;
-import com.venafi.vcert.sdk.certificate.PEMCollection;
-import com.venafi.vcert.sdk.certificate.PublicKeyAlgorithm;
-import com.venafi.vcert.sdk.certificate.RenewalRequest;
-import com.venafi.vcert.sdk.certificate.RevocationRequest;
-import com.venafi.vcert.sdk.certificate.SshCaTemplateRequest;
-import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
-import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
-import com.venafi.vcert.sdk.certificate.SshConfig;
-import com.venafi.vcert.sdk.connectors.Connector;
-import com.venafi.vcert.sdk.connectors.ConnectorException.AttemptToRetryException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.CSRNotProvidedByUserException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrThumbprintWasNotProvidedException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByThumbprintException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.CertificatePendingException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.CouldNotParseRevokeReasonException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.MoreThanOneCertificateWithSameThumbprintException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.RenewFailureException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.RetrieveCertificateTimeoutException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.RevokeFailureException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.TppManualCSRNotEnabledException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.TppPingException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.TppRequestCertificateNotAllowedException;
-import com.venafi.vcert.sdk.connectors.Policy;
-import com.venafi.vcert.sdk.connectors.ServerPolicy;
-import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRenewalResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRequestResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRetrieveResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRevokeResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateSearchResponse;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCaTemplateRequest;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCaTemplateResponse;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequest;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequestResponse;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveRequest;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveResponse;
-import com.venafi.vcert.sdk.endpoint.Authentication;
-import com.venafi.vcert.sdk.endpoint.ConnectorType;
-import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
-import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
-import com.venafi.vcert.sdk.policy.converter.TPPPolicySpecificationConverter;
-import com.venafi.vcert.sdk.utils.Is;
-import com.venafi.vcert.sdk.utils.VCertUtils;
-
-import feign.Response;
-import feign.FeignException.BadRequest;
-import feign.FeignException.Unauthorized;
-import lombok.Getter;
-
 
 public class TppConnector extends AbstractTppConnector implements Connector {
   @VisibleForTesting
   OffsetDateTime bestBeforeEnd;
   @Getter
   private String apiKey;
-  
+
   protected Authentication credentials;
 
   public TppConnector(Tpp tpp) {
     super(tpp);
   }
-  
+
   @Override
   public Authentication getCredentials() {
-	return credentials;
+    return credentials;
   }
 
   @Override
@@ -129,9 +82,9 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   public void ping() throws VCertException {
     Response response = tppAPI.ping();
     if (response.status() != 200)
-        throw new TppPingException(response.status(), response.reason());
+      throw new TppPingException(response.status(), response.reason());
   }
-  
+
   /**
    * {@inheritDoc}
    * <p>
@@ -139,36 +92,32 @@ public class TppConnector extends AbstractTppConnector implements Connector {
    * get the authorization details.
    * Also the credentials given replaces the credentials hold by this instance until 
    * this moment and additionally the {@link #apiKey} and {@link #bestBeforeEnd} attributes are determined.
-   * 
+   *
    * @throws VCertException if the call to {@link Tpp#authorize(AuthorizeRequest)} throws a {@link Unauthorized} or {@link BadRequest}
    */
   @Override
-  public void authorize(Authentication credentials) throws VCertException { 
-	  try {
-		  AuthorizeResponse response = tpp.authorize(new AuthorizeRequest(credentials.user(), credentials.password()));
-		  apiKey = response.apiKey();
-		  bestBeforeEnd = response.validUntil();
-		  this.credentials = credentials;
-		  this.credentials.apiKey(apiKey);
-	  }  catch(Unauthorized | BadRequest e){
-		  throw VCertException.fromFeignException(e);
-	  }
+  public void authorize(Authentication credentials) throws VCertException {
+    try {
+      AuthorizeResponse response = tpp.authorize(new AuthorizeRequest(credentials.user(), credentials.password()));
+      apiKey = response.apiKey();
+      bestBeforeEnd = response.validUntil();
+      this.credentials = credentials;
+      this.credentials.apiKey(apiKey);
+    }  catch(Unauthorized | BadRequest e){
+      throw VCertException.fromFeignException(e);
+    }
   }
-  
+
   /**
    * {@inheritDoc}
    */
   @Override
   public boolean isEmptyCredentials(Authentication credentials){
-      if(credentials == null){
-          return true;
-      }
-      
-      if( isBlank(credentials.user()) || isBlank(credentials.password())) {
-      	return true;
-      }
+    if(credentials == null){
+      return true;
+    }
 
-      return false;
+    return isBlank(credentials.user()) || isBlank(credentials.password());
   }
 
   @Override
@@ -193,26 +142,26 @@ public class TppConnector extends AbstractTppConnector implements Connector {
     }
     String tppMgmtType = config.customAttributeValues().get(TPP_ATTRIBUTE_MANAGEMENT_TYPE);
     if ("Monitoring".equals(tppMgmtType) || "Unassigned".equals(tppMgmtType))
-        throw new TppRequestCertificateNotAllowedException();
+      throw new TppRequestCertificateNotAllowedException();
 
     config.applyCertificateRequestDefaultSettingsIfNeeded(request);
 
     switch (request.csrOrigin()) {
       case LocalGeneratedCSR: {
-        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR))) 
-        	throw new TppManualCSRNotEnabledException(request.csrOrigin());
-        
+        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR)))
+          throw new TppManualCSRNotEnabledException(request.csrOrigin());
+
         request.generatePrivateKey();
         request.generateCSR();
         break;
       }
       case UserProvidedCSR: {
-        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR))) 
-        	throw new TppManualCSRNotEnabledException(request.csrOrigin());
-        
-        if (Is.blank(request.csr())) 
-        	throw new CSRNotProvidedByUserException();
-        
+        if ("0".equals(config.customAttributeValues().get(TPP_ATTRIBUTE_MANUAL_CSR)))
+          throw new TppManualCSRNotEnabledException(request.csrOrigin());
+
+        if (Is.blank(request.csr()))
+          throw new CSRNotProvidedByUserException();
+
         break;
       }
       case ServiceGeneratedCSR: {
@@ -221,7 +170,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
       }
     }
     return request; // TODO: should we return the request we modified? It's not a copy, it's the one
-                    // that was passed in, mutated.
+    // that was passed in, mutated.
   }
 
   @Override
@@ -245,12 +194,11 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   protected CertificateRequestsPayload prepareRequest(CertificateRequest request, String zone)
       throws VCertException {
     CertificateRequestsPayload payload;
-    Collection<NameValuePair<String, String>> caSpecificAttributes =
-        new ArrayList<NameValuePair<String, String>>();
+    Collection<NameValuePair<String, String>> caSpecificAttributes = new ArrayList<>();
 
     // Workaround to send Origin to TPP versions that does not support it in the payload
     if (!isBlank(vendorAndProductName)) {
-      caSpecificAttributes.add(new NameValuePair<String, String>("Origin", vendorAndProductName));
+      caSpecificAttributes.add(new NameValuePair<>("Origin", vendorAndProductName));
     }
 
     switch (request.csrOrigin()) {
@@ -269,14 +217,14 @@ public class TppConnector extends AbstractTppConnector implements Connector {
       case ServiceGeneratedCSR:
         payload = new CertificateRequestsPayload().policyDN(getPolicyDN(zone))
             .objectName(request.friendlyName()).subject(request.subject().commonName()) // TODO (Go
-                                                                                        // SDK):
-                                                                                        // there is
-                                                                                        // some
-                                                                                        // problem
-                                                                                        // because
-                                                                                        // Subject
-                                                                                        // is not
-                                                                                        // only CN
+            // SDK):
+            // there is
+            // some
+            // problem
+            // because
+            // Subject
+            // is not
+            // only CN
             .subjectAltNames(wrapAltNames(request)).disableAutomaticRenewal(true)
             .origin(vendorAndProductName).caSpecificAttributes(caSpecificAttributes);
         break;
@@ -301,16 +249,16 @@ public class TppConnector extends AbstractTppConnector implements Connector {
         break;
       }
     }
-    
-    
+
+
     //support for validity hours begins
     VCertUtils.addExpirationDateAttribute(request, payload);
-   //support for validity hours ends
-    
+    //support for validity hours ends
+
     //support for custom fields begins
     VCertUtils.addCustomFieldsToRequest(request, payload);
     //support for custom fields ends
-    
+
     return payload;
   }
 
@@ -340,19 +288,19 @@ public class TppConnector extends AbstractTppConnector implements Connector {
       Tpp.CertificateSearchResponse searchResult =
           searchCertificatesByFingerprint(request.thumbprint());
       if (searchResult.certificates().size() == 0)
-      	throw new CertificateNotFoundByThumbprintException(request.thumbprint());
-      
-      if (searchResult.certificates().size() > 1) 
-          throw new MoreThanOneCertificateWithSameThumbprintException(request.thumbprint());
-      
+        throw new CertificateNotFoundByThumbprintException(request.thumbprint());
+
+      if (searchResult.certificates().size() > 1)
+        throw new MoreThanOneCertificateWithSameThumbprintException(request.thumbprint());
+
       request.pickupId(searchResult.certificates().get(0).certificateRequestId());
     }
 
     CertificateRetrieveRequest certReq = new CertificateRetrieveRequest()
-    		.certificateDN(request.pickupId())
-    		.format(request.dataFormat() == DataFormat.PKCS8 ? PKCS8_DATA_FORMAT : LEGACY_DATA_FORMAT)
-            .rootFirstOrder(rootFirstOrder)
-            .includeChain(includeChain);
+        .certificateDN(request.pickupId())
+        .format(request.dataFormat() == DataFormat.PKCS8 ? PKCS8_DATA_FORMAT : LEGACY_DATA_FORMAT)
+        .rootFirstOrder(rootFirstOrder)
+        .includeChain(includeChain);
 
     if (request.csrOrigin() == CsrOriginOption.ServiceGeneratedCSR || request.fetchPrivateKey()) {
       certReq.includePrivateKey(true);
@@ -373,17 +321,17 @@ public class TppConnector extends AbstractTppConnector implements Connector {
       }
 
       if (ZERO.equals(request.timeout()))
-          throw new CertificatePendingException(request.pickupId());
+        throw new CertificatePendingException(request.pickupId());
 
       if (Instant.now().isAfter(startTime.plus(request.timeout())))
-          throw new RetrieveCertificateTimeoutException(request.pickupId());
+        throw new RetrieveCertificateTimeoutException(request.pickupId());
 
       try {
-    	  TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(2);
       } catch (InterruptedException e) {
-    	  // Restore interrupted state...
-    	  Thread.currentThread().interrupt();
-    	  throw new AttemptToRetryException(e);
+        // Restore interrupted state...
+        Thread.currentThread().interrupt();
+        throw new AttemptToRetryException(e);
       }
     }
   }
@@ -395,7 +343,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
 
 
   private Tpp.CertificateSearchResponse searchCertificatesByFingerprint(String fingerprint) throws VCertException {
-    final Map<String, String> searchRequest = new HashMap<String, String>();
+    final Map<String, String> searchRequest = new HashMap<>();
     searchRequest.put("Thumbprint", fingerprint);
 
     return searchCertificates(searchRequest);
@@ -409,15 +357,15 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   public void revokeCertificate(RevocationRequest request) throws VCertException {
     Integer reason = revocationReasons.get(request.reason());
     if (reason == null)
-        throw new CouldNotParseRevokeReasonException(request.reason());
+      throw new CouldNotParseRevokeReasonException(request.reason());
 
     CertificateRevokeRequest revokeRequest = new CertificateRevokeRequest()
         .certificateDN(request.certificateDN()).thumbprint(request.thumbprint()).reason(reason)
         .comments(request.comments()).disable(request.disable());
 
     Tpp.CertificateRevokeResponse revokeResponse = revokeCertificate(revokeRequest);
-    if (!revokeResponse.success()) 
-    	throw new RevokeFailureException(revokeResponse.error());
+    if (!revokeResponse.success())
+      throw new RevokeFailureException(revokeResponse.error());
   }
 
   private Tpp.CertificateRevokeResponse revokeCertificate(CertificateRevokeRequest request) throws VCertException {
@@ -432,18 +380,18 @@ public class TppConnector extends AbstractTppConnector implements Connector {
       Tpp.CertificateSearchResponse searchResult =
           searchCertificatesByFingerprint(request.thumbprint());
       if (searchResult.certificates().isEmpty())
-          throw new CertificateNotFoundByThumbprintException(request.thumbprint());
-      
+        throw new CertificateNotFoundByThumbprintException(request.thumbprint());
+
       if (searchResult.certificates().size() > 1)
-          throw new MoreThanOneCertificateWithSameThumbprintException(request.thumbprint());
-      
+        throw new MoreThanOneCertificateWithSameThumbprintException(request.thumbprint());
+
       certificateDN = searchResult.certificates().get(0).certificateRequestId();
     } else {
       certificateDN = request.certificateDN();
     }
 
-    if (isNull(certificateDN)) 
-        throw new CertificateDNOrThumbprintWasNotProvidedException();
+    if (isNull(certificateDN))
+      throw new CertificateDNOrThumbprintWasNotProvidedException();
 
     final CertificateRenewalRequest renewalRequest = new CertificateRenewalRequest();
     renewalRequest.certificateDN(certificateDN);
@@ -455,7 +403,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
 
     final Tpp.CertificateRenewalResponse response = tppAPI.renewCertificate(renewalRequest);
     if (!response.success())
-    	throw new RenewFailureException(response.error());
+      throw new RenewFailureException(response.error());
 
     return certificateDN;
   }
@@ -482,6 +430,8 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
     try {
       TPPPolicy tppPolicy = TPPPolicySpecificationConverter.INSTANCE.convertFromPolicySpecification(policySpecification);
+      String[] identitiesList = this.resolveTPPContacts(tppPolicy.contact());
+      tppPolicy.contact(identitiesList);
       setPolicy(policyName, tppPolicy);
     }catch (Exception e){
       throw new VCertException(e);
@@ -502,29 +452,28 @@ public class TppConnector extends AbstractTppConnector implements Connector {
 
     return policySpecification;
   }
-  
+
   @Override
   public String requestSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException {
 
-	  TppSshCertRequestResponse tppSshCertRequestResponse = super.requestTppSshCertificate(sshCertificateRequest);
-	  
-	  return tppSshCertRequestResponse.dn();
+    TppSshCertRequestResponse tppSshCertRequestResponse = super.requestTppSshCertificate(sshCertificateRequest);
+
+    return tppSshCertRequestResponse.dn();
   }
 
   @Override
   public SshCertRetrieveDetails retrieveSshCertificate(SshCertificateRequest sshCertificateRequest)
-		  throws VCertException {
-	  return super.retrieveTppSshCertificate(sshCertificateRequest);
+      throws VCertException {
+    return super.retrieveTppSshCertificate(sshCertificateRequest);
   }
-  
+
   @Override
   public SshConfig retrieveSshConfig(SshCaTemplateRequest sshCaTemplateRequest) throws VCertException {
-  	return super.retrieveTppSshConfig(sshCaTemplateRequest);
+    return super.retrieveTppSshConfig(sshCaTemplateRequest);
   }
 
   @Override
   protected TppAPI getTppAPI() {
-
     if(tppAPI == null){
       tppAPI = new TppAPI(tpp) {
 
@@ -535,106 +484,6 @@ public class TppConnector extends AbstractTppConnector implements Connector {
 
           return apiKey();
         }
-        
-        @Override
-		Response ping() throws VCertException {
-			return tpp.ping(getAuthKey());
-		}
-        
-    	@Override
-		ReadZoneConfigurationResponse readZoneConfiguration(ReadZoneConfigurationRequest request)
-				throws VCertException {
-			return tpp.readZoneConfiguration(request, getAuthKey());
-		}
-
-		@Override
-		CertificateRequestResponse requestCertificate(CertificateRequestsPayload payload) throws VCertException {
-			return tpp.requestCertificate(payload, getAuthKey());
-		}
-
-		@Override
-		CertificateRetrieveResponse certificateRetrieve(CertificateRetrieveRequest request)
-				throws VCertException {
-			return tpp.certificateRetrieve(request, getAuthKey());
-		}
-
-		@Override
-		CertificateSearchResponse searchCertificates(Map<String, String> searchRequest) throws VCertException {
-			return tpp.searchCertificates(searchRequest, getAuthKey());
-		}
-
-		@Override
-		CertificateRevokeResponse revokeCertificate(CertificateRevokeRequest request) throws VCertException {
-			return tpp.revokeCertificate(request, getAuthKey());
-		}
-
-		@Override
-		CertificateRenewalResponse renewCertificate(CertificateRenewalRequest request) throws VCertException {
-			return tpp.renewCertificate(request, getAuthKey());
-		}
-
-		@Override
-		ImportResponse importCertificate(ImportRequest request) throws VCertException {
-			return tpp.importCertificate(request, getAuthKey());
-		}
-
-        @Override
-        public DNIsValidResponse dnIsValid(DNIsValidRequest request) throws VCertException {
-          return tpp.dnIsValid(request, getAuthKey());
-        }
-
-        @Override
-        CreateDNResponse createDN(CreateDNRequest request) throws VCertException {
-          return tpp.createDN(request, getAuthKey());
-        }
-
-        @Override
-        SetPolicyAttributeResponse setPolicyAttribute(SetPolicyAttributeRequest request) throws VCertException {
-          return tpp.setPolicyAttribute(request, getAuthKey());
-        }
-
-        @Override
-        GetPolicyAttributeResponse getPolicyAttribute(GetPolicyAttributeRequest request) throws VCertException {
-          return tpp.getPolicyAttribute(request, getAuthKey());
-        }
-
-        @Override
-        GetPolicyResponse getPolicy(GetPolicyRequest request) throws VCertException {
-          return tpp.getPolicy(request, getAuthKey());
-        }
-
-        @Override
-        Response clearPolicyAttribute(ClearPolicyAttributeRequest request) throws VCertException {
-          return tpp.clearPolicyAttribute(request, getAuthKey());
-        }
-
-		@Override
-		TppSshCertRequestResponse requestSshCertificate(TppSshCertRequest request) throws VCertException {
-			return tpp.requestSshCertificate(request, getAuthKey());
-		}
-
-		@Override
-		TppSshCertRetrieveResponse retrieveSshCertificate(TppSshCertRetrieveRequest request) throws VCertException {
-			return tpp.retrieveSshCertificate(request, getAuthKey());
-		}
-
-		@Override
-		String retrieveSshCAPublicKeyData(Map<String, String> params) throws VCertException {
-			String publicKeyData = null;
-
-			try {
-				publicKeyData = CharStreams.toString(tpp.retrieveSshCAPublicKeyData(params).body().asReader());
-			} catch (Exception e) {
-				throw new VCertException(e);
-			}
-
-			return publicKeyData;
-		}
-
-		@Override
-		TppSshCaTemplateResponse retrieveSshCATemplate(TppSshCaTemplateRequest request) throws VCertException {
-			return tpp.retrieveSshCATemplate(request, getAuthKey());
-		}
       };
     }
     return tppAPI;

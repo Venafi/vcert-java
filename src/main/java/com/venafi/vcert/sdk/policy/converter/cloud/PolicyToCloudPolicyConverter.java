@@ -5,8 +5,8 @@ import com.venafi.vcert.sdk.certificate.KeyType;
 import com.venafi.vcert.sdk.connectors.cloud.CloudConstants;
 import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
 import com.venafi.vcert.sdk.policy.api.domain.CloudPolicy;
-import com.venafi.vcert.sdk.policy.domain.*;
 import com.venafi.vcert.sdk.policy.converter.FromPolicyConverter;
+import com.venafi.vcert.sdk.policy.domain.*;
 import com.venafi.vcert.sdk.utils.VCertConstants;
 import org.apache.commons.lang3.StringUtils;
 
@@ -32,6 +32,8 @@ public class PolicyToCloudPolicyConverter implements FromPolicyConverter<CloudPo
         CertificateIssuingTemplate cit = new CertificateIssuingTemplate();
 
         cloudPolicy.certificateIssuingTemplate(cit);
+
+        cloudPolicy.owners(policySpecification.users());
 
         cit.certificateAuthority(caInfo.caType());
 
