@@ -44,36 +44,43 @@ shows snippets for VCert-Java v0.6.2.
 
 ## Usage
 
+
 Instantiate a client for Trust Protection Platform using token authentication with an existing
 access token:
 
 ```java
+//Create an Authentication object with the access token
 final Authentication auth = Authentication.builder()
         .accessToken("9PQwQeiTLhcB8/W3/z2Lbw==")
         .build();
 
+//Create a Config object setting the Authentication object
 final Config config = Config.builder()
         .connectorType(ConnectorType.TPP_TOKEN)
         .baseUrl("https://tpp.venafi.example")
         .credentials(auth)
         .build();
 
+//Create the client with the Config object. The client will be authenticated
 final VCertTknClient client = new VCertTknClient(config);
 ```
 
 Or instantiate a client for Venafi Cloud:
 
 ```java
+//Create an Authentication object with the API Key
 final Authentication auth = Authentication.builder()
         .apiKey("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
         .build();
 
+//Create a Config object setting the Authentication object
 final Config config = Config.builder()
         .connectorType(ConnectorType.CLOUD)
+        .credentials(auth)
         .build();
 
+//Create the client with the Config object. The client will be authenticated
 final VCertClient client = new VCertClient(config);
-client.authenticate(auth);
 ```
 
 Then use your client to request certificates:
@@ -187,21 +194,54 @@ _without_ an existing token by providing a username/password.  Such a token is g
 short-term or temporary use and as such should be revoked upon completion of your tasks:
 
 ```java
+//Create an Authentication object with the user and password
 final Authentication auth = Authentication.builder()
         .user("local:apiuser")
         .password("password")
         .build();
 
+//Create a Config object
 final Config config = Config.builder()
         .connectorType(ConnectorType.TPP_TOKEN)
         .baseUrl("https://tpp.venafi.example")
         .build();
-
+        
+//Create the client with the Config object. The client is not authenticated yet
 final VCertTknClient client = new VCertTknClient(config);
+
+//Get the access token. It will cause the client's authentication
 client.getAccessToken(auth);
 
 ///// REQUEST, RENEW, AND/OR REVOKE CERTIFICATES...
 
+//Revoke the access token
+client.revokeAccessToken();
+```
+
+Or you can try the authentication in constructor way:
+
+```java
+//Create an Authentication object with the user and password
+final Authentication auth = Authentication.builder()
+        .user("local:apiuser")
+        .password("password")
+        .build();
+
+//Create a Config object setting the Authentication object
+final Config config = Config.builder()
+        .connectorType(ConnectorType.TPP_TOKEN)
+        .baseUrl("https://tpp.venafi.example")
+        .credentials(auth)
+        .build();
+        
+//Create the client with the Config object. The client will be authenticated
+//Internally the access token will be gotten and accessible 
+//via the getTokenInfo() method.
+final VCertTknClient client = new VCertTknClient(config);
+
+///// REQUEST, RENEW, AND/OR REVOKE CERTIFICATES...
+
+//Revoke the access token
 client.revokeAccessToken();
 ```
 
