@@ -33,19 +33,11 @@ import feign.FeignException.Unauthorized;
 import feign.Response;
 
 public class TppTokenConnector extends TppConnector implements TokenConnector {
-	
-    //@VisibleForTesting
-    //private Authentication credentials;
     
     private TokenInfo tokenInfo;
 
     public TppTokenConnector(Tpp tpp){ super(tpp); }
     
-    //@Override
-    //public Authentication getCredentials() {
-    //	return credentials;
-    //}
-
     @Override
     public ConnectorType getType() {
         return ConnectorType.TPP_TOKEN;
@@ -134,8 +126,6 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
 			
 			setTokenCredentials(auth);
 		} catch(Unauthorized | BadRequest e){
-			//tokenInfo = new TokenInfo(null, null, -1, null, null,
-			//		null, -1, false, e.getMessage() + " " + new String(e.content()) );
 			throw VCertException.fromFeignException(e);
 		}
 	}
@@ -201,8 +191,6 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
 
             return tokenInfo;
         }catch (FeignException.BadRequest e){
-            //tokenInfo = new TokenInfo(null, null, -1, null, null,
-            //    null, -1, false, e.getMessage() + " " + new String(e.content()));
         	throw VCertException.fromFeignException(e);
         }
     }

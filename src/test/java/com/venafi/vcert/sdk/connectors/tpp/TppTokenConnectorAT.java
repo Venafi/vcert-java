@@ -141,7 +141,6 @@ class TppTokenConnectorAT {
 	@Tag("InvalidAuthentication")
 	void refreshTokenInvalid() throws VCertException{
 		Authentication invalidCredentials = Authentication.builder()
-				//.accessToken("abcde==")
 				.refreshToken("1234-1234-12345-123")
 				.build();
 		

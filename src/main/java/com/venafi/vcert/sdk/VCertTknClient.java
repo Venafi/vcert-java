@@ -23,7 +23,6 @@ public class VCertTknClient extends VCertClient implements TokenConnector {
     	switch (config.connectorType()) {
     	case TPP_TOKEN:{
     		connector = new TppTokenConnector(Tpp.connect(config));
-    		//((TppTokenConnector) connector).credentials(config.credentials());
     		break;
     	}
     	default:

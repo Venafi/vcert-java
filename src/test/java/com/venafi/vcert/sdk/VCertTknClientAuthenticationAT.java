@@ -254,7 +254,6 @@ public class VCertTknClientAuthenticationAT {
 		return Authentication.builder()
 				.user(TestUtils.TPP_USER)
 				.password(TestUtils.TPP_PASSWORD)
-				//.scope("certificate:manage,revoke,discover;configuration:manage")
 				.build();
 	}
 	
