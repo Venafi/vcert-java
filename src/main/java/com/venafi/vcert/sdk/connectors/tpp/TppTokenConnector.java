@@ -73,9 +73,9 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
     /**
      * {@inheritDoc}
      * <p>
-     * Note: For this implementation is determined if the {@link Authentication#accessToken()} was provided. 
-     * If that is the case then it's invoked the {@link Tpp#verify()} method to verify if the provided access Token is valid, 
-     * otherwise then the {@link Tpp#authorizeToken(AuthorizeRequest)} is invoked to get the accessToken and refreshToken which 
+     * Note: For this implementation is determined if the Authentication.accessToken() was provided. 
+     * If that is the case then it's invoked the Tpp.verifyToken(String) method to verify if the provided access Token is valid, 
+     * otherwise then the Tpp.authorizeToken(AuthorizeTokenRequest) is invoked to get the accessToken and refreshToken which 
      * will be set to the credentials of this instance.
      * Also the credentials given replaces the credentials hold by this instance until 
      * this moment and additionally the {@link TokenInfo} object is created.
