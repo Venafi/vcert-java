@@ -35,6 +35,10 @@ public class VCertClient implements Connector {
     Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
     
     this.connector = createConnector(config);
+    
+    if(config.credentials() != null) {
+    	this.connector.authenticate(config.credentials());
+    }
 
     connector.setVendorAndProductName(isBlank(config.appInfo()) ? VCertConstants.DEFAULT_VENDOR_AND_PRODUCT_NAME :
         config.appInfo());
@@ -63,6 +67,11 @@ public class VCertClient implements Connector {
   @VisibleForTesting
   VCertClient(Connector connector) {
     this.connector = connector;
+  }
+  
+  @Override
+  public Authentication getCredentials() {
+	return connector.getCredentials();
   }
 
   /**
@@ -124,12 +133,32 @@ public class VCertClient implements Connector {
    * {@inheritDoc}
    */
   @Override
-  public void authenticate(Authentication auth) throws VCertException {
+  public void authenticate(Authentication credentials) throws VCertException {
     try {
-      connector.authenticate(auth);
+      connector.authenticate(credentials);
     } catch (FeignException e) {
       throw VCertException.fromFeignException(e);
     }
+  }
+  
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean isEmptyCredentials(Authentication credentials) {
+	  return connector.isEmptyCredentials(credentials);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void authorize(Authentication credentials) throws VCertException {
+	  try {
+		  connector.authorize(credentials);
+	  } catch (FeignException e) {
+		  throw VCertException.fromFeignException(e);
+	  }
   }
 
   /**

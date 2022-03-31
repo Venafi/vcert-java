@@ -4,14 +4,12 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import java.util.Map;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.CharStreams;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.connectors.ConnectorException.FailedToRevokeTokenException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingAccessTokenException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.MissingCredentialsException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingRefreshTokenException;
 import com.venafi.vcert.sdk.connectors.TokenConnector;
 import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRenewalResponse;
@@ -33,50 +31,107 @@ import feign.FeignException;
 import feign.FeignException.BadRequest;
 import feign.FeignException.Unauthorized;
 import feign.Response;
-import lombok.Setter;
 
 public class TppTokenConnector extends TppConnector implements TokenConnector {
-
-    @Setter
-    @VisibleForTesting
-    private Authentication credentials;
     
     private TokenInfo tokenInfo;
 
     public TppTokenConnector(Tpp tpp){ super(tpp); }
-
+    
     @Override
     public ConnectorType getType() {
         return ConnectorType.TPP_TOKEN;
     }
     
     private String getAuthHeaderValue() throws VCertException {
-        if( isEmptyToken() )
+        return getAuthHeaderValue(credentials);
+    }
+    
+    private String getAuthHeaderValue(Authentication credentials) throws VCertException {
+        if( isEmptyAccessToken(credentials) )
         	throw new MissingAccessTokenException();
 
         return String.format(HEADER_VALUE_AUTHORIZATION, credentials.accessToken());
     }
-    
-	@Override
-	public void authenticate(Authentication auth) throws VCertException {
-		if(isEmptyCredentials(auth))
-            throw new MissingCredentialsException();
-		
-        try {
-            AuthorizeTokenRequest authRequest =
-                new AuthorizeTokenRequest(auth.user(), auth.password(), auth.clientId(), auth.scope(), auth.state(),
-                    auth.redirectUri());
-            AuthorizeTokenResponse response = tpp.authorizeToken(authRequest);
-            tokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(),
-                response.tokenType(), response.scope(), response.identity(), response.refreshUntil(), true, null);
-
-            this.credentials = auth;
-            this.credentials.accessToken(tokenInfo.accessToken());
-            this.credentials.refreshToken(tokenInfo.refreshToken());
-        } catch(Unauthorized | BadRequest e){
-            tokenInfo = new TokenInfo(null, null, -1, null, null,
-                null, -1, false, e.getMessage() + " " + new String(e.content()) );
+	
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isEmptyCredentials(Authentication credentials){
+        if(credentials == null){
+            return true;
         }
+        
+        if( isEmptyTokens(credentials) && ( super.isEmptyCredentials(credentials))) {
+        	return true;
+        }
+
+        return false;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Note: For this implementation is determined if the Authentication.accessToken() was provided. 
+     * If that is the case then it's invoked the Tpp.verifyToken(String) method to verify if the provided access Token is valid, 
+     * otherwise then the Tpp.authorizeToken(AuthorizeTokenRequest) is invoked to get the accessToken and refreshToken which 
+     * will be set to the credentials of this instance.
+     * Also the credentials given replaces the credentials hold by this instance until 
+     * this moment and additionally the {@link TokenInfo} object is created.
+     * 
+     * @throws VCertException if the call to {@link Tpp#authorize(AuthorizeRequest)} throws a {@link Unauthorized} or {@link BadRequest}
+     */
+    @Override
+    public void authorize(Authentication credentials) throws VCertException {
+    	//If the AccessToken or RefreshToken were provided then only verify the accessToken is still valid
+    	if(!isEmptyTokens(credentials)) {
+    		verifyAccessToken(credentials);
+    	} else { // The user and password were provided so then generate an accessToken from them 
+    		authorizeToken(credentials);
+    	}
+    }
+
+    private boolean isEmptyTokens( Authentication credentials ){
+    	return isEmptyAccessToken(credentials) && isBlank(credentials.refreshToken());
+    }
+    
+    private boolean isEmptyAccessToken(Authentication credentials){
+    	return credentials == null || isBlank(credentials.accessToken());
+    }
+    
+    private void verifyAccessToken(Authentication credentials) throws VCertException {
+    	if(!isBlank(credentials.accessToken())) {
+    		
+    		try {
+    			//Verify the AccessToken
+        		tpp.verifyToken(getAuthHeaderValue(credentials));
+    		} catch (Unauthorized | BadRequest e) {
+    			throw VCertException.fromFeignException(e);
+			}
+    	}
+    	
+    	this.credentials = credentials;
+    	this.tokenInfo = null;
+    }
+
+	private void authorizeToken(Authentication auth) throws VCertException {
+		try {
+			AuthorizeTokenRequest authRequest =
+					new AuthorizeTokenRequest(auth.user(), auth.password(), auth.clientId(), auth.scope(), auth.state(),
+							auth.redirectUri());
+			AuthorizeTokenResponse response = tpp.authorizeToken(authRequest);
+			tokenInfo = new TokenInfo(response.accessToken(), response.refreshToken(), response.expire(),
+					response.tokenType(), response.scope(), response.identity(), response.refreshUntil(), true, null);
+			
+			setTokenCredentials(auth);
+		} catch(Unauthorized | BadRequest e){
+			throw VCertException.fromFeignException(e);
+		}
+	}
+	
+	private void setTokenCredentials(Authentication auth) {
+		this.credentials = auth.accessToken(tokenInfo.accessToken()).refreshToken(tokenInfo.refreshToken());
 	}
 	
 	@Override
@@ -86,7 +141,31 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
 
     @Override
     public TokenInfo getAccessToken(Authentication auth) throws VCertException {
-        authenticate(auth);
+    	
+    	Authentication authTemp = null;
+    	
+    	if (auth != null) {
+
+    		//creating a temp Authentication object based on the one passed as argument
+    		// in order to avoid to modify that original given it's needed that 
+    		// the Authentication object to be passed to the authenticate() method needs
+    		// that the accessToken and refreshToken doesn't set
+    		authTemp = Authentication.builder()
+    				.user(auth.user())
+    				.password(auth.password())
+    				.clientId(auth.clientId())
+    				.scope(auth.scope())
+    				.state(auth.state())
+    				.redirectUri(auth.redirectUri())
+    				.build();
+    	}
+    	
+        authenticate(authTemp);
+        
+        //setting the auth object as the credentials and setting into it the accessToken 
+        //and refreshToken hold by TokenInfo
+        setTokenCredentials(auth);
+        
         return getTokenInfo();
     }
 
@@ -112,10 +191,8 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
 
             return tokenInfo;
         }catch (FeignException.BadRequest e){
-            tokenInfo = new TokenInfo(null, null, -1, null, null,
-                null, -1, false, e.getMessage() + " " + new String(e.content()));
+        	throw VCertException.fromFeignException(e);
         }
-        return tokenInfo;
     }
 
     @Override
@@ -130,31 +207,7 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
             throw new FailedToRevokeTokenException(response.reason());
         }
     }
-  
-    private boolean isEmptyCredentials(Authentication credentials){
-        if(credentials == null){
-            return true;
-        }
-
-        if(credentials.user() == null || credentials.user().isEmpty()){
-            return true;
-        }
-
-        if(credentials.password() == null || credentials.password().isEmpty()){
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean isEmptyToken(){
-        if(credentials == null || isBlank(credentials.accessToken())){
-            return true;
-        }
-
-        return false;
-    }
-
+    
     @Override
     protected TppAPI getTppAPI() {
         if(tppAPI == null){

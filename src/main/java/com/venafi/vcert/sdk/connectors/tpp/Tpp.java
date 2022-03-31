@@ -107,6 +107,10 @@ public interface Tpp {
   @Headers("Content-Type: application/json")
   AuthorizeTokenResponse authorizeToken(AbstractTppConnector.AuthorizeTokenRequest authorizeRequest);
 
+  @RequestLine("GET /vedauth/authorize/verify")
+  @Headers({"Authorization: {value}"})
+  VerifyTokenResponse verifyToken(@Param("value") String value);
+
   @RequestLine("POST /vedauth/authorize/token")
   @Headers("Content-Type: application/json")
   RefreshTokenResponse refreshToken(AbstractTppConnector.RefreshTokenRequest request);

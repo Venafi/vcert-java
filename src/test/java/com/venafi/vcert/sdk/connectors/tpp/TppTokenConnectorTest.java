@@ -19,6 +19,8 @@ import com.venafi.vcert.sdk.policy.domain.PolicySpecificationConst;
 import feign.FeignException;
 import feign.Request;
 import feign.Response;
+import feign.FeignException.BadRequest;
+
 import org.apache.commons.lang3.RandomStringUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Assertions;
@@ -38,6 +40,7 @@ import java.time.Instant;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -242,7 +245,7 @@ public class TppTokenConnectorTest {
 
         when(tpp.refreshToken(any(AbstractTppConnector.RefreshTokenRequest.class))).thenThrow(new FeignException.BadRequest("400 Grant has been revoked, has expired, or the refresh token is invalid", request, new byte[]{}) );
 
-        TokenInfo info = classUnderTest.refreshAccessToken(TestUtils.CLIENT_ID);
+        /*TokenInfo info = classUnderTest.refreshAccessToken(TestUtils.CLIENT_ID);
         assertThat(info).isNotNull();
         assertThat(info.authorized()).isFalse();
         assertThat(info.errorMessage()).isNotNull();
@@ -250,6 +253,10 @@ public class TppTokenConnectorTest {
         logger.info("VCertException = %s", info.errorMessage());
 
         assertThat(info.errorMessage()).contains("Grant has been revoked, has expired, or the refresh token is invalid");
+        */
+        assertThatExceptionOfType(VCertException.class)
+		.isThrownBy(() -> classUnderTest.refreshAccessToken(TestUtils.CLIENT_ID))
+	    .withRootCauseInstanceOf(BadRequest.class);
     }
 
     @Test
