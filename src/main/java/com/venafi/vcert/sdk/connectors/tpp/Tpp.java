@@ -83,7 +83,11 @@ public interface Tpp {
 
   @RequestLine("POST Identity/Browse")
   @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
-  BrowseIdentityResponse getIdentity(IdentityRequest request, @Param("apiKey") String apiKey);
+  BrowseIdentitiesResponse browseIdentities(BrowseIdentitiesRequest request, @Param("apiKey") String apiKey);
+
+  @RequestLine("POST Identity/Validate")
+  @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
+  ValidateIdentityResponse validateIdentity(ValidateIdentityRequest request, @Param("apiKey") String apiKey);
 
   @RequestLine("POST SSHCertificates/request")
   @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})

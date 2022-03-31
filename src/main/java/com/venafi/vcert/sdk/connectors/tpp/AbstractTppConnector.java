@@ -9,9 +9,9 @@ import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
 import com.venafi.vcert.sdk.certificate.SshConfig;
 import com.venafi.vcert.sdk.connectors.ConnectorException.*;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.BrowseIdentityResponse;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.IdentityRequest;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.IdentityResponse;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.BrowseIdentitiesResponse;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.BrowseIdentitiesRequest;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.IdentityEntry;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.*;
 import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
 import lombok.AllArgsConstructor;
@@ -59,7 +59,6 @@ public abstract class AbstractTppConnector {
   protected TppAPI tppAPI;
 
   public AbstractTppConnector(Tpp tpp) {
-
     this.tpp = tpp;
     this.tppAPI = getTppAPI();
   }
@@ -120,26 +119,26 @@ public abstract class AbstractTppConnector {
   protected String[] resolveTPPContacts(String[] contacts) throws VCertException{
     List<String> identitiesIdList = new ArrayList<>();
     for (String contact: contacts) {
-      IdentityResponse identity = this.getTPPIdentity(contact);
+      IdentityEntry identity = this.getTPPIdentity(contact);
       identitiesIdList.add(identity.prefixedUniversal());
     }
     return identitiesIdList.toArray(new String[0]);
   }
 
-  public IdentityResponse getTPPIdentity(String username) throws VCertException{
+  public IdentityEntry getTPPIdentity(String username) throws VCertException{
     if (username == null){
       throw new VCertException("Identity string cannot be null");
     }
 
-    BrowseIdentityResponse response = getTppAPI().getIdentity(new IdentityRequest(username, 2,
-            IdentityRequest.ALL_IDENTITIES));
+    BrowseIdentitiesResponse response = getTppAPI().browseIdentities(new BrowseIdentitiesRequest(username, 2,
+            BrowseIdentitiesRequest.ALL_IDENTITIES));
 
     if (response.identities().length > 1){
       throw new VCertException("Extraneous information returned in the identity response. "
               + "Expected size: 1, found: 2\n" + response.identities()[1].toString());
     }
 
-    IdentityResponse identity = response.identities()[0];
+    IdentityEntry identity = response.identities()[0];
 
     return identity;
   }

@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-public class IdentityRequest {
+public class BrowseIdentitiesRequest {
   public static final int IDENTITY_USER = 1;
   public static final int IDENTITY_SECURITY_GROUP = 2;
   public static final int IDENTITY_DISTRIBUTION_GROUP = 8;

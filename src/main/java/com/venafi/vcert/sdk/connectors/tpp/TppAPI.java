@@ -78,8 +78,12 @@ public abstract class TppAPI {
         return tpp.clearPolicyAttribute(request, getAuthKey());
     }
 
-    BrowseIdentityResponse getIdentity(IdentityRequest request) throws VCertException{
-        return tpp.getIdentity(request, getAuthKey());
+    BrowseIdentitiesResponse browseIdentities(BrowseIdentitiesRequest request) throws VCertException{
+        return tpp.browseIdentities(request, getAuthKey());
+    }
+
+    ValidateIdentityResponse validateIdentity(ValidateIdentityRequest request) throws VCertException{
+        return tpp.validateIdentity(request, getAuthKey());
     }
 
     TppSshCertRequestResponse requestSshCertificate(TppSshCertRequest request) throws VCertException {

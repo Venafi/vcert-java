@@ -93,7 +93,11 @@ public interface TppToken extends Tpp{
 
   @RequestLine("POST Identity/Browse")
   @Headers({"Content-Type: application/json", "Authorization: {token}"})
-  BrowseIdentityResponse getIdentity(IdentityRequest request, @Param("token") String token);
+  BrowseIdentitiesResponse browseIdentities(BrowseIdentitiesRequest request, @Param("token") String token);
+
+  @RequestLine("POST Identity/Validate")
+  @Headers({"Content-Type: application/json", "Authorization: {token}"})
+  ValidateIdentityResponse validateIdentity(ValidateIdentityRequest request, @Param("token") String token);
 
   @RequestLine("POST /vedsdk/SSHCertificates/request")
   @Headers({"Content-Type: application/json", "Authorization: {token}"})

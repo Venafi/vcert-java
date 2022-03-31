@@ -4,8 +4,8 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 
 @Data
-public class BrowseIdentityResponse {
+public class ValidateIdentityResponse {
 
-  @SerializedName("Identities")
-  private IdentityResponse[] identities;
+    @SerializedName("ID")
+    private IdentityEntry id;
 }
