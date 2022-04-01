@@ -91,11 +91,11 @@ public interface TppToken extends Tpp{
   @Headers({"Content-Type: application/json", "Authorization: {token}"})
   Response clearPolicyAttribute(ClearPolicyAttributeRequest request, @Param("token") String token);
 
-  @RequestLine("POST Identity/Browse")
+  @RequestLine("POST /vedsdk/Identity/Browse")
   @Headers({"Content-Type: application/json", "Authorization: {token}"})
   BrowseIdentitiesResponse browseIdentities(BrowseIdentitiesRequest request, @Param("token") String token);
 
-  @RequestLine("POST Identity/Validate")
+  @RequestLine("POST /vedsdk/Identity/Validate")
   @Headers({"Content-Type: application/json", "Authorization: {token}"})
   ValidateIdentityResponse validateIdentity(ValidateIdentityRequest request, @Param("token") String token);
 
