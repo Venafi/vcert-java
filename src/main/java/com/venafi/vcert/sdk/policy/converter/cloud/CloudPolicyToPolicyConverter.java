@@ -30,6 +30,8 @@ public class CloudPolicyToPolicyConverter extends ToPolicyConverterAbstract<Clou
 
         processDefaults( policySpecification, cloudPolicy);
 
+        policySpecification.users(cloudPolicy.owners());
+
         return policySpecification;
     }
 

@@ -224,6 +224,18 @@ public class CloudConnectorUtils {
 
 	public static CloudPolicy getCloudPolicy( String policyName, String apiKey, Cloud cloud) throws VCertException{
 		CloudPolicy cloudPolicy = new CloudPolicy();
+		CloudZone zone = new CloudZone(policyName);
+
+		Application app = cloud.applicationByName(zone.appName(), apiKey);
+		if (app == null){
+			throw new VCertException("Application "+ zone.appName() + " could not be found");
+		}
+		List<String> usersList = new ArrayList<>();
+		for (OwnerIdsAndType owner: app.ownerIdsAndTypes()) {
+			User user = cloud.retrieveUserById(owner.ownerId(), apiKey);
+			usersList.add(user.username());
+		}
+		cloudPolicy.owners(usersList.toArray(new String[0]));
 
 		CertificateIssuingTemplate cit = getPolicy(policyName, apiKey, cloud);
 		cloudPolicy.certificateIssuingTemplate( cit );
