@@ -47,11 +47,9 @@ public interface Tpp {
   @Headers({"Content-Type: application/json", "x-venafi-api-key: {value}"})
   Tpp.CertificateRevokeResponse revokeCertificate(TppConnector.CertificateRevokeRequest request, @Param("value") String value);
 
-
   @RequestLine("POST certificates/renew")
   @Headers({"Content-Type: application/json", "x-venafi-api-key: {value}"})
   Tpp.CertificateRenewalResponse renewCertificate(TppConnector.CertificateRenewalRequest request, @Param("value") String value);
-
 
   @RequestLine("POST certificates/import")
   @Headers({"Content-Type: application/json", "x-venafi-api-key: {value}"})
@@ -84,7 +82,15 @@ public interface Tpp {
   @RequestLine("POST Config/ClearPolicyAttribute")
   @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
   Response clearPolicyAttribute(ClearPolicyAttributeRequest request, @Param("apiKey") String apiKey);
-  
+
+  @RequestLine("POST Identity/Browse")
+  @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
+  BrowseIdentitiesResponse browseIdentities(BrowseIdentitiesRequest request, @Param("apiKey") String apiKey);
+
+  @RequestLine("POST Identity/Validate")
+  @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
+  ValidateIdentityResponse validateIdentity(ValidateIdentityRequest request, @Param("apiKey") String apiKey);
+
   @RequestLine("POST SSHCertificates/request")
   @Headers({"Content-Type: application/json", "X-Venafi-Api-Key: {apiKey}"})
   TppSshCertRequestResponse requestSshCertificate(TppSshCertRequest request, @Param("apiKey") String apiKey);
@@ -118,82 +124,6 @@ public interface Tpp {
   @RequestLine("GET /vedauth/revoke/token")
   @Headers("Authorization: {token}")
   Response revokeToken(@Param("token") String token);
-
-  @RequestLine("POST /vedsdk/certificates/checkpolicy")
-  @Headers({"Content-Type: application/json", "Authorization: {value}"})
-  TppConnector.ReadZoneConfigurationResponse readZoneConfigurationToken(
-          TppConnector.ReadZoneConfigurationRequest readZoneConfigurationRequest, @Param("value") String value);
-
-  @RequestLine("POST /vedsdk/certificates/request")
-  @Headers({"Content-Type: application/json", "Authorization: {value}"})
-  CertificateRequestResponse requestCertificateToken(TppConnector.CertificateRequestsPayload payload, @Param("value") String value);
-
-  @RequestLine("GET /vedsdk/certificates/")
-  @Headers("Authorization: {value}")
-  Tpp.CertificateSearchResponse searchCertificatesToken(@QueryMap Map<String, String> query, @Param("value") String value);
-
-  @RequestLine("POST /vedsdk/certificates/retrieve")
-  @Headers({"Content-Type: application/json", "Authorization: {value}"})
-  CertificateRetrieveResponse certificateRetrieveToken(
-          TppConnector.CertificateRetrieveRequest certificateRetrieveRequest, @Param("value") String value);
-
-  @RequestLine("POST /vedsdk/certificates/revoke")
-  @Headers({"Content-Type: application/json", "Authorization: {value}"})
-  Tpp.CertificateRevokeResponse revokeCertificateToken(TppConnector.CertificateRevokeRequest request, @Param("value") String value);
-
-
-  @RequestLine("POST /vedsdk/certificates/renew")
-  @Headers({"Content-Type: application/json", "Authorization: {value}"})
-  Tpp.CertificateRenewalResponse renewCertificateToken(TppConnector.CertificateRenewalRequest request, @Param("value") String value);
-
-
-  @RequestLine("POST /vedsdk/certificates/import")
-  @Headers({"Content-Type: application/json", "Authorization: {value}"})
-  ImportResponse importCertificateToken(ImportRequest request, @Param("value") String value);
-
-  @RequestLine("GET /vedsdk")
-  @Headers("Authorization: {value}")
-  Response pingToken(@Param("value") String value);
-
-  @RequestLine("POST /vedsdk/Config/IsValid")
-  @Headers({"Content-Type: application/json", "Authorization: {token}"})
-  DNIsValidResponse dnIsValidToken(DNIsValidRequest request, @Param("token") String token);
-
-  @RequestLine("POST /vedsdk/Config/Create")
-  @Headers({"Content-Type: application/json", "Authorization: {token}"})
-  CreateDNResponse createDNToken(CreateDNRequest request, @Param("token") String token);
-
-  @RequestLine("POST /vedsdk/Config/WritePolicy")
-  @Headers({"Content-Type: application/json", "Authorization: {token}"})
-  SetPolicyAttributeResponse setPolicyAttributeToken(SetPolicyAttributeRequest request, @Param("token") String token);
-
-  @RequestLine("POST /vedsdk/Config/ReadPolicy")
-  @Headers({"Content-Type: application/json", "Authorization: {token}"})
-  GetPolicyAttributeResponse getPolicyAttributeToken(GetPolicyAttributeRequest request, @Param("token") String token);
-
-  @RequestLine("POST /vedsdk/Certificates/CheckPolicy")
-  @Headers({"Content-Type: application/json", "Authorization: {token}"})
-  GetPolicyResponse getPolicyToken(GetPolicyRequest request, @Param("token") String token);
-
-  @RequestLine("POST /vedsdk/Config/ClearPolicyAttribute")
-  @Headers({"Content-Type: application/json", "Authorization: {token}"})
-  Response clearPolicyAttributeToken(ClearPolicyAttributeRequest request, @Param("token") String token);
-  
-  @RequestLine("POST /vedsdk/SSHCertificates/request")
-  @Headers({"Content-Type: application/json", "Authorization: {token}"})
-  TppSshCertRequestResponse requestSshCertificateToken(TppSshCertRequest request, @Param("token") String token);
-  
-  @RequestLine("POST /vedsdk/SSHCertificates/retrieve")
-  @Headers({"Content-Type: application/json", "Authorization: {token}"})
-  TppSshCertRetrieveResponse retrieveSshCertificateToken(TppSshCertRetrieveRequest request, @Param("token") String token);
-  
-  @RequestLine("GET /vedsdk/SSHCertificates/Template/Retrieve/PublicKeyData")
-  @Headers({"Content-Type: text/plain"})
-  Response retrieveSshCAPublicKeyDataToken(@QueryMap Map<String, String> params);
-  
-  @RequestLine("POST vedsdk/SSHCertificates/Template/Retrieve")
-  @Headers({"Content-Type: application/json", "Authorization: {token}"})
-  TppSshCaTemplateResponse retrieveSshCATemplateToken(TppSshCaTemplateRequest request, @Param("token") String token);
 
   //=================================================================================================\
 

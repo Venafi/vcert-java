@@ -307,9 +307,46 @@ public class TppConnectorUtils {
 
 			//Prohibited SAN Types
 			setProhibitedSANTypes(tppPolicy, policyResponse);
+
+			// Resolve contact names
+			String[] usernames = TppConnectorUtils.retrieveUsernamesFromTPPContacts(tppPolicy.policyName(), tppAPI);
+			tppPolicy.contact(usernames);
 		}
 
 		return tppPolicy;
+	}
+
+	private static String[] retrieveUsernamesFromTPPContacts(String policyName, TppAPI tppAPI) throws VCertException{
+		GetPolicyAttributeResponse contactResponse;
+		List<String> usersList = new ArrayList<>();
+
+		try{
+			contactResponse = tppAPI.getPolicyAttribute(new GetPolicyAttributeRequest(policyName,
+					TppPolicyConstants.TPP_CONTACT));
+		} catch (Exception e) {
+			throw new VCertException(e);
+		}
+		if (contactResponse != null && contactResponse.error() != null){
+			throw new VCertException(contactResponse.error());
+		}
+		if (contactResponse.values() != null) {
+			String[] contacts = (String[]) contactResponse.values();
+			for (String prefixedUniversal : contacts) {
+				try{
+					ValidateIdentityResponse response = tppAPI.validateIdentity(
+							new ValidateIdentityRequest(
+									new IdentityInformation(prefixedUniversal)
+							)
+					);
+					String username = response.id().name();
+					usersList.add(username);
+				} catch (Exception e) {
+					throw new VCertException(e);
+				}
+			}
+		}
+
+		return usersList.toArray(new String[0]);
 	}
 
 	public static void setProhibitedSANTypes( TPPPolicy tppPolicy, PolicyResponse policyResponse ) {

@@ -11,10 +11,7 @@ import com.venafi.vcert.sdk.connectors.ConnectorException.KeyStoreZipEntriesExce
 import com.venafi.vcert.sdk.connectors.ConnectorException.PolicyMatchException;
 import com.venafi.vcert.sdk.connectors.cloud.CloudConnector.CsrAttributes;
 import com.venafi.vcert.sdk.connectors.cloud.CloudConnector.SubjectAlternativeNamesByType;
-import com.venafi.vcert.sdk.connectors.cloud.domain.Application;
-import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
-import com.venafi.vcert.sdk.connectors.cloud.domain.CloudZone;
-import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
+import com.venafi.vcert.sdk.connectors.cloud.domain.*;
 import com.venafi.vcert.sdk.connectors.cloud.endpoint.*;
 import com.venafi.vcert.sdk.connectors.cloud.endpoint.CAAccount.ProductOption;
 import com.venafi.vcert.sdk.policy.api.domain.CloudPolicy;
@@ -39,7 +36,8 @@ import org.bouncycastle.openssl.PEMParser;
 
 public class CloudConnectorUtils {
 
-    public static void setCit(String policyName, CertificateIssuingTemplate cit, CloudPolicy.CAInfo caInfo, String apiKey, Cloud cloud) throws VCertException {
+    public static void setCit(String policyName, CertificateIssuingTemplate cit, CloudPolicy.CAInfo caInfo,
+							  String[] usersList, String apiKey, Cloud cloud) throws VCertException {
 
         CloudZone cloudZone = new CloudZone(policyName);
         cit.name(cloudZone.citAlias());
@@ -74,7 +72,7 @@ public class CloudConnectorUtils {
             cit.id( createCIT(cit, apiKey, cloud));
         }
 
-        setCitToApp(policyName, cit, apiKey, cloud);
+        setCitToApp(policyName, cit, usersList, apiKey, cloud);
     }
 
     public static CAAccountInfo getCAAccountInfo(CloudPolicy.CAInfo caInfo, String apiKey, Cloud cloud) throws VCertException {
@@ -124,7 +122,8 @@ public class CloudConnectorUtils {
         return response.certificateIssuingTemplates().get(0).id();
     }
 
-    public static void setCitToApp(String policyName, CertificateIssuingTemplate cit/*, CloudPolicy.CAInfo caInfo*/, String apiKey, Cloud cloud) throws VCertException {
+    public static void setCitToApp(String policyName, CertificateIssuingTemplate cit, String[] usersList, String apiKey,
+								   Cloud cloud) throws VCertException {
         //getting the cloud zone
         CloudZone zone = new CloudZone(policyName);
 
@@ -141,35 +140,30 @@ public class CloudConnectorUtils {
         // then it will needed to create it
         if( application == null )
             //create the application and related it with the cit
-            createAppForCit(cit, zone.appName(), apiKey, cloud);
+            createAppForCit(cit, zone.appName(), usersList, apiKey, cloud);
         else //update the application with the relation to the cit if that is not existing
-            addCitToApp(cit, application, apiKey, cloud);
+            addCitToApp(cit, application, usersList, apiKey, cloud);
     }
 
-    private static void createAppForCit(CertificateIssuingTemplate cit, String appName, String apiKey, Cloud cloud) throws VCertException {
-        UserDetails userDetails = cloud.authorize(apiKey);
-
-        String userId = userDetails.user().id();
-
+    private static void createAppForCit(CertificateIssuingTemplate cit, String appName, String[] usersList,
+										String apiKey, Cloud cloud) throws VCertException {
         Application application = new Application();
 
-        Application.OwnerIdsAndType ownerIdsAndType = new Application.OwnerIdsAndType();
-        ownerIdsAndType.ownerId(userId);
-        ownerIdsAndType.ownerType("USER");
-        List<Application.OwnerIdsAndType> ownerIdsAndTypes = new ArrayList<>();
-        ownerIdsAndTypes.add(ownerIdsAndType);
+		// Obtaining the owners from the user list
+		List<Application.OwnerIdsAndType> ownersList = CloudConnectorUtils.resolveOwners(usersList, apiKey, cloud);
 
         Map<String, String> citAliasIdMap = new HashMap<>();
         citAliasIdMap.put(cit.name(), cit.id());
 
         application.name(appName);
-        application.ownerIdsAndTypes(ownerIdsAndTypes);
+        application.ownerIdsAndTypes(ownersList);
         application.certificateIssuingTemplateAliasIdMap(citAliasIdMap);
 
         cloud.createApplication(application, apiKey);
     }
 
-    private static void addCitToApp(CertificateIssuingTemplate cit, Application application, String apiKey, Cloud cloud) throws VCertException {
+    private static void addCitToApp(CertificateIssuingTemplate cit, Application application, String[] usersList,
+									String apiKey, Cloud cloud) throws VCertException {
         Map<String, String> citAliasIdMap = null;
 
         if ( application.certificateIssuingTemplateAliasIdMap() != null )
@@ -179,27 +173,77 @@ public class CloudConnectorUtils {
             application.certificateIssuingTemplateAliasIdMap( citAliasIdMap );
         }
 
-        //if the App doesn't contains the relation to the cit
+        //if the App doesn't contain the relation to the cit
         if ( !citAliasIdMap.containsKey(cit.name()) ) {
             //adding the reference to the cit
             citAliasIdMap.put(cit.name(), cit.id());
 
-            //getting the appId because it will used to invoke the API to update the related Application
+            //getting the appId because it will be used to invoke the API to update the related Application
             String appId = application.id();
 
-            //The id, companyId, fqDns and internalFqDns needs to be null in the request to update the Application
-            // so therefore these attributes are set to null
+            //The id, companyId, fqDns and internalFqDns needs to be null in the request to update the Application,
+            //therefore these attributes are set to null
             application.id(null);
             application.companyId(null);
             application.fqDns(null);
             application.internalFqDns(null);
 
+			// Updating the owners list
+			List<Application.OwnerIdsAndType> ownersList =  CloudConnectorUtils.resolveOwners(usersList, apiKey, cloud);
+			application.ownerIdsAndTypes(ownersList);
+
             cloud.updateApplication(application, appId, apiKey);
         }
     }
 
+	private static List<Application.OwnerIdsAndType> resolveOwners(String[] usersList, String apiKey, Cloud cloud) {
+		List<Application.OwnerIdsAndType> ownersList = new ArrayList<>();
+
+		// Adding the current user to the owners list
+		UserDetails userDetails = cloud.authorize(apiKey);
+		String userId = userDetails.user().id();
+		Application.OwnerIdsAndType currentOwner = new Application.OwnerIdsAndType();
+		currentOwner.ownerId(userId);
+		currentOwner.ownerType(CloudConstants.OWNER_TYPE_USER);
+		ownersList.add(currentOwner);
+
+		// Resolving the usernames list
+		if (usersList != null) {
+			for (String username: usersList) {
+				UserResponse response = cloud.retrieveUser(username, apiKey);
+				// If the name matches a user, create the entry
+				if (response != null) {
+					Application.OwnerIdsAndType owner = new Application.OwnerIdsAndType();
+					owner.ownerId(response.users().get(0).id());
+					owner.ownerType(CloudConstants.OWNER_TYPE_USER);
+					ownersList.add(owner);
+				}else{
+					// TODO: Logic to find Teams by name is not available at VaaS. Update when ready.
+				}
+			}
+		}
+
+		return ownersList;
+	}
+
     public static CloudPolicy getCloudPolicy( String policyName, String apiKey, Cloud cloud) throws VCertException{
         CloudPolicy cloudPolicy = new CloudPolicy();
+		CloudZone zone = new CloudZone(policyName);
+
+		Application app = cloud.applicationByName(zone.appName(), apiKey);
+		if (app == null){
+			throw new VCertException("Application "+ zone.appName() + " could not be found");
+		}
+		List<String> usersList = new ArrayList<>();
+		for (Application.OwnerIdsAndType owner: app.ownerIdsAndTypes()) {
+			if (owner.ownerType().equals(CloudConstants.OWNER_TYPE_USER)) {
+				User user = cloud.retrieveUserById(owner.ownerId(), apiKey);
+				usersList.add(user.username());
+			}else if (owner.ownerType().equals(CloudConstants.OWNER_TYPE_TEAM)) {
+				// TODO: Include Teams logic here when supported by VaaS API.
+			}
+		}
+		cloudPolicy.owners(usersList.toArray(new String[0]));
 
         CertificateIssuingTemplate cit = getPolicy(policyName, apiKey, cloud);
         cloudPolicy.certificateIssuingTemplate( cit );

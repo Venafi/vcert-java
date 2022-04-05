@@ -9,11 +9,7 @@ import java.util.regex.Pattern;
 
 import com.venafi.vcert.sdk.Config;
 import com.venafi.vcert.sdk.certificate.CertificateStatus;
-import com.venafi.vcert.sdk.connectors.cloud.domain.Application;
-import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateDetails;
-import com.venafi.vcert.sdk.connectors.cloud.domain.CertificateIssuingTemplate;
-import com.venafi.vcert.sdk.connectors.cloud.domain.EdgeEncryptionKey;
-import com.venafi.vcert.sdk.connectors.cloud.domain.UserDetails;
+import com.venafi.vcert.sdk.connectors.cloud.domain.*;
 import com.venafi.vcert.sdk.connectors.cloud.endpoint.*;
 import com.venafi.vcert.sdk.utils.FeignUtils;
 
@@ -109,6 +105,14 @@ public interface Cloud {
   @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
   @RequestLine("POST /outagedetection/v1/certificates/{id}/keystore")
   Response retrieveKeystore(@Param("id") String id, KeystoreRequest keystoreRequest, @Param("apiKey") String apiKey);
+
+  @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+  @RequestLine("GET /v1/users/username/{username}")
+  UserResponse retrieveUser(@Param("username") String username, @Param("apiKey") String apiKey);
+
+  @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+  @RequestLine("GET /v1/users/{id}")
+  User retrieveUserById(@Param("id") String id, @Param("apiKey") String apiKey);
 
   static Cloud connect() {
 	  return connect((Config)null);

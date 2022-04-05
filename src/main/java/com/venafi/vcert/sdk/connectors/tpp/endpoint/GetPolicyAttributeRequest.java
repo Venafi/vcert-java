@@ -15,6 +15,4 @@ public class GetPolicyAttributeRequest {
     private final String objectClass = TppPolicyConstants.POLICY_ATTRIBUTE_CLASS;
     @SerializedName("AttributeName")
     private final String attributeName;
-    @SerializedName("Values")
-    private final Object[] values = {"1"};
 }
