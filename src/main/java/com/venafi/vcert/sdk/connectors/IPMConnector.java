@@ -3,7 +3,7 @@ package com.venafi.vcert.sdk.connectors;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 
-public interface PolicyManagementInterface {
+public interface IPMConnector {
 
   /**
    * Reads the policy configuration for a specific zone in Venafi

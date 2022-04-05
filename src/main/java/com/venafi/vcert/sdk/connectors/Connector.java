@@ -12,7 +12,7 @@ import com.venafi.vcert.sdk.endpoint.ConnectorType;
  * This represents the connector to TPP or Cloud 
  *
  */
-public interface Connector extends PolicyManagementInterface, SSHInterface{
+public interface Connector extends IPMConnector, ISSHConnector {
 
 	Authentication getCredentials();
 
