@@ -6,6 +6,7 @@ import com.venafi.vcert.sdk.connectors.tpp.endpoint.IdentityEntry;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.IdentityInformation;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ValidateIdentityRequest;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ValidateIdentityResponse;
+import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,5 +45,20 @@ public class TppTokenConnectorPolicyAT {
         );
         Assertions.assertNotNull(response);
         Assertions.assertEquals(username, response.id().name());
+    }
+
+    @Test
+    @DisplayName("TPP - Create a policy with contacts and retrieve it")
+    public void createAndGetPolicyContacts() throws VCertException {
+        TppTokenConnector connector = connectorResource.connector();
+
+        PolicySpecification policySpecification = TppTestUtils.getPolicySpecification();
+        policySpecification.users(new String[]{"osstestuser"});
+        String zone = TppTestUtils.getRandomZone();
+        connector.setPolicy(zone, policySpecification);
+        PolicySpecification psReturned = connector.getPolicy(zone);
+
+        Assertions.assertEquals(1, psReturned.users().length);
+        Assertions.assertEquals("osstestuser", psReturned.users()[0]);
     }
 }

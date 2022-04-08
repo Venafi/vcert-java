@@ -2,28 +2,11 @@ package com.venafi.vcert.sdk.connectors.tpp;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import java.util.Map;
-
-import com.google.common.io.CharStreams;
 import com.venafi.vcert.sdk.VCertException;
-import com.venafi.vcert.sdk.certificate.ImportRequest;
-import com.venafi.vcert.sdk.certificate.ImportResponse;
 import com.venafi.vcert.sdk.connectors.ConnectorException.FailedToRevokeTokenException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingAccessTokenException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingRefreshTokenException;
 import com.venafi.vcert.sdk.connectors.TokenConnector;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRenewalResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRequestResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRetrieveResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRevokeResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateSearchResponse;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCaTemplateRequest;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCaTemplateResponse;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequest;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequestResponse;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveRequest;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveResponse;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 

@@ -199,16 +199,19 @@ public class CloudConnectorUtils {
 	private static List<Application.OwnerIdsAndType> resolveOwners(String[] usersList, String apiKey, Cloud cloud) {
 		List<Application.OwnerIdsAndType> ownersList = new ArrayList<>();
 
-		// Adding the current user to the owners list
-		UserDetails userDetails = cloud.authorize(apiKey);
-		String userId = userDetails.user().id();
-		Application.OwnerIdsAndType currentOwner = new Application.OwnerIdsAndType();
-		currentOwner.ownerId(userId);
-		currentOwner.ownerType(CloudConstants.OWNER_TYPE_USER);
-		ownersList.add(currentOwner);
-
-		// Resolving the usernames list
-		if (usersList != null) {
+		if (usersList == null) {
+			// When no user is provided on the list, adds the current one as owner
+			UserDetails userDetails = cloud.authorize(apiKey);
+			String userId = userDetails.user().id();
+			Application.OwnerIdsAndType currentOwner = new Application.OwnerIdsAndType();
+			currentOwner.ownerId(userId);
+			currentOwner.ownerType(CloudConstants.OWNER_TYPE_USER);
+			ownersList.add(currentOwner);
+		}
+		else {
+			// Resolving the usernames list
+			// Creating a higher level Teams object to cache the response.
+			Teams tResponse = null;
 			for (String username: usersList) {
 				UserResponse response = cloud.retrieveUser(username, apiKey);
 				// If the name matches a user, create the entry
@@ -218,11 +221,24 @@ public class CloudConnectorUtils {
 					owner.ownerType(CloudConstants.OWNER_TYPE_USER);
 					ownersList.add(owner);
 				}else{
-					// TODO: Logic to find Teams by name is not available at VaaS. Update when ready.
+					if (tResponse == null) {
+						tResponse = cloud.retrieveTeams(apiKey);
+					}
+					if (tResponse != null) {
+						for (Team t : tResponse.teams()) {
+							if (t.name().equals(username)) {
+								Application.OwnerIdsAndType owner = new Application.OwnerIdsAndType();
+								owner.ownerId(t.id());
+								owner.ownerType(CloudConstants.OWNER_TYPE_TEAM);
+								ownersList.add(owner);
+								break;
+							}
+						}
+					}
+
 				}
 			}
 		}
-
 		return ownersList;
 	}
 
@@ -235,12 +251,25 @@ public class CloudConnectorUtils {
 			throw new VCertException("Application "+ zone.appName() + " could not be found");
 		}
 		List<String> usersList = new ArrayList<>();
+		Teams tResponse = null;
 		for (Application.OwnerIdsAndType owner: app.ownerIdsAndTypes()) {
 			if (owner.ownerType().equals(CloudConstants.OWNER_TYPE_USER)) {
 				User user = cloud.retrieveUserById(owner.ownerId(), apiKey);
 				usersList.add(user.username());
 			}else if (owner.ownerType().equals(CloudConstants.OWNER_TYPE_TEAM)) {
-				// TODO: Include Teams logic here when supported by VaaS API.
+				if (tResponse == null){
+					// This validation caches the teams list, so we don't have to call
+					// the teams' endpoint multiple times when iterating owners of type TEAM
+					tResponse = cloud.retrieveTeams(apiKey);
+				}
+				if (tResponse != null){
+					for (Team t : tResponse.teams()) {
+						if (t.id().equals(owner.ownerId())){
+							usersList.add(t.name());
+							break;
+						}
+					}
+				}
 			}
 		}
 		cloudPolicy.owners(usersList.toArray(new String[0]));

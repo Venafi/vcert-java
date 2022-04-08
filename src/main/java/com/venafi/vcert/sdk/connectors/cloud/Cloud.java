@@ -114,6 +114,10 @@ public interface Cloud {
   @RequestLine("GET /v1/users/{id}")
   User retrieveUserById(@Param("id") String id, @Param("apiKey") String apiKey);
 
+  @Headers({"tppl-api-key: {apiKey}", "Content-Type: application/json"})
+  @RequestLine("GET /v1/teams")
+  Teams retrieveTeams(@Param("apiKey") String apiKey);
+
   static Cloud connect() {
 	  return connect((Config)null);
   }

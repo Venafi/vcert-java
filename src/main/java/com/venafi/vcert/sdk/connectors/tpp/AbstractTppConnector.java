@@ -125,9 +125,11 @@ public abstract class AbstractTppConnector {
 
     protected String[] resolveTPPContacts(String[] contacts) throws VCertException{
         List<String> identitiesIdList = new ArrayList<>();
-        for (String contact: contacts) {
-            IdentityEntry identity = this.getTPPIdentity(contact);
-            identitiesIdList.add(identity.prefixedUniversal());
+        if (contacts != null){
+            for (String contact: contacts) {
+                IdentityEntry identity = this.getTPPIdentity(contact);
+                identitiesIdList.add(identity.prefixedUniversal());
+            }
         }
         return identitiesIdList.toArray(new String[0]);
     }

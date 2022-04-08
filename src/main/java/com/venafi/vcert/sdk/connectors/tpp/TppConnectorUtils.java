@@ -330,12 +330,12 @@ public class TppConnectorUtils {
 			throw new VCertException(contactResponse.error());
 		}
 		if (contactResponse.values() != null) {
-			String[] contacts = (String[]) contactResponse.values();
-			for (String prefixedUniversal : contacts) {
+			Object[] contacts = contactResponse.values();
+			for (Object prefixedUniversal : contacts) {
 				try{
 					ValidateIdentityResponse response = tppAPI.validateIdentity(
 							new ValidateIdentityRequest(
-									new IdentityInformation(prefixedUniversal)
+									new IdentityInformation((String)prefixedUniversal)
 							)
 					);
 					String username = response.id().name();
