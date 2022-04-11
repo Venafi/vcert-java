@@ -150,7 +150,7 @@ public class CloudConnectorUtils {
         Application application = new Application();
 
 		// Obtaining the owners from the user list
-		List<Application.OwnerIdsAndType> ownersList = CloudConnectorUtils.resolveOwners(usersList, apiKey, cloud);
+		List<Application.OwnerIdsAndType> ownersList = CloudConnectorUtils.resolveUsersToCloudOwners(usersList, apiKey, cloud);
 
         Map<String, String> citAliasIdMap = new HashMap<>();
         citAliasIdMap.put(cit.name(), cit.id());
@@ -189,24 +189,21 @@ public class CloudConnectorUtils {
             application.internalFqDns(null);
 
 			// Updating the owners list
-			List<Application.OwnerIdsAndType> ownersList =  CloudConnectorUtils.resolveOwners(usersList, apiKey, cloud);
+			List<Application.OwnerIdsAndType> ownersList =  CloudConnectorUtils.resolveUsersToCloudOwners(usersList, apiKey, cloud);
 			application.ownerIdsAndTypes(ownersList);
 
             cloud.updateApplication(application, appId, apiKey);
         }
     }
 
-	private static List<Application.OwnerIdsAndType> resolveOwners(String[] usersList, String apiKey, Cloud cloud) {
+	private static List<Application.OwnerIdsAndType> resolveUsersToCloudOwners(String[] usersList, String apiKey, Cloud cloud) {
 		List<Application.OwnerIdsAndType> ownersList = new ArrayList<>();
 
 		if (usersList == null) {
 			// When no user is provided on the list, adds the current one as owner
 			UserDetails userDetails = cloud.authorize(apiKey);
-			String userId = userDetails.user().id();
-			Application.OwnerIdsAndType currentOwner = new Application.OwnerIdsAndType();
-			currentOwner.ownerId(userId);
-			currentOwner.ownerType(CloudConstants.OWNER_TYPE_USER);
-			ownersList.add(currentOwner);
+			Application.OwnerIdsAndType owner = createOwner(CloudConstants.OWNER_TYPE_USER, userDetails.user().id());
+			ownersList.add(owner);
 		}
 		else {
 			// Resolving the usernames list
@@ -216,20 +213,16 @@ public class CloudConnectorUtils {
 				UserResponse response = cloud.retrieveUser(username, apiKey);
 				// If the name matches a user, create the entry
 				if (response != null) {
-					Application.OwnerIdsAndType owner = new Application.OwnerIdsAndType();
-					owner.ownerId(response.users().get(0).id());
-					owner.ownerType(CloudConstants.OWNER_TYPE_USER);
+					Application.OwnerIdsAndType owner = createOwner(CloudConstants.OWNER_TYPE_USER, response.users().get(0).id());
 					ownersList.add(owner);
-				}else{
+				} else {
 					if (tResponse == null) {
 						tResponse = cloud.retrieveTeams(apiKey);
 					}
 					if (tResponse != null) {
 						for (Team t : tResponse.teams()) {
 							if (t.name().equals(username)) {
-								Application.OwnerIdsAndType owner = new Application.OwnerIdsAndType();
-								owner.ownerId(t.id());
-								owner.ownerType(CloudConstants.OWNER_TYPE_TEAM);
+								Application.OwnerIdsAndType owner = createOwner(CloudConstants.OWNER_TYPE_TEAM, t.id());
 								ownersList.add(owner);
 								break;
 							}
@@ -242,8 +235,27 @@ public class CloudConnectorUtils {
 		return ownersList;
 	}
 
+	public static Application.OwnerIdsAndType createOwner(String type, String id) {
+		Application.OwnerIdsAndType owner = new Application.OwnerIdsAndType();
+		owner.ownerType(type);
+		owner.ownerId(id);
+		return owner;
+	}
+
     public static CloudPolicy getCloudPolicy( String policyName, String apiKey, Cloud cloud) throws VCertException{
         CloudPolicy cloudPolicy = new CloudPolicy();
+
+		String[] usersList = resolveCloudOwnersNames(policyName, apiKey, cloud);
+		cloudPolicy.owners(usersList);
+
+        CertificateIssuingTemplate cit = getPolicy(policyName, apiKey, cloud);
+        cloudPolicy.certificateIssuingTemplate( cit );
+        cloudPolicy.caInfo(getCAInfo( cit, apiKey, cloud ));
+
+        return cloudPolicy;
+    }
+
+    private static String[] resolveCloudOwnersNames(String policyName, String apiKey, Cloud cloud) throws VCertException {
 		CloudZone zone = new CloudZone(policyName);
 
 		Application app = cloud.applicationByName(zone.appName(), apiKey);
@@ -256,7 +268,7 @@ public class CloudConnectorUtils {
 			if (owner.ownerType().equals(CloudConstants.OWNER_TYPE_USER)) {
 				User user = cloud.retrieveUserById(owner.ownerId(), apiKey);
 				usersList.add(user.username());
-			}else if (owner.ownerType().equals(CloudConstants.OWNER_TYPE_TEAM)) {
+			} else if (owner.ownerType().equals(CloudConstants.OWNER_TYPE_TEAM)) {
 				if (tResponse == null){
 					// This validation caches the teams list, so we don't have to call
 					// the teams' endpoint multiple times when iterating owners of type TEAM
@@ -272,14 +284,9 @@ public class CloudConnectorUtils {
 				}
 			}
 		}
-		cloudPolicy.owners(usersList.toArray(new String[0]));
 
-        CertificateIssuingTemplate cit = getPolicy(policyName, apiKey, cloud);
-        cloudPolicy.certificateIssuingTemplate( cit );
-        cloudPolicy.caInfo(getCAInfo( cit, apiKey, cloud ));
-
-        return cloudPolicy;
-    }
+		return usersList.toArray(new String[0]);
+	}
 
     private static CertificateIssuingTemplate getPolicy(String policyName, String apiKey, Cloud cloud) throws VCertException {
 
