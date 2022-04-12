@@ -117,7 +117,7 @@ public class CloudConnectorPolicyAT {
 		connector.setPolicy(policyName, policySpecification);
 		PolicySpecification psReturned = connector.getPolicy(policyName);
 
-		Assertions.assertEquals(3, psReturned.users().length);
+		Assertions.assertEquals(2, psReturned.users().length);
 		Assertions.assertEquals("pki-admin@opensource.qa.venafi.io", psReturned.users()[0]);
 		Assertions.assertEquals("resource-owner@opensource.qa.venafi.io", psReturned.users()[1]);
 	}
