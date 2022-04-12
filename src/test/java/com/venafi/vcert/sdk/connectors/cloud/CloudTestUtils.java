@@ -14,6 +14,7 @@ public class CloudTestUtils {
 
     public static PolicySpecification getPolicySpecification() {
         PolicySpecification policySpecification = PolicySpecification.builder()
+                .users(new String[]{"jenkins@opensource.qa.venafi.io"})
                 .policy( Policy.builder()
                         .domains(new String[]{"venafi.com","kwan.com"})
                         .maxValidDays(120)
