@@ -6,6 +6,5 @@ import lombok.Data;
 @Data
 public class BrowseIdentitiesResponse {
 
-    @SerializedName("Identities")
     private IdentityEntry[] identities;
 }

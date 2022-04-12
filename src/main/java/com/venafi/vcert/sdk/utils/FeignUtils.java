@@ -14,6 +14,7 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
+import com.venafi.vcert.sdk.connectors.tpp.TppToken;
 import feign.Client;
 import feign.Feign;
 import feign.Logger;
@@ -54,7 +55,7 @@ public class FeignUtils {
 
   private static <T> GsonBuilder gsonBuilderFor(Class<T> clazz) {
     GsonBuilder builder = gsonBuilderFactory.get();
-    if (Tpp.class.equals(clazz)) {
+    if (Tpp.class.equals(clazz) || TppToken.class.equals(clazz)) {
       builder.setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE);
     }
     return builder;

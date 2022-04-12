@@ -8,6 +8,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class IdentityInformation {
 
-    @SerializedName("PrefixedUniversal")
     private String prefixedUniversal;
 }

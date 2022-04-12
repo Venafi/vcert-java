@@ -12,9 +12,7 @@ public class BrowseIdentitiesRequest {
     public static final int IDENTITY_DISTRIBUTION_GROUP = 8;
     public static final int ALL_IDENTITIES = IDENTITY_USER + IDENTITY_SECURITY_GROUP + IDENTITY_DISTRIBUTION_GROUP;
 
-    @SerializedName("Filter")
     private final String filter;
-    @SerializedName("Limit")
     private final int limit;
     @SerializedName("IdentityType")
     private final int type;
