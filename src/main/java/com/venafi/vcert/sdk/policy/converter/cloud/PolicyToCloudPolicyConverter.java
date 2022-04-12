@@ -33,6 +33,8 @@ public class PolicyToCloudPolicyConverter implements FromPolicyConverter<CloudPo
 
         cloudPolicy.certificateIssuingTemplate(cit);
 
+        cloudPolicy.owners(policySpecification.users());
+
         cit.certificateAuthority(caInfo.caType());
 
         cit.product( new CertificateIssuingTemplate.Product(caInfo.caType(), caInfo.vendorProductName(), getValidityPeriod( policy ), null, null, null) );

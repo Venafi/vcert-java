@@ -163,12 +163,8 @@ public class TppConnector extends AbstractTppConnector implements Connector {
       if(credentials == null){
           return true;
       }
-      
-      if( isBlank(credentials.user()) || isBlank(credentials.password())) {
-      	return true;
-      }
 
-      return false;
+    return isBlank(credentials.user()) || isBlank(credentials.password());
   }
 
   @Override
@@ -482,6 +478,8 @@ public class TppConnector extends AbstractTppConnector implements Connector {
   public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
     try {
       TPPPolicy tppPolicy = TPPPolicySpecificationConverter.INSTANCE.convertFromPolicySpecification(policySpecification);
+      String[] identitiesList = this.resolveTPPContacts(tppPolicy.contact());
+      tppPolicy.contact(identitiesList);
       setPolicy(policyName, tppPolicy);
     }catch (Exception e){
       throw new VCertException(e);
@@ -535,106 +533,6 @@ public class TppConnector extends AbstractTppConnector implements Connector {
 
           return apiKey();
         }
-        
-        @Override
-		Response ping() throws VCertException {
-			return tpp.ping(getAuthKey());
-		}
-        
-    	@Override
-		ReadZoneConfigurationResponse readZoneConfiguration(ReadZoneConfigurationRequest request)
-				throws VCertException {
-			return tpp.readZoneConfiguration(request, getAuthKey());
-		}
-
-		@Override
-		CertificateRequestResponse requestCertificate(CertificateRequestsPayload payload) throws VCertException {
-			return tpp.requestCertificate(payload, getAuthKey());
-		}
-
-		@Override
-		CertificateRetrieveResponse certificateRetrieve(CertificateRetrieveRequest request)
-				throws VCertException {
-			return tpp.certificateRetrieve(request, getAuthKey());
-		}
-
-		@Override
-		CertificateSearchResponse searchCertificates(Map<String, String> searchRequest) throws VCertException {
-			return tpp.searchCertificates(searchRequest, getAuthKey());
-		}
-
-		@Override
-		CertificateRevokeResponse revokeCertificate(CertificateRevokeRequest request) throws VCertException {
-			return tpp.revokeCertificate(request, getAuthKey());
-		}
-
-		@Override
-		CertificateRenewalResponse renewCertificate(CertificateRenewalRequest request) throws VCertException {
-			return tpp.renewCertificate(request, getAuthKey());
-		}
-
-		@Override
-		ImportResponse importCertificate(ImportRequest request) throws VCertException {
-			return tpp.importCertificate(request, getAuthKey());
-		}
-
-        @Override
-        public DNIsValidResponse dnIsValid(DNIsValidRequest request) throws VCertException {
-          return tpp.dnIsValid(request, getAuthKey());
-        }
-
-        @Override
-        CreateDNResponse createDN(CreateDNRequest request) throws VCertException {
-          return tpp.createDN(request, getAuthKey());
-        }
-
-        @Override
-        SetPolicyAttributeResponse setPolicyAttribute(SetPolicyAttributeRequest request) throws VCertException {
-          return tpp.setPolicyAttribute(request, getAuthKey());
-        }
-
-        @Override
-        GetPolicyAttributeResponse getPolicyAttribute(GetPolicyAttributeRequest request) throws VCertException {
-          return tpp.getPolicyAttribute(request, getAuthKey());
-        }
-
-        @Override
-        GetPolicyResponse getPolicy(GetPolicyRequest request) throws VCertException {
-          return tpp.getPolicy(request, getAuthKey());
-        }
-
-        @Override
-        Response clearPolicyAttribute(ClearPolicyAttributeRequest request) throws VCertException {
-          return tpp.clearPolicyAttribute(request, getAuthKey());
-        }
-
-		@Override
-		TppSshCertRequestResponse requestSshCertificate(TppSshCertRequest request) throws VCertException {
-			return tpp.requestSshCertificate(request, getAuthKey());
-		}
-
-		@Override
-		TppSshCertRetrieveResponse retrieveSshCertificate(TppSshCertRetrieveRequest request) throws VCertException {
-			return tpp.retrieveSshCertificate(request, getAuthKey());
-		}
-
-		@Override
-		String retrieveSshCAPublicKeyData(Map<String, String> params) throws VCertException {
-			String publicKeyData = null;
-
-			try {
-				publicKeyData = CharStreams.toString(tpp.retrieveSshCAPublicKeyData(params).body().asReader());
-			} catch (Exception e) {
-				throw new VCertException(e);
-			}
-
-			return publicKeyData;
-		}
-
-		@Override
-		TppSshCaTemplateResponse retrieveSshCATemplate(TppSshCaTemplateRequest request) throws VCertException {
-			return tpp.retrieveSshCATemplate(request, getAuthKey());
-		}
       };
     }
     return tppAPI;

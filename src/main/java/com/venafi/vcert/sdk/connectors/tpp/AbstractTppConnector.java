@@ -6,6 +6,9 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.BrowseIdentitiesResponse;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.BrowseIdentitiesRequest;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.IdentityEntry;
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -118,6 +121,34 @@ public abstract class AbstractTppConnector {
         TppConnectorUtils.populatePolicy(tppPolicy, tppAPI);
 
         return tppPolicy;
+    }
+
+    protected String[] resolveTPPContacts(String[] contacts) throws VCertException{
+        List<String> identitiesIdList = new ArrayList<>();
+        if (contacts != null){
+            for (String contact: contacts) {
+                IdentityEntry identity = this.getTPPIdentity(contact);
+                identitiesIdList.add(identity.prefixedUniversal());
+            }
+        }
+        return identitiesIdList.toArray(new String[0]);
+    }
+
+    public IdentityEntry getTPPIdentity(String username) throws VCertException{
+        if (username == null){
+            throw new MissingTppIdentityException();
+        }
+
+        BrowseIdentitiesResponse response = getTppAPI().browseIdentities(new BrowseIdentitiesRequest(username, 2,
+                BrowseIdentitiesRequest.ALL_IDENTITIES));
+
+        if (response.identities().length > 1){
+            throw new IdentityExtraneousInformationException(response.identities());
+        }
+
+        IdentityEntry identity = response.identities()[0];
+
+        return identity;
     }
     
     protected TppSshCertRequestResponse requestTppSshCertificate(SshCertificateRequest sshCertificateRequest) throws VCertException {

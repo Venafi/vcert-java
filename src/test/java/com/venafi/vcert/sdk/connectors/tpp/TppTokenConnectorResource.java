@@ -1,6 +1,3 @@
-/**
- * 
- */
 package com.venafi.vcert.sdk.connectors.tpp;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,7 +50,7 @@ public class TppTokenConnectorResource implements BeforeEachCallback, BeforeAllC
 				.scope("certificate:manage,revoke,discover;configuration:manage")
 				.build();
 		
-		connector = new TppTokenConnector(Tpp.connect(TestUtils.TPP_TOKEN_URL));
+		connector = new TppTokenConnector(TppToken.connect(TestUtils.TPP_TOKEN_URL));
 
 		TokenInfo info = connector.getAccessToken(authentication);
 

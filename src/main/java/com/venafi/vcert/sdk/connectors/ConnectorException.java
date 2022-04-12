@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CsrOriginOption;
+import com.venafi.vcert.sdk.connectors.tpp.endpoint.IdentityEntry;
 
 /**
  * @author Marcos E. Albornoz Abud
@@ -307,8 +308,7 @@ public class ConnectorException extends VCertException {
 			this.status = status;
 		}
 	}
-	
-	
+
 	public static class CertificateDNOrThumbprintWasNotProvidedException extends ConnectorException {
 		
 		private static final long serialVersionUID = 1L;
@@ -489,6 +489,57 @@ public class ConnectorException extends VCertException {
 			this.maxCompressionRatioExpected = maxCompressionRatioExpected;
 			this.certificateId = certificateId;
 			this.fileName = fileName;
+		}
+	}
+
+	public static class VaaSApplicationNotFoundException extends ConnectorException {
+
+		private static final long serialVersionUID = 1L;
+		private static final String message  = "Application with name %s could not be found on VaaS account";
+
+		public VaaSApplicationNotFoundException(String appName) {
+			super(format(message, appName));
+		}
+
+	}
+
+	public static class MissingTppIdentityException extends ConnectorException {
+
+		private static final long serialVersionUID = 1L;
+		private static final String message = "TPP Identity cannot be null";
+
+		public MissingTppIdentityException() {
+			super(message);
+		}
+	}
+
+	public static class IdentityExtraneousInformationException extends ConnectorException {
+
+		private static final long serialVersionUID = 1L;
+		private static final String message = "Extraneous information returned in the identity response. Expected: 1, " +
+				"found: %s.\t\n%s";
+
+		public IdentityExtraneousInformationException(IdentityEntry[] identityList) {
+			super(format(message, identityList.length, get_bad_data(identityList)));
+		}
+
+		private static String get_bad_data(IdentityEntry[] identityList) {
+			StringBuilder bad_data = new StringBuilder();
+			for (IdentityEntry entry : identityList) {
+				bad_data.append(entry.toString()).append("\n");
+			}
+
+			return bad_data.toString();
+		}
+	}
+
+	public static class TppContactException extends ConnectorException {
+
+		private static final long serialVersionUID = 1L;
+		private static final String message = "Error while retrieving contact attribute from policy %s:\nError: %s";
+
+		public TppContactException(String policy, String error) {
+			super(format(message, policy, error));
 		}
 	}
 

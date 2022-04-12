@@ -26,7 +26,7 @@ public class TppTokenConnectorIT {
     @BeforeEach
     void setup() throws VCertException {
     	serverMock.start();
-        classUnderTest = new TppTokenConnector(Tpp.connect("http://localhost:" + serverMock.port() + "/"));
+        classUnderTest = new TppTokenConnector(TppToken.connect("http://localhost:" + serverMock.port() + "/"));
         // String.format()
         Authentication auth = Authentication.builder()
                 .user("user")

@@ -58,10 +58,10 @@ import lombok.Data;
 import lombok.Getter;
 	
 public class CloudConnector implements Connector {
-	
-	private static String APPLICATION_SERVER_TYPE_ID = "784938d1-ef0d-11eb-9461-7bb533ba575b";
 
-  private Cloud cloud;
+	private static final String APPLICATION_SERVER_TYPE_ID = "784938d1-ef0d-11eb-9461-7bb533ba575b";
+
+  private final Cloud cloud;
 
   @Getter
   private UserDetails user;
@@ -124,12 +124,8 @@ public class CloudConnector implements Connector {
       if(credentials == null){
           return true;
       }
-      
-      if( isBlank(credentials.apiKey())) {
-      	return true;
-      }
 
-      return false;
+	  return isBlank(credentials.apiKey());
   }
   
   /**
@@ -155,9 +151,9 @@ public class CloudConnector implements Connector {
   @Override
   public ZoneConfiguration readZoneConfiguration(String zone) throws VCertException {
 
-	  String valies[] = StringUtils.split(zone, "\\");
-	  String appName = valies[0];
-	  String citAlias = valies[1];
+	  String[] values = StringUtils.split(zone, "\\");
+	  String appName = values[0];
+	  String citAlias = values[1];
 
 	  CertificateIssuingTemplate cit = null;
 
@@ -584,7 +580,8 @@ public class CloudConnector implements Connector {
   public void setPolicy(String policyName, PolicySpecification policySpecification) throws VCertException {
     try {
       CloudPolicy cloudPolicy = CloudPolicySpecificationConverter.INSTANCE.convertFromPolicySpecification(policySpecification);
-      CloudConnectorUtils.setCit(policyName, cloudPolicy.certificateIssuingTemplate(), cloudPolicy.caInfo(), credentials.apiKey(), cloud);
+      CloudConnectorUtils.setCit(policyName, cloudPolicy.certificateIssuingTemplate(), cloudPolicy.caInfo(),
+			  cloudPolicy.owners(), credentials.apiKey(), cloud);
     } catch ( Exception e ) {
       throw new VCertException(e);
     }
@@ -641,7 +638,7 @@ public class CloudConnector implements Connector {
       return new String[] {zone, null, null};
     } catch (IllegalArgumentException iae) {
       // The zone argument is not UUID, so we expect to be ProjectName\ZoneName
-      String zoneParsed[] = zone.split(Pattern.quote("\\"));
+      String[] zoneParsed = zone.split(Pattern.quote("\\"));
 
       if (zoneParsed.length != 2) {
         throw new VCertException(format(
@@ -662,8 +659,6 @@ public class CloudConnector implements Connector {
 
 @Data
   public static class CertificateRequestsPayload {
-    // private String companyId;
-    // private String downloadFormat;
     @SerializedName("certificateSigningRequest")
     private String csr;
     private String zoneId;

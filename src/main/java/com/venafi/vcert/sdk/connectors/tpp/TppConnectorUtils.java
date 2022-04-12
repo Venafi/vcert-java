@@ -5,6 +5,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
 import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
+import com.venafi.vcert.sdk.connectors.ConnectorException;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequest;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveRequest;
@@ -307,9 +308,46 @@ public class TppConnectorUtils {
 
 			//Prohibited SAN Types
 			setProhibitedSANTypes(tppPolicy, policyResponse);
+
+			// Resolve contact names
+			String[] usernames = TppConnectorUtils.retrieveUsernamesFromTPPContacts(tppPolicy.policyName(), tppAPI);
+			tppPolicy.contact(usernames);
 		}
 
 		return tppPolicy;
+	}
+
+	private static String[] retrieveUsernamesFromTPPContacts(String policyName, TppAPI tppAPI) throws VCertException{
+		GetPolicyAttributeResponse contactResponse;
+		List<String> usersList = new ArrayList<>();
+
+		try{
+			contactResponse = tppAPI.getPolicyAttribute(new GetPolicyAttributeRequest(policyName,
+					TppPolicyConstants.TPP_CONTACT));
+		} catch (Exception e) {
+			throw new VCertException(e);
+		}
+		if (contactResponse != null && contactResponse.error() != null){
+			throw new ConnectorException.TppContactException(policyName, contactResponse.error());
+		}
+		if (contactResponse.values() != null) {
+			Object[] contacts = contactResponse.values();
+			for (Object prefixedUniversal : contacts) {
+				try{
+					ValidateIdentityResponse response = tppAPI.validateIdentity(
+							new ValidateIdentityRequest(
+									new IdentityInformation((String)prefixedUniversal)
+							)
+					);
+					String username = response.id().name();
+					usersList.add(username);
+				} catch (Exception e) {
+					throw new VCertException(e);
+				}
+			}
+		}
+
+		return usersList.toArray(new String[0]);
 	}
 
 	public static void setProhibitedSANTypes( TPPPolicy tppPolicy, PolicyResponse policyResponse ) {

@@ -28,7 +28,7 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 
 class TppTokenConnectorATForSSH {
 
-	private static TppTokenConnector classUnderTest = new TppTokenConnector(Tpp.connect(TestUtils.TPP_TOKEN_URL));
+	private static TppTokenConnector classUnderTest = new TppTokenConnector(TppToken.connect(TestUtils.TPP_TOKEN_URL));
 	private static TokenInfo info;
 
 	@BeforeEach
