@@ -136,15 +136,14 @@ public abstract class AbstractTppConnector {
 
     public IdentityEntry getTPPIdentity(String username) throws VCertException{
         if (username == null){
-            throw new VCertException("Identity string cannot be null");
+            throw new MissingTppIdentityException();
         }
 
         BrowseIdentitiesResponse response = getTppAPI().browseIdentities(new BrowseIdentitiesRequest(username, 2,
                 BrowseIdentitiesRequest.ALL_IDENTITIES));
 
         if (response.identities().length > 1){
-            throw new VCertException("Extraneous information returned in the identity response. "
-                    + "Expected size: 1, found: 2\n" + response.identities()[1].toString());
+            throw new IdentityExtraneousInformationException(response.identities());
         }
 
         IdentityEntry identity = response.identities()[0];

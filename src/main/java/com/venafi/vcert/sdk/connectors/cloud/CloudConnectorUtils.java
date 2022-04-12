@@ -5,6 +5,7 @@ import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ChainOption;
 import com.venafi.vcert.sdk.certificate.DataFormat;
 import com.venafi.vcert.sdk.certificate.PEMCollection;
+import com.venafi.vcert.sdk.connectors.ConnectorException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.KeyStoreUnzipedFilesBytesSizeExceeded;
 import com.venafi.vcert.sdk.connectors.ConnectorException.KeyStoreZipCompressionRatioExceeded;
 import com.venafi.vcert.sdk.connectors.ConnectorException.KeyStoreZipEntriesExceeded;
@@ -260,7 +261,7 @@ public class CloudConnectorUtils {
 
 		Application app = cloud.applicationByName(zone.appName(), apiKey);
 		if (app == null){
-			throw new VCertException("Application "+ zone.appName() + " could not be found");
+			throw new ConnectorException.VaaSApplicationNotFoundException(zone.appName());
 		}
 		List<String> usersList = new ArrayList<>();
 		Teams tResponse = null;

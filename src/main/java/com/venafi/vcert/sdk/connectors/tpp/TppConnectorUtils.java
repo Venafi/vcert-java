@@ -5,6 +5,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
 import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
+import com.venafi.vcert.sdk.connectors.ConnectorException;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequest;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveRequest;
@@ -327,7 +328,7 @@ public class TppConnectorUtils {
 			throw new VCertException(e);
 		}
 		if (contactResponse != null && contactResponse.error() != null){
-			throw new VCertException(contactResponse.error());
+			throw new ConnectorException.TppContactException(policyName, contactResponse.error());
 		}
 		if (contactResponse.values() != null) {
 			Object[] contacts = contactResponse.values();

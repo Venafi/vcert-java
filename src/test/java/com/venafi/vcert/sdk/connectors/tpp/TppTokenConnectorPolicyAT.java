@@ -23,13 +23,9 @@ public class TppTokenConnectorPolicyAT {
     @Test
     @DisplayName("TPP - Retrieve an Identity by username")
     public void browseIdentities() throws VCertException {
-        try{
-            IdentityEntry identity = connectorResource.connector().getTPPIdentity(username);
-            Assertions.assertEquals(username, identity.name());
-            prefixedUniversal = identity.prefixedUniversal();
-        } catch (Exception e){
-            System.out.println("");
-        }
+        IdentityEntry identity = connectorResource.connector().getTPPIdentity(username);
+        Assertions.assertEquals(username, identity.name());
+        prefixedUniversal = identity.prefixedUniversal();
     }
 
     @Test
