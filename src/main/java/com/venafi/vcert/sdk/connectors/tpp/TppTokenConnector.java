@@ -5,8 +5,8 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.FailedToRevokeTokenException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingAccessTokenException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.MissingCredentialsException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingRefreshTokenException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.NullAuthenticationException;
 import com.venafi.vcert.sdk.connectors.TokenConnector;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
@@ -64,11 +64,15 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
      */
     @Override
     public void authorize(Authentication credentials) throws VCertException {
-    	//If the AccessToken or RefreshToken were provided then only verify the accessToken is still valid
-    	if(!isEmptyTokens(credentials)) {
-    		verifyAccessToken(credentials);
-    	} else { // The user and password were provided so then generate an accessToken from them 
-    		authorizeToken(credentials);
+    	if(credentials != null) {
+    		//If the AccessToken or RefreshToken were provided then only verify the accessToken is still valid
+    		if(!isEmptyTokens(credentials)) {
+    			verifyAccessToken(credentials);
+    		} else { // The user and password were provided so then generate an accessToken from them 
+    			authorizeToken(credentials);
+    		}
+    	} else {
+    		throw new MissingCredentialsException();
     	}
     }
 
@@ -149,7 +153,7 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
 
     		return getTokenInfo();
     	} else 
-    		throw new NullAuthenticationException();
+    		throw new MissingCredentialsException();
     }
 
     @Override

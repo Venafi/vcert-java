@@ -13,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingCredentialsException;
-import com.venafi.vcert.sdk.connectors.ConnectorException.NullAuthenticationException;
 import com.venafi.vcert.sdk.connectors.tpp.TokenInfo;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
@@ -220,7 +219,7 @@ public class VCertTknClientAuthenticationAT {
 		VCertTknClient client = getClientUnauthenticated();
 		
 		//asserting that the credentials were not provided
-		assertThrows(NullAuthenticationException.class, () -> client.getAccessToken());
+		assertThrows(MissingCredentialsException.class, () -> client.getAccessToken());
 		
 		//asserting that the credentials were not provided
 		assertThrows(MissingCredentialsException.class, () -> client.getAccessToken(getAuthenticationMissingAccessToken()));
