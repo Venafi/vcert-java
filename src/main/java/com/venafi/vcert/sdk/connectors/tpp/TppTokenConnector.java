@@ -6,6 +6,7 @@ import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.FailedToRevokeTokenException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingAccessTokenException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingRefreshTokenException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.NullAuthenticationException;
 import com.venafi.vcert.sdk.connectors.TokenConnector;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
@@ -72,11 +73,15 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
     }
 
     private boolean isEmptyTokens( Authentication credentials ){
-    	return isEmptyAccessToken(credentials) && isBlank(credentials.refreshToken());
+    	return isEmptyAccessToken(credentials) && isEmptyRefreshToken(credentials);
     }
     
     private boolean isEmptyAccessToken(Authentication credentials){
     	return credentials == null || isBlank(credentials.accessToken());
+    }
+    
+    private boolean isEmptyRefreshToken(Authentication credentials){
+    	return credentials == null || isBlank(credentials.refreshToken());
     }
     
     private void verifyAccessToken(Authentication credentials) throws VCertException {
@@ -121,31 +126,35 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
     @Override
     public TokenInfo getAccessToken(Authentication auth) throws VCertException {
     	
-    	Authentication authTemp = null;
-    	
     	if (auth != null) {
 
-    		//creating a temp Authentication object based on the one passed as argument
-    		// in order to avoid to modify that original given it's needed that 
-    		// the Authentication object to be passed to the authenticate() method needs
-    		// that the accessToken and refreshToken doesn't set
-    		authTemp = Authentication.builder()
-    				.user(auth.user())
-    				.password(auth.password())
-    				.clientId(auth.clientId())
-    				.scope(auth.scope())
-    				.state(auth.state())
-    				.redirectUri(auth.redirectUri())
-    				.build();
-    	}
-    	
-        authenticate(authTemp);
-        
-        //setting the auth object as the credentials and setting into it the accessToken 
-        //and refreshToken hold by TokenInfo
-        setTokenCredentials(auth);
-        
-        return getTokenInfo();
+    		Authentication authTemp = null;
+
+    		if (auth != null) {
+
+    			//creating a temp Authentication object based on the one passed as argument
+    			// in order to avoid to modify that original given it's needed that 
+    			// the Authentication object to be passed to the authenticate() method needs
+    			// that the accessToken and refreshToken doesn't set
+    			authTemp = Authentication.builder()
+    					.user(auth.user())
+    					.password(auth.password())
+    					.clientId(auth.clientId())
+    					.scope(auth.scope())
+    					.state(auth.state())
+    					.redirectUri(auth.redirectUri())
+    					.build();
+    		}
+
+    		authenticate(authTemp);
+
+    		//setting the auth object as the credentials and setting into it the accessToken 
+    		//and refreshToken hold by TokenInfo
+    		setTokenCredentials(auth);
+
+    		return getTokenInfo();
+    	} else 
+    		throw new NullAuthenticationException();
     }
 
     @Override

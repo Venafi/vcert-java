@@ -64,6 +64,15 @@ public class ConnectorException extends VCertException {
 		}
 	}
 	
+	public static class NullAuthenticationException extends ConnectorException {
+		
+		private static final long serialVersionUID = 1L;
+		
+		public NullAuthenticationException() {
+			super("Authentication object is null");
+		}
+	}
+	
 	public static class MissingCredentialsException extends ConnectorException {
 		
 		private static final long serialVersionUID = 1L;
