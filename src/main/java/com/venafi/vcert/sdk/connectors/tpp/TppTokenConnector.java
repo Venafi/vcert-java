@@ -128,23 +128,18 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
     	
     	if (auth != null) {
 
-    		Authentication authTemp = null;
-
-    		if (auth != null) {
-
-    			//creating a temp Authentication object based on the one passed as argument
-    			// in order to avoid to modify that original given it's needed that 
-    			// the Authentication object to be passed to the authenticate() method needs
-    			// that the accessToken and refreshToken doesn't set
-    			authTemp = Authentication.builder()
-    					.user(auth.user())
-    					.password(auth.password())
-    					.clientId(auth.clientId())
-    					.scope(auth.scope())
-    					.state(auth.state())
-    					.redirectUri(auth.redirectUri())
-    					.build();
-    		}
+    		//creating a temp Authentication object based on the one passed as argument
+    		// in order to avoid to modify that original given it's needed that 
+    		// the Authentication object to be passed to the authenticate() method needs
+    		// that the accessToken and refreshToken doesn't set
+    		Authentication authTemp = Authentication.builder()
+    				.user(auth.user())
+    				.password(auth.password())
+    				.clientId(auth.clientId())
+    				.scope(auth.scope())
+    				.state(auth.state())
+    				.redirectUri(auth.redirectUri())
+    				.build();
 
     		authenticate(authTemp);
 
