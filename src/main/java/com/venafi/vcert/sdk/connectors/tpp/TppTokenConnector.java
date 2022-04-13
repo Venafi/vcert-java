@@ -5,6 +5,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.FailedToRevokeTokenException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingAccessTokenException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.MissingCredentialsException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingRefreshTokenException;
 import com.venafi.vcert.sdk.connectors.TokenConnector;
 import com.venafi.vcert.sdk.endpoint.Authentication;
@@ -63,20 +64,28 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
      */
     @Override
     public void authorize(Authentication credentials) throws VCertException {
-    	//If the AccessToken or RefreshToken were provided then only verify the accessToken is still valid
-    	if(!isEmptyTokens(credentials)) {
-    		verifyAccessToken(credentials);
-    	} else { // The user and password were provided so then generate an accessToken from them 
-    		authorizeToken(credentials);
+    	if(credentials != null) {
+    		//If the AccessToken or RefreshToken were provided then only verify the accessToken is still valid
+    		if(!isEmptyTokens(credentials)) {
+    			verifyAccessToken(credentials);
+    		} else { // The user and password were provided so then generate an accessToken from them 
+    			authorizeToken(credentials);
+    		}
+    	} else {
+    		throw new MissingCredentialsException();
     	}
     }
 
     private boolean isEmptyTokens( Authentication credentials ){
-    	return isEmptyAccessToken(credentials) && isBlank(credentials.refreshToken());
+    	return isEmptyAccessToken(credentials) && isEmptyRefreshToken(credentials);
     }
     
     private boolean isEmptyAccessToken(Authentication credentials){
     	return credentials == null || isBlank(credentials.accessToken());
+    }
+    
+    private boolean isEmptyRefreshToken(Authentication credentials){
+    	return credentials == null || isBlank(credentials.refreshToken());
     }
     
     private void verifyAccessToken(Authentication credentials) throws VCertException {
@@ -121,15 +130,13 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
     @Override
     public TokenInfo getAccessToken(Authentication auth) throws VCertException {
     	
-    	Authentication authTemp = null;
-    	
     	if (auth != null) {
 
     		//creating a temp Authentication object based on the one passed as argument
     		// in order to avoid to modify that original given it's needed that 
     		// the Authentication object to be passed to the authenticate() method needs
     		// that the accessToken and refreshToken doesn't set
-    		authTemp = Authentication.builder()
+    		Authentication authTemp = Authentication.builder()
     				.user(auth.user())
     				.password(auth.password())
     				.clientId(auth.clientId())
@@ -137,15 +144,16 @@ public class TppTokenConnector extends TppConnector implements TokenConnector {
     				.state(auth.state())
     				.redirectUri(auth.redirectUri())
     				.build();
-    	}
-    	
-        authenticate(authTemp);
-        
-        //setting the auth object as the credentials and setting into it the accessToken 
-        //and refreshToken hold by TokenInfo
-        setTokenCredentials(auth);
-        
-        return getTokenInfo();
+
+    		authenticate(authTemp);
+
+    		//setting the auth object as the credentials and setting into it the accessToken 
+    		//and refreshToken hold by TokenInfo
+    		setTokenCredentials(auth);
+
+    		return getTokenInfo();
+    	} else 
+    		throw new MissingCredentialsException();
     }
 
     @Override

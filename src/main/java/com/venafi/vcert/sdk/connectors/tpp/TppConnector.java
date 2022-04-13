@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.io.CharStreams;
 import com.venafi.vcert.sdk.VCertException;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ChainOption;
@@ -47,6 +46,7 @@ import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateDNOrThumbpr
 import com.venafi.vcert.sdk.connectors.ConnectorException.CertificateNotFoundByThumbprintException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.CertificatePendingException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.CouldNotParseRevokeReasonException;
+import com.venafi.vcert.sdk.connectors.ConnectorException.MissingCredentialsException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MoreThanOneCertificateWithSameThumbprintException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.RenewFailureException;
 import com.venafi.vcert.sdk.connectors.ConnectorException.RetrieveCertificateTimeoutException;
@@ -57,18 +57,7 @@ import com.venafi.vcert.sdk.connectors.ConnectorException.TppRequestCertificateN
 import com.venafi.vcert.sdk.connectors.Policy;
 import com.venafi.vcert.sdk.connectors.ServerPolicy;
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRenewalResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRequestResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRetrieveResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateRevokeResponse;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp.CertificateSearchResponse;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.*;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCaTemplateRequest;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCaTemplateResponse;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequest;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRequestResponse;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveRequest;
-import com.venafi.vcert.sdk.connectors.tpp.endpoint.ssh.TppSshCertRetrieveResponse;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.endpoint.ConnectorType;
 import com.venafi.vcert.sdk.policy.api.domain.TPPPolicy;
@@ -143,7 +132,8 @@ public class TppConnector extends AbstractTppConnector implements Connector {
    * @throws VCertException if the call to {@link Tpp#authorize(AuthorizeRequest)} throws a {@link Unauthorized} or {@link BadRequest}
    */
   @Override
-  public void authorize(Authentication credentials) throws VCertException { 
+  public void authorize(Authentication credentials) throws VCertException {
+	  if (credentials != null) {
 	  try {
 		  AuthorizeResponse response = tpp.authorize(new AuthorizeRequest(credentials.user(), credentials.password()));
 		  apiKey = response.apiKey();
@@ -152,6 +142,9 @@ public class TppConnector extends AbstractTppConnector implements Connector {
 		  this.credentials.apiKey(apiKey);
 	  }  catch(Unauthorized | BadRequest e){
 		  throw VCertException.fromFeignException(e);
+	  }
+	  } else {
+		  throw new MissingCredentialsException();
 	  }
   }
   

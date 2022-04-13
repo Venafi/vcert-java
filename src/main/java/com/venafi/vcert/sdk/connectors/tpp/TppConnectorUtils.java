@@ -330,7 +330,7 @@ public class TppConnectorUtils {
 		if (contactResponse != null && contactResponse.error() != null){
 			throw new ConnectorException.TppContactException(policyName, contactResponse.error());
 		}
-		if (contactResponse.values() != null) {
+		if (contactResponse != null && contactResponse.values() != null) {
 			Object[] contacts = contactResponse.values();
 			for (Object prefixedUniversal : contacts) {
 				try{
