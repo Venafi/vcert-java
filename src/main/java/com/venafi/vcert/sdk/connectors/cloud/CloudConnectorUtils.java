@@ -174,28 +174,38 @@ public class CloudConnectorUtils {
             application.certificateIssuingTemplateAliasIdMap( citAliasIdMap );
         }
 
+		boolean updateApplication = false;
+
         //if the App doesn't contain the relation to the cit
         if ( !citAliasIdMap.containsKey(cit.name()) ) {
             //adding the reference to the cit
             citAliasIdMap.put(cit.name(), cit.id());
-
-            //getting the appId because it will be used to invoke the API to update the related Application
-            String appId = application.id();
-
-            //The id, companyId, fqDns and internalFqDns needs to be null in the request to update the Application,
-            //therefore these attributes are set to null
-            application.id(null);
-            application.companyId(null);
-            application.fqDns(null);
-            application.internalFqDns(null);
-
-			// Updating the owners list
-			List<Application.OwnerIdsAndType> ownersList =  CloudConnectorUtils.resolveUsersToCloudOwners(usersList, apiKey, cloud);
-			application.ownerIdsAndTypes(ownersList);
-
-            cloud.updateApplication(application, appId, apiKey);
+            updateApplication = true;
         }
-    }
+
+		// Updating the owners list of the Application
+		List<Application.OwnerIdsAndType> ownersList =  CloudConnectorUtils.resolveUsersToCloudOwners(usersList, apiKey, cloud);
+		if (ownersList.size() > 0){
+//			application.ownerIdsAndTypes().addAll(ownersList);
+			List<Application.OwnerIdsAndType> newList = mergeOwnersList(application.ownerIdsAndTypes(), ownersList);
+			application.ownerIdsAndTypes(newList);
+			updateApplication = true;
+		}
+
+        if (updateApplication) {
+			//getting the appId because it will be used to invoke the API to update the related Application
+			String appId = application.id();
+
+			//The id, companyId, fqDns and internalFqDns needs to be null in the request to update the Application,
+			//therefore these attributes are set to null
+			application.id(null);
+			application.companyId(null);
+			application.fqDns(null);
+			application.internalFqDns(null);
+
+			cloud.updateApplication(application, appId, apiKey);
+		}
+	}
 
 	private static List<Application.OwnerIdsAndType> resolveUsersToCloudOwners(String[] usersList, String apiKey, Cloud cloud) {
 		List<Application.OwnerIdsAndType> ownersList = new ArrayList<>();
@@ -287,6 +297,19 @@ public class CloudConnectorUtils {
 		}
 
 		return usersList.toArray(new String[0]);
+	}
+
+	private static List<Application.OwnerIdsAndType> mergeOwnersList(List<Application.OwnerIdsAndType> sourceList, List<Application.OwnerIdsAndType> incomingList) {
+    	sourceList.addAll(incomingList);
+    	Map<String, Application.OwnerIdsAndType> ownerMap = new HashMap<>();
+
+    	for(Application.OwnerIdsAndType owner : sourceList) {
+    		if (!ownerMap.containsKey(owner.ownerId())){
+    			ownerMap.put(owner.ownerId(), owner);
+			}
+		}
+
+    	return new ArrayList<>(ownerMap.values());
 	}
 
     private static CertificateIssuingTemplate getPolicy(String policyName, String apiKey, Cloud cloud) throws VCertException {
