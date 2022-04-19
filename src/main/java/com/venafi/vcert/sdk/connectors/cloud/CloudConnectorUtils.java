@@ -167,44 +167,36 @@ public class CloudConnectorUtils {
 									String apiKey, Cloud cloud) throws VCertException {
         Map<String, String> citAliasIdMap = null;
 
-        if ( application.certificateIssuingTemplateAliasIdMap() != null )
+        if ( application.certificateIssuingTemplateAliasIdMap() != null ) {
             citAliasIdMap = application.certificateIssuingTemplateAliasIdMap();
+        }
         else {
             citAliasIdMap = new HashMap<>();
             application.certificateIssuingTemplateAliasIdMap( citAliasIdMap );
         }
 
-		boolean updateApplication = false;
-
         //if the App doesn't contain the relation to the cit
         if ( !citAliasIdMap.containsKey(cit.name()) ) {
             //adding the reference to the cit
             citAliasIdMap.put(cit.name(), cit.id());
-            updateApplication = true;
         }
 
 		// Updating the owners list of the Application
 		List<Application.OwnerIdsAndType> ownersList =  CloudConnectorUtils.resolveUsersToCloudOwners(usersList, apiKey, cloud);
-		if (ownersList.size() > 0){
-//			application.ownerIdsAndTypes().addAll(ownersList);
-			List<Application.OwnerIdsAndType> newList = mergeOwnersList(application.ownerIdsAndTypes(), ownersList);
-			application.ownerIdsAndTypes(newList);
-			updateApplication = true;
-		}
+        application.ownerIdsAndTypes(ownersList);
 
-        if (updateApplication) {
-			//getting the appId because it will be used to invoke the API to update the related Application
-			String appId = application.id();
+		//getting the appId because it will be used to invoke the API to update the related Application
+		String appId = application.id();
 
-			//The id, companyId, fqDns and internalFqDns needs to be null in the request to update the Application,
-			//therefore these attributes are set to null
-			application.id(null);
-			application.companyId(null);
-			application.fqDns(null);
-			application.internalFqDns(null);
+		//The id, companyId, fqDns and internalFqDns needs to be null in the request to update the Application,
+		//therefore these attributes are set to null
+		application.id(null);
+		application.companyId(null);
+		application.fqDns(null);
+		application.internalFqDns(null);
 
-			cloud.updateApplication(application, appId, apiKey);
-		}
+		cloud.updateApplication(application, appId, apiKey);
+
 	}
 
 	private static List<Application.OwnerIdsAndType> resolveUsersToCloudOwners(String[] usersList, String apiKey, Cloud cloud) {

@@ -124,7 +124,7 @@ public class CloudConnectorPolicyAT {
 
 	@Test
 	@DisplayName("Cloud - Testing setting contacts that are duplicated on VaaS")
-	public void testPolicyContactsDuplicated() throws VCertException {
+	public void testPolicyContactsUpdated() throws VCertException {
 		CloudConnector connector = connectorResource.connector();
 		String policyName = CloudTestUtils.getRandomZone();
 		PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
@@ -136,15 +136,12 @@ public class CloudConnectorPolicyAT {
 		Assertions.assertEquals("pki-admin@opensource.qa.venafi.io", psReturned.users()[0]);
 		Assertions.assertEquals("resource-owner@opensource.qa.venafi.io", psReturned.users()[1]);
 
-		//Updating the Policy Specification to include the duplicated contacts
-
+		//Updating the Policy Specification to include just one owner
 		PolicySpecification ps2 = CloudTestUtils.getPolicySpecification();
-		ps2.users(new String[]{"pki-admin@opensource.qa.venafi.io"});
-		connector.setPolicy(policyName, policySpecification);
+		connector.setPolicy(policyName, ps2);
 		PolicySpecification psReturned2 = connector.getPolicy(policyName);
 
-		Assertions.assertEquals(2, psReturned2.users().length);
-		Assertions.assertEquals("pki-admin@opensource.qa.venafi.io", psReturned.users()[0]);
-		Assertions.assertEquals("resource-owner@opensource.qa.venafi.io", psReturned.users()[1]);
+		Assertions.assertEquals(1, psReturned2.users().length);
+		Assertions.assertEquals("jenkins@opensource.qa.venafi.io", psReturned2.users()[0]);
 	}
 }
