@@ -108,8 +108,21 @@ public class CloudConnectorPolicyAT {
 	}
 
 	@Test
-	@DisplayName("Cloud - Testing get and set users from Policy Specification into Application")
-	public void createAndGetPolicyContacts() throws VCertException {
+	@DisplayName("Cloud - Testing policy creation with empty users list")
+	public void createPolicyWithNoUsers() throws VCertException {
+		CloudConnector connector = connectorResource.connector();
+		String policyName = CloudTestUtils.getRandomZone();
+		PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
+		connector.setPolicy(policyName, policySpecification);
+		PolicySpecification psReturned = connector.getPolicy(policyName);
+
+		Assertions.assertEquals(1, psReturned.users().length);
+		Assertions.assertEquals("jenkins@opensource.qa.venafi.io", psReturned.users()[0]);
+	}
+
+	@Test
+	@DisplayName("Cloud - Testing policy creation with a users list")
+	public void createPolicyWithUsers() throws VCertException {
 		CloudConnector connector = connectorResource.connector();
 		String policyName = CloudTestUtils.getRandomZone();
 		PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
@@ -123,8 +136,8 @@ public class CloudConnectorPolicyAT {
 	}
 
 	@Test
-	@DisplayName("Cloud - Testing setting contacts that are duplicated on VaaS")
-	public void testPolicyContactsUpdated() throws VCertException {
+	@DisplayName("Cloud - Testing updating a policy with a policy specification with no user list")
+	public void updatePolicyWithNoUsers() throws VCertException {
 		CloudConnector connector = connectorResource.connector();
 		String policyName = CloudTestUtils.getRandomZone();
 		PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
@@ -136,12 +149,38 @@ public class CloudConnectorPolicyAT {
 		Assertions.assertEquals("pki-admin@opensource.qa.venafi.io", psReturned.users()[0]);
 		Assertions.assertEquals("resource-owner@opensource.qa.venafi.io", psReturned.users()[1]);
 
-		//Updating the Policy Specification to include just one owner
+		//Updating the Policy Specification with no users
 		PolicySpecification ps2 = CloudTestUtils.getPolicySpecification();
 		connector.setPolicy(policyName, ps2);
 		PolicySpecification psReturned2 = connector.getPolicy(policyName);
 
-		Assertions.assertEquals(1, psReturned2.users().length);
-		Assertions.assertEquals("jenkins@opensource.qa.venafi.io", psReturned2.users()[0]);
-	}
+		Assertions.assertEquals(2, psReturned2.users().length);
+		Assertions.assertEquals("pki-admin@opensource.qa.venafi.io", psReturned.users()[0]);
+		Assertions.assertEquals("resource-owner@opensource.qa.venafi.io", psReturned.users()[1]);	}
+
+
+	@Test
+	@DisplayName("Cloud - Testing updating a policy with a policy specification with a users list")
+	public void updatePolicyWithUsers() throws VCertException {
+		CloudConnector connector = connectorResource.connector();
+		String policyName = CloudTestUtils.getRandomZone();
+		PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
+		policySpecification.users(new String[]{"jenkins@opensource.qa.venafi.io"});
+		connector.setPolicy(policyName, policySpecification);
+		PolicySpecification psReturned = connector.getPolicy(policyName);
+
+		Assertions.assertEquals(1, psReturned.users().length);
+		Assertions.assertEquals("jenkins@opensource.qa.venafi.io", psReturned.users()[0]);
+
+
+
+		//Updating the Policy Specification to include just one owner
+		PolicySpecification ps2 = CloudTestUtils.getPolicySpecification();
+		ps2.users(new String[]{"pki-admin@opensource.qa.venafi.io","resource-owner@opensource.qa.venafi.io"});
+		connector.setPolicy(policyName, ps2);
+		PolicySpecification psReturned2 = connector.getPolicy(policyName);
+
+		Assertions.assertEquals(2, psReturned2.users().length);
+		Assertions.assertEquals("pki-admin@opensource.qa.venafi.io", psReturned2.users()[0]);
+		Assertions.assertEquals("resource-owner@opensource.qa.venafi.io", psReturned2.users()[1]);	}
 }
