@@ -6,10 +6,14 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 public class CloudTestUtils {
 
-    public static final String APP_NAME = String.format("VCert-Java-%d-%s", System.currentTimeMillis(), RandomStringUtils.randomAlphabetic(4));
+//    public static final String APP_NAME = String.format("VCert-Java-%d-%s", System.currentTimeMillis(), RandomStringUtils.randomAlphabetic(4));
 
     public static String getRandomZone() {
-        return APP_NAME+"\\"+TestUtils.randomCITName();
+        return getRandomAppName()+"\\"+TestUtils.randomCITName();
+    }
+
+    public static String getRandomAppName(){
+        return String.format("VCert-Java-%d-%s", System.currentTimeMillis(), RandomStringUtils.randomAlphabetic(4));
     }
 
     public static PolicySpecification getPolicySpecification() {
