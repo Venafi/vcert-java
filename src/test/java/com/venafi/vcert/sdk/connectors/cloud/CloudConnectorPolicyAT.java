@@ -44,7 +44,11 @@ public class CloudConnectorPolicyAT {
 	    //The returned policySpecification will contains the default cloud CA, then it will needed
 	    //to set it to the policySpecification source
 	    policySpecification.policy().certificateAuthority(VCertConstants.CLOUD_DEFAULT_CA);
-	
+
+	    //The returned policy specification will contain a single user, which is the one who created the policy
+		//on the first place. We add this user to the source policy spec in order to assert.
+		policySpecification.users(new String[]{"jenkins@opensource.qa.venafi.io"});
+
 	    Assertions.assertEquals(policySpecification, policySpecificationReturned);
 	}
 
@@ -66,7 +70,11 @@ public class CloudConnectorPolicyAT {
 	    //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
 	    //due it doesn't contain it
 	    policySpecification.name(policySpecificationReturned.name());
-	
+
+		//The returned policy specification will contain a single user, which is the one who created the policy
+		//on the first place. We add this user to the source policy spec in order to assert.
+		policySpecification.users(new String[]{"jenkins@opensource.qa.venafi.io"});
+
 	    Assertions.assertEquals(policySpecification, policySpecificationReturned);
 	}
 
@@ -88,7 +96,11 @@ public class CloudConnectorPolicyAT {
 	    //The returned policySpecification will have the policy's name so it will copied to the source policySpecification
 	    //due it doesn't contain it
 	    policySpecification.name(policySpecificationReturned.name());
-	
+
+		//The returned policy specification will contain a single user, which is the one who created the policy
+		//on the first place. We add this user to the source policy spec in order to assert.
+		policySpecification.users(new String[]{"jenkins@opensource.qa.venafi.io"});
+
 	    assertEquals(policySpecification, policySpecificationReturned);
 	}
 
