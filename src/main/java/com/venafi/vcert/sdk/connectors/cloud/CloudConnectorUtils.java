@@ -137,7 +137,7 @@ public class CloudConnectorUtils {
             }
         }
 
-        //if the applications doesn't exist, the response will contains an error with code 20215,
+        //if the applications doesn't exist, the response will contain an error with code 20215,
         // then it will needed to create it
         if( application == null )
             //create the application and related it with the cit
@@ -181,9 +181,11 @@ public class CloudConnectorUtils {
             citAliasIdMap.put(cit.name(), cit.id());
         }
 
-		// Updating the owners list of the Application
-		List<Application.OwnerIdsAndType> ownersList =  CloudConnectorUtils.resolveUsersToCloudOwners(usersList, apiKey, cloud);
-        application.ownerIdsAndTypes(ownersList);
+		if (usersList != null && usersList.length > 0){
+			// Updating the owners list of the Application
+			List<Application.OwnerIdsAndType> ownersList =  CloudConnectorUtils.resolveUsersToCloudOwners(usersList, apiKey, cloud);
+        	application.ownerIdsAndTypes(ownersList);
+		}
 
 		//getting the appId because it will be used to invoke the API to update the related Application
 		String appId = application.id();
