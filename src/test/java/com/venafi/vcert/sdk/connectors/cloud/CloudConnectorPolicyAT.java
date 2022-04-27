@@ -201,11 +201,11 @@ public class CloudConnectorPolicyAT {
 		CloudConnector connector = connectorResource.connector();
 		String policyName = CloudTestUtils.getRandomZone();
 		PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
-		policySpecification.users(new String[]{"DevOpsTeam"});
+		policySpecification.users(new String[]{TestUtils.CLOUD_TEAM});
 		connector.setPolicy(policyName, policySpecification);
 		PolicySpecification psReturned = connector.getPolicy(policyName);
 
 		Assertions.assertEquals(1, psReturned.users().length);
-		Assertions.assertEquals("DevOpsTeam", psReturned.users()[0]);
+		Assertions.assertEquals(TestUtils.CLOUD_TEAM, psReturned.users()[0]);
 	}
 }
