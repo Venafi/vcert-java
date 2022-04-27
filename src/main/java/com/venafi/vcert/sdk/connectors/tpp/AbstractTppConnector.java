@@ -142,6 +142,9 @@ public abstract class AbstractTppConnector {
         BrowseIdentitiesResponse response = getTppAPI().browseIdentities(new BrowseIdentitiesRequest(username, 2,
                 BrowseIdentitiesRequest.ALL_IDENTITIES));
 
+        if (response.identities().length == 0){
+            throw new TPPUsernameNotFoundException(username);
+        }
         if (response.identities().length > 1){
             throw new IdentityExtraneousInformationException(response.identities());
         }
