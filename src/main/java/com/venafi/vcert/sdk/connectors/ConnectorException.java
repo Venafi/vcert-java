@@ -543,4 +543,13 @@ public class ConnectorException extends VCertException {
 		}
 	}
 
+	public static class VaaSUsernameNotFoundException extends ConnectorException {
+
+		private static final long serialVersionUID = 1L;
+		private static final String message = "Username %s is not an existing VaaS user or team";
+
+		public VaaSUsernameNotFoundException(String username){
+			super(format(message, username));
+		}
+	}
 }
