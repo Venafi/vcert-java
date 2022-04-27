@@ -137,7 +137,7 @@ public class CloudConnectorPolicyAT {
 		CloudConnector connector = connectorResource.connector();
 		String policyName = CloudTestUtils.getRandomZone();
 		PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
-		policySpecification.users(new String[]{"RVelaTeam"});
+		policySpecification.users(new String[]{"pki-admin@opensource.qa.venafi.io","resource-owner@opensource.qa.venafi.io"});
 		connector.setPolicy(policyName, policySpecification);
 		PolicySpecification psReturned = connector.getPolicy(policyName);
 
