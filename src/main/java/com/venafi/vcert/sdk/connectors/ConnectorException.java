@@ -543,4 +543,27 @@ public class ConnectorException extends VCertException {
 		}
 	}
 
+	public static class UsernameNotFoundException extends ConnectorException {
+
+		private static final long serialVersionUID = 1L;
+		private static final String message = "Username %s is not an existing %s %s or team";
+
+		public UsernameNotFoundException(String username, String platform, String category){
+			super(format(message, username, platform, category));
+		}
+	}
+
+	public static class VaaSUsernameNotFoundException extends UsernameNotFoundException {
+
+		public VaaSUsernameNotFoundException(String username) {
+			super(username, "VaaS", "user");
+		}
+	}
+
+	public static class TPPUsernameNotFoundException extends UsernameNotFoundException {
+
+		public TPPUsernameNotFoundException(String username) {
+			super(username, "TPP", "contact");
+		}
+	}
 }

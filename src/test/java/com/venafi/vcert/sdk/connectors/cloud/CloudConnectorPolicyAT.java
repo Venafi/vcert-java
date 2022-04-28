@@ -194,4 +194,18 @@ public class CloudConnectorPolicyAT {
 		Assertions.assertEquals(2, psReturned2.users().length);
 		Assertions.assertEquals("pki-admin@opensource.qa.venafi.io", psReturned2.users()[0]);
 		Assertions.assertEquals("resource-owner@opensource.qa.venafi.io", psReturned2.users()[1]);	}
+
+	@Test
+	@DisplayName("Cloud - Testing policy creation with a team in the users list")
+	public void createPolicyWithTeam() throws VCertException {
+		CloudConnector connector = connectorResource.connector();
+		String policyName = CloudTestUtils.getRandomZone();
+		PolicySpecification policySpecification = CloudTestUtils.getPolicySpecification();
+		policySpecification.users(new String[]{TestUtils.CLOUD_TEAM});
+		connector.setPolicy(policyName, policySpecification);
+		PolicySpecification psReturned = connector.getPolicy(policyName);
+
+		Assertions.assertEquals(1, psReturned.users().length);
+		Assertions.assertEquals(TestUtils.CLOUD_TEAM, psReturned.users()[0]);
+	}
 }

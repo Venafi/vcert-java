@@ -201,43 +201,67 @@ public class CloudConnectorUtils {
 
 	}
 
-	private static List<Application.OwnerIdsAndType> resolveUsersToCloudOwners(String[] usersList, String apiKey, Cloud cloud) {
+	private static List<Application.OwnerIdsAndType> resolveUsersToCloudOwners(String[] usersList, String apiKey, Cloud cloud) throws VCertException {
 		List<Application.OwnerIdsAndType> ownersList = new ArrayList<>();
 
 		if (usersList == null) {
-			// When no user is provided on the list, adds the current one as owner
-			UserDetails userDetails = cloud.authorize(apiKey);
-			Application.OwnerIdsAndType owner = createOwner(CloudConstants.OWNER_TYPE_USER, userDetails.user().id());
-			ownersList.add(owner);
+			// When no users are provided on the list, adds the api key user as owner
+			Application.OwnerIdsAndType tokenOwner = resolveApiKeyOwner(apiKey, cloud);
+			ownersList.add(tokenOwner);
 		}
 		else {
 			// Resolving the usernames list
 			// Creating a higher level Teams object to cache the response.
-			Teams tResponse = null;
+			Teams teams = null;
 			for (String username: usersList) {
-				UserResponse response = cloud.retrieveUser(username, apiKey);
-				// If the name matches a user, create the entry
-				if (response != null) {
-					Application.OwnerIdsAndType owner = createOwner(CloudConstants.OWNER_TYPE_USER, response.users().get(0).id());
+				try{
+					Application.OwnerIdsAndType owner = resolveUserToCloudOwner(username, apiKey, cloud);
 					ownersList.add(owner);
-				} else {
-					if (tResponse == null) {
-						tResponse = cloud.retrieveTeams(apiKey);
+				} catch(FeignException fe) {
+					// When no user is found, the framework throws an exception.
+					// Exception status must be 404 Not Found.
+					// Otherwise, a different error occurred and the exception must be thrown.
+					if (fe.status() != 404){
+						throw VCertException.fromFeignException(fe);
 					}
-					if (tResponse != null) {
-						for (Team t : tResponse.teams()) {
-							if (t.name().equals(username)) {
-								Application.OwnerIdsAndType owner = createOwner(CloudConstants.OWNER_TYPE_TEAM, t.id());
-								ownersList.add(owner);
-								break;
-							}
-						}
+					if (teams == null) {
+						teams = cloud.retrieveTeams(apiKey);
 					}
-
+					Application.OwnerIdsAndType teamOwner = resolveUserToCloudTeam(teams, username, apiKey, cloud);
+					if (teamOwner == null){
+						throw new ConnectorException.VaaSUsernameNotFoundException(username);
+					}
+					ownersList.add(teamOwner);
 				}
 			}
 		}
 		return ownersList;
+	}
+
+	private static Application.OwnerIdsAndType resolveApiKeyOwner(String apiKey, Cloud cloud){
+		// When no user is provided on the list, adds the current one as owner
+		UserDetails userDetails = cloud.authorize(apiKey);
+		Application.OwnerIdsAndType owner = createOwner(CloudConstants.OWNER_TYPE_USER, userDetails.user().id());
+		return owner;
+	}
+
+	private static Application.OwnerIdsAndType resolveUserToCloudOwner(String username, String apiKey, Cloud cloud){
+		UserResponse response = cloud.retrieveUser(username, apiKey);
+		Application.OwnerIdsAndType owner = createOwner(CloudConstants.OWNER_TYPE_USER, response.users().get(0).id());
+		return owner;
+	}
+
+	private static Application.OwnerIdsAndType resolveUserToCloudTeam(Teams teams, String username, String apiKey, Cloud cloud){
+		if (teams == null) {
+			teams = cloud.retrieveTeams(apiKey);
+		}
+		for (Team t : teams.teams()) {
+			if (t.name().equals(username)) {
+				Application.OwnerIdsAndType owner = createOwner(CloudConstants.OWNER_TYPE_TEAM, t.id());
+				return owner;
+			}
+		}
+		return null;
 	}
 
 	public static Application.OwnerIdsAndType createOwner(String type, String id) {

@@ -53,6 +53,7 @@ public class TestUtils {
 	public static final String API_KEY = System.getenv("APIKEY");
 	public static final String CLOUD_ENTRUST_CA_NAME = System.getenv("CLOUD_ENTRUST_CA_NAME");
 	public static final String CLOUD_DIGICERT_CA_NAME = System.getenv("CLOUD_DIGICERT_CA_NAME");
+	public static final String CLOUD_TEAM = System.getenv("CLOUD_TEAM");
 	
 	public static final String PEM_RSA_PRIVATE_KEY = "RSA PRIVATE KEY";
 	public static final String PEM_RSA_PRIVATE_KEY_ENCRYPTED = "RSA PRIVATE KEY";
