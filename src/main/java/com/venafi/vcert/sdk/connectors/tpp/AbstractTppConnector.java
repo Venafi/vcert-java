@@ -5,6 +5,7 @@ import static java.time.Duration.ZERO;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.BrowseIdentitiesResponse;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.BrowseIdentitiesRequest;
@@ -126,7 +127,8 @@ public abstract class AbstractTppConnector {
     protected String[] resolveTPPContacts(String[] contacts) throws VCertException{
         List<String> identitiesIdList = new ArrayList<>();
         if (contacts != null){
-            for (String contact: contacts) {
+            HashSet<String> contactSet = Arrays.stream(contacts).collect(Collectors.toCollection(HashSet::new));
+            for (String contact: contactSet) {
                 IdentityEntry identity = this.getTPPIdentity(contact);
                 identitiesIdList.add(identity.prefixedUniversal());
             }
@@ -145,11 +147,22 @@ public abstract class AbstractTppConnector {
         if (response.identities().length == 0){
             throw new TPPUsernameNotFoundException(username);
         }
+
+        IdentityEntry identity = null;
         if (response.identities().length > 1){
-            throw new IdentityExtraneousInformationException(response.identities());
+            for (IdentityEntry entry: response.identities()){
+                if (entry.name().equalsIgnoreCase(username)){
+                    identity = entry;
+                    break;
+                }
+            }
+        }else {
+            identity = response.identities()[0];
         }
 
-        IdentityEntry identity = response.identities()[0];
+        if (identity == null){
+            throw new TPPUsernameNotFoundException(username);
+        }
 
         return identity;
     }
