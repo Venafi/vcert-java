@@ -28,12 +28,12 @@ public class TppTokenConnectorPolicyAT {
         prefixedUniversal = identity.prefixedUniversal();
     }
 
-    @Test
-    @DisplayName("TPP - Retrieve and Identity using a partial match. Ensure that only one entry is returned")
-    public void browseIdentitiesPartialMatch() throws VCertException {
-        IdentityEntry identity = connectorResource.connector().getTPPIdentity(TestUtils.TPP_IDENTITY_USER);
-        Assertions.assertEquals(TestUtils.TPP_IDENTITY_USER, identity.name());
-    }
+//    @Test
+//    @DisplayName("TPP - Retrieve and Identity using a partial match. Ensure that only one entry is returned")
+//    public void browseIdentitiesPartialMatch() throws VCertException {
+//        IdentityEntry identity = connectorResource.connector().getTPPIdentity(TestUtils.TPP_IDENTITY_USER);
+//        Assertions.assertEquals(TestUtils.TPP_IDENTITY_USER, identity.name());
+//    }
 
     @Test
     @DisplayName("TPP - Retrieve the details of an Identity Entry by prefixedUniversal")
