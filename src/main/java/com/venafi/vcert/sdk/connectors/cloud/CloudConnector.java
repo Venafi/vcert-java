@@ -703,7 +703,7 @@ public class CloudConnector implements Connector {
   public static class CsrAttributes {
 	  private String commonName;
 	  private String organization;
-	  //private String[] organizationalUnits;
+	  private String[] organizationalUnits;
 	  private String locality;
 	  private String state;
 	  private String country;

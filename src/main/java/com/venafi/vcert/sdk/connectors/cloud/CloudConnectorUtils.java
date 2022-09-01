@@ -388,7 +388,7 @@ public class CloudConnectorUtils {
   	  }
   	  
   	  //computing the organizational Units
-  	  /*List<String> reqOrgUnits = Optional.ofNullable(request).map(req -> req.subject()).map(s -> s.organizationalUnit()).orElse(null);
+  	  List<String> reqOrgUnits = Optional.ofNullable(request).map(req -> req.subject()).map(s -> s.organizationalUnit()).orElse(null);
 
   	  if( reqOrgUnits!=null && reqOrgUnits.size() > 0) {
   		  String[] reqOrgUnitsArray = reqOrgUnits.toArray(new String[0]);
@@ -405,7 +405,7 @@ public class CloudConnectorUtils {
 
   		  if(defaultOrgUnits!=null && defaultOrgUnits.length>0)
   			  csrAttributes.organizationalUnits(defaultOrgUnits);
-  	  }*/
+  	  }
   	  
   	  //computing the localities
   	  List<String> reqLocalities = Optional.ofNullable(request).map(req -> req.subject()).map(s -> s.locality()).orElse(null);
