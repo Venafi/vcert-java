@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.venafi.vcert.sdk;
+package com.venafi.vcert.sdk.vcertTknClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -12,6 +12,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import com.venafi.vcert.sdk.Config;
+import com.venafi.vcert.sdk.TestUtils;
+import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.VCertTknClient;
 import com.venafi.vcert.sdk.connectors.ConnectorException.MissingCredentialsException;
 import com.venafi.vcert.sdk.connectors.tpp.TokenInfo;
 import com.venafi.vcert.sdk.endpoint.Authentication;

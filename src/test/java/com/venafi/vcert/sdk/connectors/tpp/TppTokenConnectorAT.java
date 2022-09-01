@@ -29,6 +29,7 @@ import com.venafi.vcert.sdk.connectors.ConnectorException.FailedToRevokeTokenExc
 import com.venafi.vcert.sdk.connectors.ZoneConfiguration;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
+import com.venafi.vcert.sdk.utils.TppTestUtils;
 
 import feign.FeignException;
 import feign.FeignException.BadRequest;

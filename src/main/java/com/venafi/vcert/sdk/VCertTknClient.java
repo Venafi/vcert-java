@@ -7,7 +7,7 @@ import feign.FeignException;
 import com.venafi.vcert.sdk.connectors.Connector;
 import com.venafi.vcert.sdk.connectors.TokenConnector;
 import com.venafi.vcert.sdk.connectors.tpp.TokenInfo;
-import com.venafi.vcert.sdk.connectors.tpp.Tpp;
+import com.venafi.vcert.sdk.connectors.tpp.TppToken;
 import com.venafi.vcert.sdk.connectors.tpp.TppTokenConnector;
 import com.venafi.vcert.sdk.endpoint.Authentication;
 
@@ -22,7 +22,7 @@ public class VCertTknClient extends VCertClient implements TokenConnector {
     	Connector connector;
     	switch (config.connectorType()) {
     	case TPP_TOKEN:{
-    		connector = new TppTokenConnector(Tpp.connect(config));
+    		connector = new TppTokenConnector(TppToken.connect(config));
     		break;
     	}
     	default:

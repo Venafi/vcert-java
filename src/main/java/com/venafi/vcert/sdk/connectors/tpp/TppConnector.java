@@ -169,7 +169,7 @@ public class TppConnector extends AbstractTppConnector implements Connector {
     Policy policy = serverPolicy.toPolicy();
     ZoneConfiguration zoneConfig = serverPolicy.toZoneConfig();
     zoneConfig.policy(policy);
-    zoneConfig.zoneId(zone);
+    zoneConfig.zoneId(getPolicyDN(zone));
     return zoneConfig;
   }
 
