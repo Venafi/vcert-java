@@ -16,6 +16,8 @@ import com.venafi.vcert.sdk.endpoint.Authentication;
 import com.venafi.vcert.sdk.policy.converter.tpp.TPPPolicySpecificationValidator;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecificationConst;
+import com.venafi.vcert.sdk.utils.TppTestUtils;
+
 import feign.FeignException;
 import feign.Request;
 import feign.Response;

@@ -1,5 +1,8 @@
 package com.venafi.vcert.sdk;
 
+import com.venafi.vcert.sdk.Config;
+import com.venafi.vcert.sdk.VCertException;
+import com.venafi.vcert.sdk.VCertTknClient;
 import com.venafi.vcert.sdk.certificate.CertificateRequest;
 import com.venafi.vcert.sdk.certificate.ImportRequest;
 import com.venafi.vcert.sdk.certificate.RenewalRequest;

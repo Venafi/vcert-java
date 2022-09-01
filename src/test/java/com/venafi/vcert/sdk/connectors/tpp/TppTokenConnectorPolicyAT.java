@@ -7,6 +7,8 @@ import com.venafi.vcert.sdk.connectors.tpp.endpoint.IdentityInformation;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ValidateIdentityRequest;
 import com.venafi.vcert.sdk.connectors.tpp.endpoint.ValidateIdentityResponse;
 import com.venafi.vcert.sdk.policy.domain.PolicySpecification;
+import com.venafi.vcert.sdk.utils.TppTestUtils;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

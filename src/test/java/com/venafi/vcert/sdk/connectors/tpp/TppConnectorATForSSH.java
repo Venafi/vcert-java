@@ -24,6 +24,7 @@ import com.venafi.vcert.sdk.certificate.SshCertRetrieveDetails;
 import com.venafi.vcert.sdk.certificate.SshCertificateRequest;
 import com.venafi.vcert.sdk.certificate.SshConfig;
 import com.venafi.vcert.sdk.endpoint.Authentication;
+import com.venafi.vcert.sdk.utils.TppTestUtils;
 
 class TppConnectorATForSSH {
 
