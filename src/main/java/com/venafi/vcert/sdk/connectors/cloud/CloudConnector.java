@@ -104,17 +104,12 @@ public class CloudConnector implements Connector {
     return vendorAndProductName;
   }
 
+  /**
+   * @deprecated The ping capability is not longer supported by VaaS.
+   */
   @Override
-  public void ping() throws VCertException {
-    Response response = doPing();
-    if (response.status() != 200) {
-      throw new CloudPingException( response.status(), response.reason());
-    }
-  }
-
-  private Response doPing() {
-    return cloud.ping(credentials.apiKey());
-  }
+  @Deprecated
+  public void ping() throws VCertException {}
 
   /**
    * {@inheritDoc}
