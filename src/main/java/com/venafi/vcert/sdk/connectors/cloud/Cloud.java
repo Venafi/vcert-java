@@ -66,10 +66,6 @@ public interface Cloud {
   @RequestLine("GET /outagedetection/v1/certificates/{id}")
   CertificateDetails certificateDetails(@Param("id") String id, @Param("apiKey") String apiKey);
 
-  @RequestLine("GET ping")
-  @Headers("x-venafi-api-key: {apiKey}")
-  Response ping(@Param("apiKey") String apiKey);
-
   @RequestLine("GET /v1/certificateauthorities/{CA}/accounts")
   @Headers("tppl-api-key: {apiKey}")
   CAAccountsList getCAAccounts(@Param("CA") String caName, @Param("apiKey") String apiKey);
