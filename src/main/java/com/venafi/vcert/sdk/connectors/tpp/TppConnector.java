@@ -290,8 +290,11 @@ public class TppConnector extends AbstractTppConnector implements Connector {
         break;
       }
     }
-    
-    
+
+    if (request.certificateType() != null) {
+      payload.certificateType(request.certificateType().value());
+    }
+
     //support for validity hours begins
     VCertUtils.addExpirationDateAttribute(request, payload);
    //support for validity hours ends
