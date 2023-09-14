@@ -94,7 +94,7 @@ final Authentication auth = Authentication.builder()
 //Create a Config object setting the Authentication object
 final Config config = Config.builder()
         .connectorType(ConnectorType.CLOUD)
-        .baseUrl("https://api.eu.venafi.cloud")
+        .baseUrl("https://api.venafi.eu")
         .credentials(auth)
         .build();
 
@@ -306,7 +306,7 @@ TPP REST APIs but please be advised this goes against Venafi recommendations.
 
 ## Prerequisites for using with Venafi as a Service
 
-1. The Venafi as a Service REST API is accessible at https://api.venafi.cloud or https://api.eu.venafi.cloud(if you have an EU account) from the system where VCert
+1. The Venafi as a Service REST API is accessible at [https://api.venafi.cloud](https://api.venafi.cloud/vaas) or [https://api.venafi.eu](https://api.venafi.eu/vaas) (if you have an EU account) from the system where VCert
 will be executed.
 2. You have successfully registered for a Venafi as a Service account, have been granted at least the
 OutagePREDICT "Resource Owner" role, and know your API key.
