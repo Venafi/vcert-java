@@ -1,7 +1,7 @@
 [![Venafi](https://raw.githubusercontent.com/Venafi/.github/master/images/Venafi_logo.png)](https://www.venafi.com/)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Community Supported](https://img.shields.io/badge/Support%20Level-Community-brightgreen)
-![Compatible with TPP 17.3+ & Cloud](https://img.shields.io/badge/Compatibility-TPP%2017.3+%20%26%20Cloud-f9a90c)  
+![Compatible with TPP 17.3+ & VaaS](https://img.shields.io/badge/Compatibility-TPP%2017.3+%20%26%20VaaS-f9a90c)  
 _**This open source project is community-supported.** To report a problem or share an idea, use
 **[Issues](../../issues)**; and if you have a suggestion for fixing the issue, please include those details, too.
 In addition, use **[Pull Requests](../../pulls)** to contribute actual bug fixes or proposed enhancements.
@@ -12,12 +12,12 @@ We welcome and appreciate all contributions. Got questions or want to discuss so
 
 VCert is a Java library, SDK, designed to simplify key generation and enrollment of machine identities
 (also known as SSL/TLS certificates and keys) that comply with enterprise security policy by using the
-[Venafi Platform](https://www.venafi.com/platform/trust-protection-platform) or
-[Venafi Cloud](https://pki.venafi.com/venafi-cloud/).
+[Venafi Trust Protection Platform](https://www.venafi.com/platform/trust-protection-platform) or
+[Venafi as a Service](https://www.venafi.com/venaficloud).
 
 #### Compatibility
 
-VCert releases are tested using the latest version of Trust Protection Platform and Venafi Cloud.
+VCert releases are tested using the latest version of Trust Protection Platform and Venafi as a Service.
 The [latest VCert release](../../releases/latest) should be compatible with Trust Protection
 Platform 17.3 or higher based on the subset of API methods it consumes.  Token Authentication
 requires 19.2 or higher; for earlier versions, username/password authentication (deprecated) applies.
@@ -65,7 +65,7 @@ final Config config = Config.builder()
 final VCertTknClient client = new VCertTknClient(config);
 ```
 
-Or instantiate a client for Venafi Cloud:
+Or instantiate a client for Venafi as a Service:
 
 ```java
 //Create an Authentication object with the API Key
@@ -83,9 +83,28 @@ final Config config = Config.builder()
 final VCertClient client = new VCertClient(config);
 ```
 
+Or instantiate a client for Venafi as a Service EU:
+
+```java
+//Create an Authentication object with the API Key
+final Authentication auth = Authentication.builder()
+        .apiKey("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+        .build();
+
+//Create a Config object setting the Authentication object
+final Config config = Config.builder()
+        .connectorType(ConnectorType.CLOUD)
+        .baseUrl("https://api.venafi.eu")
+        .credentials(auth)
+        .build();
+
+//Create the client with the Config object. The client will be authenticated
+final VCertClient client = new VCertClient(config);
+```
+
 Then use your client to request certificates:
 - For Trust Protection Platform, the `zone` format is the DN of a policy with or without the "\VED\Policy\" prefix (e.g. "\VED\Policy\Certificates\VCert" or simply "Certificates\VCert")
-- For Venafi Cloud, the `zone` format is the name of an OutagePREDICT Application and the API Alias of an Issuing Template assigned to it delimited by a single backslash character (e.g. "My Application\My CIT")
+- For Venafi as a Service, the `zone` format is the name of an OutagePREDICT Application and the API Alias of an Issuing Template assigned to it delimited by a single backslash character (e.g. "My Application\My CIT")
 
 ```java
 //////////////////////////////////////
@@ -159,7 +178,7 @@ System.out.println(pemCollection.pemCertificateChain());
 ```
 
 To specify the desired validity when requesting a certificate from Trust Protection Platform
-or Venafi Cloud, use `validityHours()`:
+or Venafi as a Service, use `validityHours()`:
 
 ```java
 CertificateRequest certificateRequest = new CertificateRequest().subject(
@@ -285,11 +304,11 @@ practice which also met our design objective to keep the certificate request pro
 VCert users. If you require the ability to specify the CA Template with the request you can use the
 TPP REST APIs but please be advised this goes against Venafi recommendations.
 
-## Prerequisites for using with Venafi Cloud
+## Prerequisites for using with Venafi as a Service
 
-1. The Venafi Cloud REST API is accessible at https://api.venafi.cloud from the system where VCert
+1. The Venafi as a Service REST API is accessible at [https://api.venafi.cloud](https://api.venafi.cloud/vaas) or [https://api.venafi.eu](https://api.venafi.eu/vaas) (if you have an EU account) from the system where VCert
 will be executed.
-2. You have successfully registered for a Venafi Cloud account, have been granted at least the
+2. You have successfully registered for a Venafi as a Service account, have been granted at least the
 OutagePREDICT "Resource Owner" role, and know your API key.
 3. A CA Account and Issuing Template exist and have been configured with:
     1. Recommended Settings values for:
@@ -316,10 +335,10 @@ To run the acceptance tests the following environment variables must be set:
 | TPPUSER | Only for TPP connector tests |
 | TPPPASSWORD | Only for TPP connector tests |
 | TPPZONE | Policy folder for TPP |
-| CLOUDURL | Only for Venafi Cloud tests running against non-production environments (uncommon) |
-| APIKEY | Obtained by logging into Venafi Cloud after registering |
-| CLOUDZONE | Zone ID or ProjectName\ZoneName for Venafi Cloud |
-| CLOUDZONE2 | Zone ID or ProjectName\ZoneName for Venafi Cloud for testing empty OU, O, L, ST, and C |
+| CLOUDURL | Only for Venafi as a Service tests |
+| APIKEY | Obtained by logging into Venafi as a Service after registering |
+| CLOUDZONE | Zone ID or ProjectName\ZoneName for Venafi as a Service |
+| CLOUDZONE2 | Zone ID or ProjectName\ZoneName for Venafi as a Service for testing empty OU, O, L, ST, and C |
 
 Acceptance test  are executed with:
 
