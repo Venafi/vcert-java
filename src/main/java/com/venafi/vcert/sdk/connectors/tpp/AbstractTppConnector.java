@@ -350,7 +350,7 @@ public abstract class AbstractTppConnector {
         private String ellipticCurve;
         private boolean disableAutomaticRenewal;
         private String origin;
-        
+        private String certificateType;
         @SerializedName("CustomFields")
         private ArrayList<CustomFieldRequest> customFields;
     }

@@ -74,6 +74,7 @@ public class CertificateRequest {
   private String issuerHint;
   private Collection<CustomField> customFields;
   private DataFormat dataFormat;
+  private CertificateType certificateType;
 
   public CertificateRequest() {
     this.dnsNames = emptyList();
