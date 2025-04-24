@@ -66,7 +66,7 @@ public class TestUtils {
 	public static final String PEM_HEADER_PKCS8 = "PRIVATE KEY";
 	public static final String PEM_HEADER_PKCS8_ENCRYPTED = "ENCRYPTED PRIVATE KEY";
 	//This password complains the TPP and VaaS requirements.
-	public static final String KEY_PASSWORD = "newPassw0rd!";
+	public static final String KEY_PASSWORD = "CyberArkT3stP4ZZC0de%jQX^J=4H";
 	
 	private static String loadFileContents(String name) throws IOException {
 		ClassLoader classLoader = TestUtils.class.getClassLoader();
